@@ -1,0 +1,31 @@
+html {
+    --bodycolor: burlywood;
+}
+
+.animate-bg {
+    background-color: grey;
+    padding: 0px;
+    margin: 0px;
+    animation-name: bgcolor;
+    animation-duration: var(--time);
+    animation-timing-function: ease;
+    animation-delay: 1.5s;
+    animation-iteration-count: infinite;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+@keyframes bgcolor {
+    0% {
+        background-color: var(--start);
+        opacity: 0.6;
+    }
+    50% {
+        background-color: var(--end);
+        opacity: 1;
+    }
+    100% {
+        background-color: var(--start);
+        opacity: 0.6;
+    }
+}

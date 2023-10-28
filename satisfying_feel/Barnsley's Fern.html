@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barnsley's Fern</title>
+
+    <!--
+      Implementation of Barnsley's fern which resembles the black spleenwort, Asplenium adiantum-nigrum
+      and a variant of it which resembles the Cyclosorus or Thelypteridaceae fern.
+
+      A truly amazing application of fractal math and it's relationship with nature.
+    -->
+
+    <style>
+        * {
+            box-sizing: border-box;
+            color: black;
+        }
+        
+        canvas {
+            border: 3px green solid;
+            border-radius: 5%;
+            background-color: black;
+            /*Make the canvas black*/
+        }
+        
+        #canv_section {
+            padding-top: 20px;
+        }
+        
+        button {
+            display: inline-block;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 15px;
+            width: 70%;
+            margin: 20px 0;
+            box-shadow: 0 3px #999;
+        }
+        
+        button:hover {
+            background-color: #3e8e41;
+            box-shadow: 0 5px #666;
+            transform: translateY(4px);
+        }
+        
+        div#collective {
+            position: fixed;
+            right: 5px;
+            height: 20px;
+            border: 5px red;
+            border-style: double;
+            border-radius: 5px;
+            overflow-y: scroll;
+            text-align: center;
+            padding: 50px 0;
+        }
+        
+        .desc {
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        input.ranges {
+            width: 100px;
+        }
+    </style>
+
+    <link rel="stylesheet" href="animate-bg.css">
+</head>
+
+<body class="animate-bg">
+
+    <div id="collective">
+        <div id="collective_barnsley">
+            <hr/>
+
+            <h3 class="desc">Barnsley Controls</h3>
+
+            <div class="rangediv">
+                <p class="labels">Iter_b: <span id="iter_b">null</span></p>
+                <input type="range" class="ranges" min="100000" max="10000000" value="10000">
+            </div>
+            <div>
+                <input type="number" id="iter_num_b" class="ranges" value="0">
+            </div>
+            <div class="rangediv">
+                <p class="labels">divX: <span id="divX_b">null</span></p>
+                <input type="range" class="ranges" min="1" max="200" value="7">
+            </div>
+            <div class="rangediv">
+                <p class="labels">divY: <span id="divY_b">null</span></p>
+                <input type="range" class="ranges" min="1" max="200" value="10">
+            </div>
+            <div class="rangediv">
+                <p class="labels">multX: <span id="multX_b">null</span></p>
+                <input type="range" class="ranges" min="1" max="20" value="3">
+            </div>
+            <div class="rangediv">
+                <p class="labels">multY: <span id="multY_b">null</span></p>
+                <input type="range" class="ranges" min="1" max="20" value="10">
+            </div>
+
+            <hr/>
+        </div>
+
+        <div id="collective_barnsley_variant">
+            <hr/>
+
+            <h3 class="desc">Barnsley Variant Controls</h3>
+
+            <div class="rangediv">
+                <p class="labels">Iter_b: <span id="iter_b_v">null</span></p>
+                <input type="range" class="ranges" min="100000" max="10000000" value="10000">
+            </div>
+            <div>
+                <input type="number" id="iter_num" class="ranges" value="0">
+            </div>
+            <div class="rangediv">
+                <p class="labels">divX: <span id="divX_b_v">null</span></p>
+                <input type="range" class="ranges" min="1" max="200" value="4">
+            </div>
+            <div class="rangediv">
+                <p class="labels">divY: <span id="divY_b_v">null</span></p>
+                <input type="range" class="ranges" min="1" max="200" value="8">
+            </div>
+            <div class="rangediv">
+                <p class="labels">multX: <span id="multX_b_v">null</span></p>
+                <input type="range" class="ranges" min="1" max="20" value="2">
+            </div>
+            <div class="rangediv">
+                <p class="labels">multY: <span id="multY_b_v">null</span></p>
+                <input type="range" class="ranges" min="1" max="20" value="7">
+            </div>
+        </div>
+
+        <hr/>
+    </div>
+
+    <div id="canv_section">
+        <canvas id="barnsley"></canvas>
+
+        <button>Draw Barnsley</button>
+
+        <canvas id="barnsleyvariant"></canvas>
+
+        <button>Draw Barnsley Variant</button>
+    </div>
+
+
+    <script>
+        "use strict";
+
+        const body = document.getElementsByTagName("body")[0];
+        const canvas = document.getElementsByTagName("canvas");
+        const _Barnsley = canvas[0];
+        const _BarnsleyVariant = canvas[1];
+
+        const _b_ctx = _Barnsley.getContext('2d');
+        const _b_v_ctx = _BarnsleyVariant.getContext('2d');
+
+        const buttons = document.getElementsByTagName("button");
+        const _b_draw = buttons[0];
+        const _b_v_draw = buttons[1];
+
+        const inputs = document.getElementsByTagName("input");
+
+        const Iter_b = document.getElementById('iter_b');
+        const divX_b = document.getElementById('divX_b');
+        const divY_b = document.getElementById('divY_b');
+        const multX_b = document.getElementById('multX_b');
+        const multY_b = document.getElementById('multY_b');
+
+        const Iter_b_v = document.getElementById('iter_b_v');
+        const divX_b_v = document.getElementById('divX_b_v');
+        const divY_b_v = document.getElementById('divY_b_v');
+        const multX_b_v = document.getElementById('multX_b_v');
+        const multY_b_v = document.getElementById('multY_b_v');
+
+        const collective = document.getElementById('collective');
+        const collective_barnsley = document.getElementById('collective_barnsley');
+        const collective_barnsley_variant = document.getElementById('collective_barnsley_variant');
+
+        // Barnsley User Interface variables and functions
+
+        const _Iter_b = inputs[0];
+        const _Iter_num_b = inputs[1];
+        const _divX_b = inputs[2];
+        const _divY_b = inputs[3];
+        const _multX_b = inputs[4];
+        const _multY_b = inputs[5];
+
+        Iter_b.innerHTML = _Iter_b.value;
+        _Iter_num_b.value = _Iter_b.value;
+        divX_b.innerHTML = _divX_b.value;
+        divY_b.innerHTML = _divY_b.value;
+        multX_b.innerHTML = _multX_b.value;
+        multY_b.innerHTML = _multY_b.value;
+
+        _Iter_b.oninput = () => {
+            Iter_b.innerHTML = _Iter_b.value;
+            _Iter_num_b.value = _Iter_b.value;
+        }
+
+        _Iter_num_b.oninput = () => {
+            if (Number(_Iter_num_b.value) >= Number(_Iter_num_b.min) && Number(_Iter_num_b.value) <= Number(_Iter_num_b.max)) {
+                Iter_b.innerHTML = _Iter_num_b.value;
+                _Iter_b.value = _Iter_num_b.value;
+            }
+        }
+
+        _divX_b.oninput = () => {
+            divX_b.innerHTML = _divX_b.value;
+            commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+        }
+
+        _divY_b.oninput = () => {
+            divY_b.innerHTML = _divY_b.value;
+            commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+        }
+
+        _multX_b.oninput = () => {
+            multX_b.innerHTML = _multX_b.value;
+            commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+        }
+
+        _multY_b.oninput = () => {
+            multY_b.innerHTML = _multY_b.value;
+            commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+        }
+
+        // Barnsley variant User Interface variables and functions
+
+        const _Iter_b_v = inputs[6];
+        const _Iter_num_b_v = inputs[7];
+        const _divX_b_v = inputs[8];
+        const _divY_b_v = inputs[9];
+        const _multX_b_v = inputs[10];
+        const _multY_b_v = inputs[11];
+
+        Iter_b_v.innerHTML = _Iter_b_v.value;
+        _Iter_num_b_v.value = _Iter_b_v.value;
+        divX_b_v.innerHTML = _divX_b_v.value;
+        divY_b_v.innerHTML = _divY_b_v.value;
+        multX_b_v.innerHTML = _multX_b_v.value;
+        multY_b_v.innerHTML = _multY_b_v.value;
+
+        _Iter_b_v.oninput = () => {
+            Iter_b_v.innerHTML = _Iter_b_v.value;
+            _Iter_num_b_v.value = _Iter_b_v.value;
+        }
+
+        _Iter_num_b_v.oninput = () => {
+            if (Number(_Iter_num_b_v.value) >= Number(_Iter_b_v.min) && Number(_Iter_num_b_v.value) <= Number(_Iter_num_b_v.max)) {
+                Iter_b_v.innerHTML = _Iter_num_b_v.value;
+                _Iter_b_v.value = _Iter_num_b_v.value;
+            }
+        }
+
+        _divX_b_v.oninput = () => {
+            divX_b_v.innerHTML = _divX_b_v.value;
+            commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+        }
+
+        _divY_b_v.oninput = () => {
+            divY_b_v.innerHTML = _divY_b_v.value;
+            commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+        }
+
+        _multX_b_v.oninput = () => {
+            multX_b_v.innerHTML = _multX_b_v.value;
+            commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+        }
+
+        _multY_b_v.oninput = () => {
+            multY_b_v.innerHTML = _multY_b_v.value;
+            commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+        }
+
+        var width = window.innerWidth * 0.9 - 100;
+        var height = window.innerHeight * 0.9 - 100;
+
+        _b_draw.style.width = `${window.innerWidth * 0.9 - 100}px`;
+        _b_v_draw.style.width = `${window.innerWidth * 0.9 - 100}px`;
+
+        collective.style.height = `${window.innerHeight}px`;
+        collective.style.width = `${window.innerWidth -(window.innerWidth * 0.9)+50}px`;
+
+        var ratioX = 0;
+        var ratioY = 0;
+
+        _Barnsley.width = width;
+        _Barnsley.height = height;
+
+        _BarnsleyVariant.width = width;
+        _BarnsleyVariant.height = height;
+
+        var _b_imageData = _b_ctx.createImageData(width, height);
+        var _b_v_imageData = _b_ctx.createImageData(width, height);
+
+        function commonRun_b(_a, _b, _c, _d, w, h) {
+            _b_imageData = _b_ctx.createImageData(width, height);
+            getDivRatio(_a, _b);
+            Barnsley(_Iter_b.min, _c, _d);
+        }
+
+        function commonRun_b_v(_a, _b, _c, _d) {
+            _b_v_imageData = _b_ctx.createImageData(width, height);
+            getDivRatio(_a, _b);
+            BarnsleyVariant(_Iter_b_v.min, _c, _d);
+        }
+
+        commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+        commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+
+        window.onresize = function() {
+            width = window.innerWidth * 0.9 - 100;
+            height = window.innerHeight * 0.9 - 100;
+            _b_draw.style.width = `${window.innerWidth * 0.9 - 100}px`;
+            _b_v_draw.style.width = `${window.innerWidth * 0.9 - 100}px`;
+
+            collective.style.height = `${window.innerHeight}px`;
+            collective.style.width = `${window.innerWidth -(window.innerWidth * 0.9)+50}px`;
+
+            _Barnsley.width = width;
+            _Barnsley.height = height;
+
+            _BarnsleyVariant.width = width;
+            _BarnsleyVariant.height = height;
+
+            commonRun_b(Number(_divX_b.value), Number(_divY_b.value), Number(_multX_b.value), Number(_multY_b.value));
+            commonRun_b_v(Number(_divX_b_v.value), Number(_divY_b_v.value), Number(_multX_b_v.value), Number(_multY_b_v.value));
+        }
+
+        _b_draw.onclick = function() {
+            _b_imageData = _b_ctx.createImageData(width, height);
+            getDivRatio(_divX_b.value, _divY_b.value);
+            Barnsley(_Iter_b.value, _multX_b.value, _multY_b.value);
+        }
+
+        _b_v_draw.onclick = function() {
+            _b_v_imageData = _b_ctx.createImageData(width, height);
+            getDivRatio(_divX_b_v.value, _divY_b_v.value);
+            BarnsleyVariant(_Iter_b_v.value, _multX_b_v.value, _multY_b_v.value);
+        }
+
+
+        // The following JavaScript code uses an iterated function system (IFS) to create the fractals.bg
+        // The pseudocode can be derived from wikipedia.bg
+
+        // The formula for one transformation is:
+        //          |a b| |x|   |e|
+        // f(x,y) = |   | | | + | |
+        //          |c d| |y|   |f|
+
+
+        // w        a       b       c       d       e       f       p       Portion generated
+        // f1       0       0       0       0.16    0       0       0.01    Stem     
+        // f2       0.85    0.04    -0.04   0.85    0       1.60    0.85    Successively smaller leaflets
+        // f3       0.20    -0.26   0.23    0.22    0       1.60    0.07    Largest left-hand leaflet
+        // f4       -0.15   0.28    0.26    0.24    0       0.44    0.07    Largest right-hand leaflet
+
+        // First point is drawn at origin (0,0)
+
+        //f1:
+        //    xn+1 = 0
+        //    yn+1 = 0.16yn
+
+        //f2:
+        //    xn+1 = 0.85xn + 0.04yn
+        //    yn+1 = -0.04xn + 0.85yn + 1.6
+
+        //f3:
+        //    xn+1 = 0.2xn - 0.26yn
+        //    yn+1 = 0.23xn + 0.22yn + 1.6
+
+        //f4:
+        //    xn+1 = -0.15xn + 0.28yn
+        //    yn+1 = 0.26xn + 0.24yn + 0.44
+
+
+        function Barnsley(maximum_iterations = 1000, multX, multY) {
+
+            var x = 0.0;
+            var y = 0.0;
+            var n = 0;
+            var xn = 0.0;
+            var yn = 0.0;
+
+            while (n < maximum_iterations) {
+                let r = Math.random();
+
+                if (r < 0.1) {
+                    xn = 0.0
+                    yn = 0.16 * y;
+                } else if (r < 0.86) {
+                    xn = 0.85 * x + 0.04 * y;
+                    yn = -0.04 * x + 0.85 * y + 1.6;
+                } else if (r < 0.93) {
+                    xn = 0.2 * x - 0.26 * y;
+                    yn = 0.23 * x + 0.22 * y + 1.6;
+                } else {
+                    xn = -0.15 * x + 0.28 * y;
+                    yn = 0.26 * x + 0.24 * y + 0.44;
+                }
+
+                // draw pixel (x,y) green on screen
+
+                x = xn;
+                y = yn;
+
+                const [a, b] = unclip([x, y], true);
+                const [u, v] = toCanvas([a, b], multX, multY);
+
+                const [i, j] = [Math.round(u), Math.round(v)];
+
+                // _b_ctx.fillStyle = "green ";
+                // _b_ctx.fillRect(i, j, 1, 1);
+
+                _b_imageData.data[j * (_b_imageData.width * 4) + i * 4] = 0;
+                _b_imageData.data[j * (_b_imageData.width * 4) + i * 4 + 1] = 255;
+                _b_imageData.data[j * (_b_imageData.width * 4) + i * 4 + 2] = 0;
+                _b_imageData.data[j * (_b_imageData.width * 4) + i * 4 + 3] = 255;
+                //increment n
+
+                n++;
+            }
+
+            _b_ctx.putImageData(_b_imageData, 0, 0);
+        }
+
+        // Variant
+
+        // w        a       b       c       d       e       f       p       Portion generated
+        // f1       0       0       0       0.25    0       -0.4    0.02    Stem     
+        // f2       0.95    0.005   -0.005  0.93    -0.002  0.5     0.84    Successively smaller leaflets
+        // f3       0.035   -0.2    0.16    0.04    -0.09   0.02    0.07    Largest left-hand leaflet
+        // f4       -0.04   0.2     0.16    0.04    0.083   0.12    0.07    Largest right-hand leaflet
+
+
+        //f1:
+        //    xn+1 = 0
+        //    yn+1 = 0.25yn - 0.4
+
+        //f2:
+        //    xn+1 = 0.95xn + 0.005yn -0.002
+        //    yn+1 = -0.005xn + 0.93yn + 0.5
+
+        //f3:
+        //    xn+1 = 0.035xn - 0.2yn -0.09
+        //    yn+1 = 0.16xn + 0.04yn + 0.02
+
+        //f4:
+        //    xn+1 = -0.04xn + 0.2yn + 0.083
+        //    yn+1 = 0.16xn + 0.04yn + 0.12
+
+
+        // draw all pixels on screen white
+
+        function BarnsleyVariant(maximum_iterations = 1000, multX, multY) {
+
+            var x = 0.0;
+            var y = 0.0;
+            var n = 0;
+            var xn = 0.0;
+            var yn = 0.0;
+
+            while (n < maximum_iterations) {
+                let r = Math.random();
+
+                if (r < 0.1) {
+                    xn = 0.0
+                    yn = 0.25 * y - 0.4;
+                } else if (r < 0.86) {
+                    xn = 0.95 * x + 0.005 * y - 0.002;
+                    yn = -0.005 * x + 0.93 * y + 0.5;
+                } else if (r < 0.93) {
+                    xn = 0.035 * x - 0.2 * y - 0.09;
+                    yn = 0.16 * x + 0.04 * y + 0.02;
+                } else {
+                    xn = -0.04 * x + 0.2 * y + 0.083;
+                    yn = 0.16 * x + 0.04 * y + 0.12;
+                }
+
+                // draw pixel (x,y) green on screen
+
+                x = xn;
+                y = yn;
+
+                const [a, b] = unclip([x, y], true);
+                const [u, v] = toCanvas([a, b], multX, multY);
+
+                const [i, j] = [Math.round(u), Math.round(v)];
+
+                // _b_v_ctx.fillStyle = "green ";
+                // _b_v_ctx.fillRect(i, j, 1, 1);
+
+                _b_v_imageData.data[j * (_b_v_imageData.width * 4) + i * 4] = 0;
+                _b_v_imageData.data[j * (_b_v_imageData.width * 4) + i * 4 + 1] = 255;
+                _b_v_imageData.data[j * (_b_v_imageData.width * 4) + i * 4 + 2] = 0;
+                _b_v_imageData.data[j * (_b_v_imageData.width * 4) + i * 4 + 3] = 255;
+
+                //increment n
+
+                n++;
+            }
+
+            _b_v_ctx.putImageData(_b_v_imageData, 0, 0);
+        }
+
+        function getDivRatio(divX, divY) {
+            ratioX = width / divX;
+            ratioY = height / divY;
+        }
+
+        function canvasTo(arr) {
+            arr[0] -= ratioX;
+            arr[1] -= ratioY;
+            return arr;
+        }
+
+        function toCanvas(arr, multX, multY) {
+            arr[0] += ratioX * multX;
+            arr[1] += ratioY * multY;
+            return arr;
+        }
+
+        function clip(arr, invertY = false) {
+            var sgn = 1;
+            if (invertY = true) sgn = -1;
+            else sgn = 1;
+            arr[0] /= ratioX;
+            arr[1] /= sgn * ratioY;
+            return arr;
+        }
+
+        function unclip(arr, invertY = false) {
+            var sgn = 1;
+            if (invertY = true) sgn = -1;
+            else sgn = 1;
+            arr[0] *= ratioX;
+            arr[1] *= sgn * ratioY;
+            return arr;
+        }
+    </script>
+    <script src="animate-bg.js"></script>
+</body>
+
+</html>

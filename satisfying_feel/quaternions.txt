@@ -1,0 +1,116 @@
+i ^ 2 = j ^ 2 = k ^ 2 = -1
+
+ij = -ji = k
+
+ki = -ik = j
+
+jk = -kj = i
+
+
+    (w1 + x1i + y1j + z1k)(w2 + x2i + y2j + z2k) = (w1w2 - x1x2 - y1y2 - z1z2) + (w1x2 + x1w2 + y1z2 - z1y2) i + (w1y2 + y1w2 + z1x2 - x1z2) j + (w1z2 + z1w2 + x1y2 + y1x2) k
+
+
+    |
+    x1 | | x2 |
+    v1 = | y1 | v2 = | y2 |
+    |
+    z1 | | z2 |
+
+
+    (w1w2 - v1.v2, w1v2 + w2v1 + v1 x v2)
+
+.: dot product
+x: cross product
+
+    ||
+    q || = || w1 + x1i + y1j + z1k || = sqrt(w1 ^ 2 + x1i ^ 2 + y1j ^ 2 + z1k ^ 2)
+
+q1.q2 = (q1 / || q1 || ) || q1 || .q2
+
+f(p) = qpq ^ -1
+
+v = [v1 v2 v3]
+
+p = [xi yi zi]
+
+q = cos(theta / 2) + sin(theta / 2)(v1 v2 v3)
+
+q = w + xi + yj + zk
+where:
+    w = cos(theta / 2)
+x = v1 * sin(theta / 2)
+y = v2 * sin(theta / 2)
+z = v3 * sin(theta / 2)
+
+q ^ -1 = w - xi - yj - zk
+
+
+
+
+
+
+
+
+
+
+    canvasTo(arr) {
+        arr[0] -= this.halfx;
+        arr[1] -= this.halfy;
+        return arr;
+    }
+
+    toCanvas(arr) {
+        arr[0] += this.halfx;
+        arr[1] += this.halfy;
+        return arr;
+    }
+
+    clip(arr) {
+        arr[0] /= this.halfx;
+        arr[1] /= this.halfy;
+        return arr;
+    }
+
+    unclip(arr) {
+        arr[0] *= this.halfx;
+        arr[1] *= this.halfy;
+        return arr;
+    }
+
+    canvToScreen(inputVertexArray, returnVertexArray) {
+        const a_third_vert_len = inputVertexArray.length / 3;
+
+        for (let i = 0; i < a_third_vert_len; i++) {
+            returnVertexArray[i * 3] = inputVertexArray[i * 3] - this.halfX;
+            returnVertexArray[i * 3 + 1] = inputVertexArray[i * 3 + 1] - this.halfY;
+        }
+    }
+
+    screenToCanv(inputVertexArray, returnVertexArray) {
+        const a_third_vert_len = inputVertexArray.length / 3;
+
+        for (let i = 0; i < a_third_vert_len; i++) {
+            returnVertexArray[i * 3] = inputVertexArray[i * 3] + this.halfX;
+            returnVertexArray[i * 3 + 1] = inputVertexArray[i * 3 + 1] + this.halfY;
+        }
+    }
+
+    screenToWorld(inputVertexArray, returnVertexArray) {
+        const a_third_vert_len = inputVertexArray.length / 3;
+
+        for (let i = 0; i < a_third_vert_len; i++) {
+            returnVertexArray[i * 3] = inputVertexArray[i * 3] / this.halfX;
+            returnVertexArray[i * 3 + 1] = inputVertexArray[i * 3 + 1] / this.halfY;
+        }
+    }
+
+    worldToScreen(inputVertexArray, returnVertexArray) {
+        const a_third_vert_len = inputVertexArray.length / 3;
+
+        for (let i = 0; i < a_third_vert_len; i++) {
+            returnVertexArray[i * 3] = inputVertexArray[i * 3] * this.halfX;
+            returnVertexArray[i * 3 + 1] = inputVertexArray[i * 3 + 1] * this.halfY;
+        }
+    }
+
+            this.lightProjectionMatrix = [this.dist * this.arInv, 0, 0, 0, 0, this.dist, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0];

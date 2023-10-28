@@ -1,0 +1,75 @@
+
+
+a = [2,3,4,5]
+
+b = [9,7,8,6]
+
+i0
+  j0
+  sum = 0
+    k0 sum += a[i+] * b[k+j]
+              a[0+0] * b[0+0]
+              2 * 9 = 18
+    k1 sum += a[i+k] * b[k+j] 
+              a[0+1] * b[1+0]
+              3 * 7 = 21
+    sum = 39
+  j1
+    k0 sum += a[i+k] * b[k+j]
+              a[0+0] * b[0+1]
+              2 * 7 = 
+    k1 sum += a[i+k] * b[k+j]
+i1
+  j0
+    k0 sum += a[i+k] * b[k+j]
+    k1 sum += a[i+k] * b[k+j]
+  j1
+    k0 sum += a[i+k] * b[k+j]
+    k1 sum += a[i+k] * b[k+j]
+   
+            // matMult(counter, matA, matB, shapeA, shapeB) {
+            //     var matC = [],
+            //         sum = 0
+
+        //     if ((shapeA[1] == shapeB[0]) && shapeA[1] > 0) {
+        //         for (let i = 0; i < shapeA[0]; i++) {
+        //             for (let j = 0; j < shapeB[1]; j++) {
+        //                 sum = 0
+        //                 for (let k = 0; k < shapeB[0]; k++) {
+        //                     let aIndex = this.getIndex(i, k, shapeA[1]),
+        //                         bIndex = this.getIndex(k, j, shapeB[1])
+        //                     sum += matA[aIndex] * matB[bIndex]
+        //                 }
+        //                 matC[counter.add().value()] = sum
+        //             }
+        //         }
+        //     }
+        //     counter.change(-1)
+        //     return [matC, [shapeA[0], shapeB[1]]]
+        // }
+
+
+                // In the first case above, the dot product is the sum of the multiplication of the corresponding pairs of the two vectors.
+        // e.g [3,5,2] . [9,3,2] = [3*9] + [5*3] + [2*2] = 27 + 15 + 4  = 46.
+
+        // While for the second case above, the dot product will correspond to the multiplication of two vector magnitudes x the cosine of the angle between them.
+
+        // Eg. using the above vectors:
+
+        // mag([3,5,2]) = sqrt([3**2+5**2+2**2]) = approx. 6.1644.
+        // mag([9,3,2]) = sqrt([9**2+3**2+2**2]) = approx. 9.6953.
+
+        // The angle between the two vectors is defined as the dot product of the two vectors (46),
+        // divided by the multiplication of their magnitudes (6.1644 * 9.6953) = 59.7657,
+        // that is 46/59.7657 which is 0.7696,
+        // which is then plugged into the inverse cosine function to yield the angle in radians,
+        // which will give us approx. 0.6925 rad or approx. 39.6773 deg, we will use radians because the standard JS trig. functions use radian units.
+
+        // Therefore the dot product using the second method would be 6.1644 * 9.6953 * 0.6925 which is approx. 41.3877.
+
+        // The above result is off from the original 46 by -4.6123 units due to rounding errors (4 d.p was used, the higher the d.p the higher the accuracy ...slightly though),
+        // and also due to hardware limitations resulting from division in computers being non-perfect as denary decimals,
+        // have to be converted to binary decimals using floating point arithmetic, refer to the wikipedia page on IEEE754 floating numbers for more on this.
+
+        // Use vectors if you know the components e.g [x,y] values for 2d vectors, [x,y,z] values for 3d vectors and so on.
+        // Use magnitudes and an angle if you know the magnitudes of the vectors and the angle between the two vectors.

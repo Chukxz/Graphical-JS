@@ -1,0 +1,25 @@
+Things to implement:
+
+  - Conversion of faces to triangles through subdivision.
+
+  - Storage of triangle vertices and direction matrix with the appropiate
+  convention to distinguish inner triangular face from outer triangular face.
+
+  - No need to implement rasterization as the Canvas 2d rendering context does
+  this for us.
+
+  - A custom 3d plotter.
+
+  - Smooth 3d rotations, translations, scaling, reflections and shearing.
+
+  - A 3d viewer.
+
+  - Inbuilt primitive 1d, 2d and 3d shapes.
+
+  - Simplistic and minimalistic but sufficient shaders with lights and cameras.
+
+  - Realistic perspective views and if possible, an orthogonal viewer.
+
+  - Interactive, simple and stylish UI.
+
+  - Others to be added...

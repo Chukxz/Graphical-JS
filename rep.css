@@ -1,0 +1,142 @@
+* {
+    box-sizing: border-box;
+    resize: both;
+}
+
+body {
+    background-color: darkgray;
+    font-family: Courier;
+}
+
+canvas {
+    background-color: white;
+}
+
+button {
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    color: #fff;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 15px;
+    width: 70%;
+    margin-top: 10px;
+    margin-left: 15%;
+    margin-right: 15%;
+    box-shadow: 0 3px #999;
+}
+
+#menu {
+    overflow: scroll;
+}
+
+button:hover {
+    background-color: #3e8e41
+}
+
+button:active {
+    background-color: #3e8e41;
+    box-shadow: 0 5px #666;
+    transform: translateY(4px);
+}
+
+.rand.bg {
+    background-color: initial;
+    animation-name: bgcolor;
+    animation-duration: var(--time);
+    animation-timing-function: ease;
+    animation-delay: 0s;
+    animation-iteration-count: infinite;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+
+@keyframes bgcolor {
+    0% {
+        background-color: var(--start_cycle_0);
+        opacity: 0.7;
+    }
+    5% {
+        background-color: var(--end_cycle_0);
+        opacity: 1;
+    }
+    10% {
+        background-color: var(--start_cycle_1);
+        opacity: 0.7;
+    }
+    15% {
+        background-color: var(--end_cycle_1);
+        opacity: 1;
+    }
+    20% {
+        background-color: var(--start_cycle_2);
+        opacity: 0.7;
+    }
+    25% {
+        background-color: var(--end_cycle_2);
+        opacity: 1;
+    }
+    30% {
+        background-color: var(--start_cycle_3);
+        opacity: 0.7;
+    }
+    35% {
+        background-color: var(--end_cycle_3);
+        opacity: 1;
+    }
+    40% {
+        background-color: var(--start_cycle_4);
+        opacity: 0.7;
+    }
+    45% {
+        background-color: var(--end_cycle_4);
+        opacity: 1;
+    }
+    50% {
+        background-color: var(--start_cycle_5);
+        opacity: 0.7;
+    }
+    55% {
+        background-color: var(--end_cycle_5);
+        opacity: 1;
+    }
+    60% {
+        background-color: var(--start_cycle_6);
+        opacity: 0.7;
+    }
+    65% {
+        background-color: var(--end_cycle_6);
+        opacity: 1;
+    }
+    70% {
+        background-color: var(--start_cycle_7);
+        opacity: 0.7;
+    }
+    75% {
+        background-color: var(--end_cycle_7);
+        opacity: 1;
+    }
+    80% {
+        background-color: var(--start_cycle_8);
+        opacity: 0.7;
+    }
+    85% {
+        background-color: var(--end_cycle_8);
+        opacity: 1;
+    }
+    90% {
+        background-color: var(--start_cycle_9);
+        opacity: 0.7;
+    }
+    95% {
+        background-color: var(--end_cycle_9);
+        opacity: 1;
+    }
+    100% {
+        background-color: var(--start_cycle_0);
+        opacity: 0.7;
+    }
+}
