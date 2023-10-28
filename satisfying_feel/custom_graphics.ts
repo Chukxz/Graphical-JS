@@ -229,8 +229,8 @@
         }
 
         function dragTouchend() {
-            document.addEventListener('touchend', null, { 'passive': true });
-            document.addEventListener('touchmove', null, { 'passive': true });
+            document.addEventListener('touchend', () => null, { 'passive': true });
+            document.addEventListener('touchmove', () => null, { 'passive': true });
         }
 
         return retObject;
