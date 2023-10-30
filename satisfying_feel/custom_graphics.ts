@@ -132,7 +132,7 @@
         }
     }
 
-    interface Drag
+    interface DRAG
     { 
         change : (value : number) => void,
         start : (element : any) => void,
@@ -142,7 +142,7 @@
     // We implement a function closure here by binding the variable 'implementDrag'
     // to a local function and invoking the local function, this ensures that we have
     // some sort of private variables
-    var implementDrag : Drag =
+    var implementDrag : DRAG =
      (function() {
         var pos1 = 0,
             pos2 = 0,
@@ -159,7 +159,7 @@
             // of the object 'retObject' and set the return value of the local function
             // to 'retObject'
 
-            retObject : Drag = {
+            retObject : DRAG = {
                 change: changeSens,
                 start: drag,
                 sensitivity: getSens()
@@ -1269,80 +1269,6 @@
     
     const _Camera = new Camera()
 
-    class Light {
-        _ACTUAL_LIGHT_POS: _3D_VEC_;
-        _USED_LIGHT_POS: _3D_VEC_;
-        _LIGHT_U: _3D_VEC_;
-        _LIGHT_V: _3D_VEC_;
-        _LIGHT_N: _3D_VEC_;
-        _LIGHT_MATRIX : _4_4_MAT_;
-        _INV_LIGHT_MATRIX : _4_4_MAT_;
-        _C : _3D_VEC_;
-    
-        constructor() {
-            this._ACTUAL_LIGHT_POS = [0, 0, 0];
-            this._USED_LIGHT_POS = [0, 0, 0];
-        }
-        setCameraLight(input_array: _3D_VEC_) {
-            this._ACTUAL_LIGHT_POS = input_array;
-            this._USED_LIGHT_POS = input_array;
-            this._USED_LIGHT_POS[2] = -this._USED_LIGHT_POS[2] // reverse point for right to left hand coordinate system
-        }
-    
-        lookAt(look_at_point: _3D_VEC_) {
-            look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
-            const DIFF: _3D_VEC_ = _Matrix.addSub(look_at_point, this._USED_LIGHT_POS, true) as _3D_VEC_;
-            const UP: _3D_VEC_ = [0, 1, 0];
-    
-            this._LIGHT_N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
-            this._LIGHT_U = _Vector.normalizeVec(_Vector.crossProduct([UP, this._LIGHT_N]) as number[]) as _3D_VEC_;
-            this._LIGHT_V = _Vector.normalizeVec(_Vector.crossProduct([this._LIGHT_N, this._LIGHT_U]) as number[]) as _3D_VEC_;
-        }
-    
-        camRotate(plane: _PLANE_, angle: number): void | _ERROR_._LIGHT_ERROR_ {
-            if (plane === "U-V") {
-                const _N_U = _Quartenion.q_rot(angle, this._LIGHT_N, this._LIGHT_U);
-                const _N_V = _Quartenion.q_rot(angle, this._LIGHT_N, this._LIGHT_V);
-    
-                if (typeof _N_U === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _N_V === "number") return _ERROR_._LIGHT_ERROR_
-                this._LIGHT_U = _N_U as _3D_VEC_;
-                this._LIGHT_V = _N_V as _3D_VEC_;
-    
-            } else if (plane === "U-N") {
-                const _V_U = _Quartenion.q_rot(angle, this._LIGHT_V, this._LIGHT_U);
-                const _V_N = _Quartenion.q_rot(angle, this._LIGHT_V, this._LIGHT_N);
-    
-                if (typeof _V_U === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _V_N === "number") return _ERROR_._LIGHT_ERROR_
-                this._LIGHT_U = _V_U as _3D_VEC_;
-                this._LIGHT_V = _V_N as _3D_VEC_;
-    
-            } else if (plane === "V-N") {
-                const _U_V = _Quartenion.q_rot(angle, this._LIGHT_U, this._LIGHT_V);
-                const _U_N = _Quartenion.q_rot(angle, this._LIGHT_U, this._LIGHT_N);
-    
-                if (typeof _U_V === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _U_N === "number") return _ERROR_._LIGHT_ERROR_
-                this._LIGHT_U = _U_V as _3D_VEC_;
-                this._LIGHT_V = _U_N as _3D_VEC_;
-    
-            }
-    
-            this._LIGHT_MATRIX = [...this._LIGHT_U, this._C[0], ...this._LIGHT_V, this._C[1], ...this._LIGHT_N, this._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this._INV_LIGHT_MATRIX = _Matrix.getInvMat(this._LIGHT_MATRIX, 4) as _4_4_MAT_;
-        }
-    
-        camTranslate(translation_array: _3D_VEC_) {
-            this._C = translation_array;
-            this._ACTUAL_LIGHT_POS = _Matrix.addSub(this._ACTUAL_LIGHT_POS, translation_array) as _3D_VEC_;
-            this._USED_LIGHT_POS = [...this._ACTUAL_LIGHT_POS];
-            this._USED_LIGHT_POS[2] = -this._ACTUAL_LIGHT_POS[2]; // reverse point for right to left hand coordinate system
-            this._LIGHT_MATRIX = [...this._LIGHT_U, this._C[0], ...this._LIGHT_V, this._C[1], ...this._LIGHT_N, this._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this._INV_LIGHT_MATRIX = _Matrix.getInvMat(this._LIGHT_MATRIX, 4) as _4_4_MAT_;
-        }
-    }
-
     class Clip {
         constructor() {}
     
@@ -1423,22 +1349,24 @@
     }
 
     const _CameraSpace = new CameraSpace();
-    
+
     class ClipSpace {
         constructor() {};
     
-        cameraToClip(arr :  _4D_VEC_) : _4D_VEC_ {
-            const cam_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
-            const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / cam_proj[3], cam_proj, true) as _4D_VEC_;
+        camera_or_light_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+            const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
             return pers_div;
         };
     
-        clipToCamera(arr :  _4D_VEC_) : _4D_VEC_ {
+        clip_ToCamera_or_ToLight(arr :  _4D_VEC_) : _4D_VEC_ {
             const rev_pers_div : _4D_VEC_ = _Matrix.scaMult(arr[3], arr, true) as _4D_VEC_;
-            const rev_cam_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
-            return rev_cam_proj;
+            const rev_orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
+            return rev_orig_proj;
         };
     }
+
+    const _ClipSpace = new ClipSpace()
     
     class ScreenSpace {
         constructor() {};
@@ -1463,6 +1391,164 @@
 
     const _ScreenSpace = new ScreenSpace();
 
+    interface LIGHT {
+        instance_number : number;
+        _ACTUAL_LIGHT_POS: _3D_VEC_;
+        _USED_LIGHT_POS: _3D_VEC_;
+        _LIGHT_U: _3D_VEC_;
+        _LIGHT_V: _3D_VEC_;
+        _LIGHT_N: _3D_VEC_;
+        _C : _3D_VEC_;
+        _LIGHT_MATRIX : _4_4_MAT_;
+        _INV_LIGHT_MATRIX : _4_4_MAT_;
+    }
+
+    class Light {
+        // Default
+        instance : LIGHT = {
+            instance_number : 0,
+            _ACTUAL_LIGHT_POS : [0,0,0],
+            _USED_LIGHT_POS : [0,0,0],
+            _LIGHT_U : [0,0,0],
+            _LIGHT_V : [0,0,0],
+            _LIGHT_N : [0,0,0],
+            _C : [0,0,0],
+            _LIGHT_MATRIX : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] as _4_4_MAT_,
+            _INV_LIGHT_MATRIX : _Matrix.getInvMat([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 4) as _4_4_MAT_            
+        }    
+        constructor()
+        {
+        }
+        setLightPos(input_array: _3D_VEC_) {
+            this.instance._ACTUAL_LIGHT_POS = input_array;
+            this.instance._USED_LIGHT_POS = input_array;
+            this.instance._USED_LIGHT_POS[2] = -this.instance._USED_LIGHT_POS[2] // reverse point for right to left hand coordinate system
+        }
+    
+        lookAt(look_at_point: _3D_VEC_) {
+            look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
+            const DIFF: _3D_VEC_ = _Matrix.addSub(look_at_point, this.instance._USED_LIGHT_POS, true) as _3D_VEC_;
+            const UP: _3D_VEC_ = [0, 1, 0];
+    
+            this.instance._LIGHT_N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
+            this.instance._LIGHT_U = _Vector.normalizeVec(_Vector.crossProduct([UP, this.instance._LIGHT_N]) as number[]) as _3D_VEC_;
+            this.instance._LIGHT_V = _Vector.normalizeVec(_Vector.crossProduct([this.instance._LIGHT_N, this.instance._LIGHT_U]) as number[]) as _3D_VEC_;
+        }
+    
+        lightRotate(plane: _PLANE_, angle: number): void | _ERROR_._LIGHT_ERROR_ {
+            if (plane === "U-V") {
+                const _N_U = _Quartenion.q_rot(angle, this.instance._LIGHT_N, this.instance._LIGHT_U);
+                const _N_V = _Quartenion.q_rot(angle, this.instance._LIGHT_N, this.instance._LIGHT_V);
+    
+                if (typeof _N_U === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _N_V === "number") return _ERROR_._LIGHT_ERROR_
+                this.instance._LIGHT_U = _N_U as _3D_VEC_;
+                this.instance._LIGHT_V = _N_V as _3D_VEC_;
+    
+            } else if (plane === "U-N") {
+                const _V_U = _Quartenion.q_rot(angle, this.instance._LIGHT_V, this.instance._LIGHT_U);
+                const _V_N = _Quartenion.q_rot(angle, this.instance._LIGHT_V, this.instance._LIGHT_N);
+    
+                if (typeof _V_U === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _V_N === "number") return _ERROR_._LIGHT_ERROR_
+                this.instance._LIGHT_U = _V_U as _3D_VEC_;
+                this.instance._LIGHT_V = _V_N as _3D_VEC_;
+    
+            } else if (plane === "V-N") {
+                const _U_V = _Quartenion.q_rot(angle, this.instance._LIGHT_U, this.instance._LIGHT_V);
+                const _U_N = _Quartenion.q_rot(angle, this.instance._LIGHT_U, this.instance._LIGHT_N);
+    
+                if (typeof _U_V === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _U_N === "number") return _ERROR_._LIGHT_ERROR_
+                this.instance._LIGHT_U = _U_V as _3D_VEC_;
+                this.instance._LIGHT_V = _U_N as _3D_VEC_;
+    
+            }
+    
+            this.instance._LIGHT_MATRIX = [...this.instance._LIGHT_U, this.instance._C[0], ...this.instance._LIGHT_V, this.instance._C[1], ...this.instance._LIGHT_N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this.instance._INV_LIGHT_MATRIX = _Matrix.getInvMat(this.instance._LIGHT_MATRIX, 4) as _4_4_MAT_;
+        }
+    
+        lightTranslate(translation_array: _3D_VEC_) {
+            this.instance._C = translation_array;
+            this.instance._ACTUAL_LIGHT_POS = _Matrix.addSub(this.instance._ACTUAL_LIGHT_POS, translation_array) as _3D_VEC_;
+            this.instance._USED_LIGHT_POS = [...this.instance._ACTUAL_LIGHT_POS];
+            this.instance._USED_LIGHT_POS[2] = -this.instance._ACTUAL_LIGHT_POS[2]; // reverse point for right to left hand coordinate system
+            this.instance._LIGHT_MATRIX = [...this.instance._LIGHT_U, this.instance._C[0], ...this.instance._LIGHT_V, this.instance._C[1], ...this.instance._LIGHT_N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this.instance._INV_LIGHT_MATRIX = _Matrix.getInvMat(this.instance._LIGHT_MATRIX, 4) as _4_4_MAT_;
+        }
+
+        worldToLight(ar:  _3D_VEC_) : _4D_VEC_ {
+            const arr : _4D_VEC_ = [...ar,1]
+            arr[2] = -arr[2] // reverse point for right to left hand coordinate system
+            const result : _4D_VEC_ = _Matrix.matMult(this.instance._LIGHT_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            return result;
+        };
+    
+        lightToWorld(arr : _4D_VEC_) : _3D_VEC_ {
+            const result : _4D_VEC_ = _Matrix.matMult(this.instance._INV_LIGHT_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            result[2] = -result[2] // reverse point for left to right hand coordinate system
+            const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
+            return new_result;
+        };
+    }
+
+    class Light_Objects{
+        light_array : Light[]
+        instance_number : number;
+
+        selected_instance : number;
+
+        constructor(){
+            this.instance_number = 0;
+            this.selected_instance = 0;
+            this.light_array[0] = new Light()
+            this.light_array[0].setLightPos([-25,25,25]);
+            this.light_array[0].lookAt([0,0,0])
+        }
+
+        createNewLightObject(){
+            this.instance_number++;
+            this.light_array[this.instance_number] = new Light()
+        }
+
+        deleteLightObject(instance_number : number) : void {
+            this.instance_number--;
+            const arrLen = this.light_array.length;
+            if (instance_number > 0 && instance_number < arrLen)
+            {
+                if (arrLen - 1 > instance_number)
+                {
+                    do {
+                        this.light_array[instance_number] = this.light_array[instance_number+1];
+                        instance_number++;
+                    } while(instance_number < arrLen - 1)
+                    this.light_array.length = arrLen - 1;
+                }
+                this.light_array.length = arrLen - 1;
+            }
+            
+        }
+
+        // doesn't delete the first one
+        deleteAllLightObjects():void{
+            this.instance_number = 0;
+            this.light_array.length = 1;
+        }
+
+        select_instance(selection : number) : void{
+            if (selection >= 0 && selection < this.light_array.length) this.selected_instance = selection;
+        }
+
+        render(vertex : _3D_VEC_) : _4D_VEC_ | _ERROR_{
+            const world_to_light : _4D_VEC_ = this.light_array[this.selected_instance].worldToLight(vertex);
+            const _light_to_clip : _4D_VEC_ = _ClipSpace.camera_or_light_ToClip(world_to_light);
+            return _ScreenSpace.clipToScreen(_light_to_clip);
+        }
+    }
+
+    const _Light_Objects = new Light_Objects()
+
     class ObjectManager{}
 
       class InterPolRend  {
@@ -1480,9 +1566,9 @@
         opacityCoeff : number;
         render : boolean;
         shader : boolean;
-        Alight : any[];
-        Blight : any[];
-        Clight : any[];
+        Alight : _4D_VEC_ | _ERROR_;
+        Blight : _4D_VEC_ | _ERROR_;
+        Clight : _4D_VEC_ | _ERROR_;
         Acam : any[];
         Bcam : any[];
         Ccam : any[];
@@ -1641,13 +1727,14 @@
         }
 
         vertShader() {
-
             if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
-                this.Alight = this.lightRender(this.avec);
-                this.Blight = this.lightRender(this.bvec);
-                this.Clight = this.lightRender(this.cvec);
-
-            } else return null;
+                this.Alight = _Light_Objects.render(this.avec);
+                if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
+                this.Blight = _Light_Objects.render(this.bvec);
+                if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_
+                this.Clight = _Light_Objects.render(this.cvec);
+                if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_
+            } else return _ERROR_._NO_ERROR_;
         }
 
         vertRend() {
