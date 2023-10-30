@@ -39,24 +39,51 @@
 
     type _4D_VEC_ = [number,number,number,number];
 
-    type _4_4_MAT_ = [number, number, number,number,number, number, number,number,number, number, number,number,number, number, number,number];
+    type _7D_VEC_ = [..._3D_VEC_,..._4D_VEC_]
 
+    type _3_3_MAT_ = [_3D_VEC_,_3D_VEC_,_3D_VEC_]
+
+    type _3_7_MAT_ = [_7D_VEC_,_7D_VEC_,_7D_VEC_]
+
+    type _4_4_MAT_ = [number, number, number,number,number, number, number,number,number, number, number,number,number, number, number,number];
+    
     type _PLANE_ = "U-V" | "U-N" | "V-N";
 
     type _OBJ_STATE_ = "local" | "object" | "world";
 
+    type _HANDEDNESS_ = "left" | "right";
+
     enum _ERROR_ 
     {
-        _GENERIC_ERROR_ = 1e12,
+        _NO_ERROR_ = 1e12,
         _SETTINGS_ERROR_,
         _MISCELLANOUS_ERROR_,
-        _QUARTENION_ERROR_,
-        _MATRIX_ERROR_,
+        _QUARTERNION_ERROR_,
+        _MATRIX_ERROR,
         _VECTOR_ERROR_,
         _PERSPECTIVE_PROJ_ERROR_,
         _CAMERA_ERROR_,
+        _LIGHT_ERROR_,
         _CLIP_ERROR_,
+        _LOCAL_SPACE_ERROR_,
+        _WORLD_SPACE_ERROR_,
+        _CAMERA_SPACE_ERROR_,
+        _CLIP_SPACE_ERROR_,
+        _SCREEN_SPACE_ERROR_,
+        _PRERENDER_ERROR_,
+        _INTERPOL_REND_ERROR_,
+        _DRAW_CANVAS_ERROR_,
     }
+
+    enum _MATRIX_ERROR_
+    {
+        _DET_ = 1,
+        _MINOR_,
+        _COF_,
+        _ADJ_,
+        _INV_
+    }
+   
 
 
     class BackTrack {
@@ -237,189 +264,6 @@
     })()
 
 
-    // class DrawCanvas extends ArrOp {
-    //     constructor(canvas, ocanvas, menu) {
-    //         super(canvas, ocanvas, menu);
-
-    //         this.resizeDepthBuffer();
-    //         this.resizeFrameBuffer();
-    //         this.initCanvas();
-    //     }
-
-    //     resizeDepthBuffer() {
-    //         const elementNum = Math.ceil(this.canvW * this.canvH);
-    //         this.depthBuffer = new Float32Array(elementNum);
-    //         this.resetDepthBuffer();
-    //     }
-
-    //     resetDepthBuffer() {
-    //         this.depthBuffer.fill(Infinity);
-    //     }
-
-    //     resizeFrameBuffer() {
-    //         const elementNum = Math.ceil(this.canvW * this.canvH);
-    //         this.frameBuffer = new Uint8Array(elementNum * 4);
-    //         this.resetFrameBuffer();
-    //     }
-
-
-    //     resetFrameBuffer() {
-    //         this.frameBuffer = this.frameBuffer.map((value, index, array) => {
-    //             const mod4 = index % 4;
-    //             if (mod4 < 3) { return value = 0 } else return value = 255;
-    //         });
-    //     }
-
-    //     initCanvas() {
-    //         this.ocanvas.width = this.canvW;
-    //         this.ocanvas.height = this.canvH;
-    //         this.canvas.style.borderStyle = this.bordStyle;
-    //         this.canvas.style.borderWidth = `${this.bordW}px`;
-    //         this.canvas.style.borderColor = this.color;
-    //         this.canvas.style.opacity = this.opacity;
-    //         this.canvas.width = this.canvW;
-    //         this.canvas.height = this.canvH;
-    //     }
-    // }
-
-
-    // class TransfMat extends DrawCanvas {
-    //     constructor(canvas, ocanvas, menu) {
-    //         super(canvas, ocanvas, menu);
-    //         this.mode = "deg";
-    //     }
-
-    //     isMatrix(matIn) {
-    //         var shape = this.getShape(matIn);
-
-    //         if (shape.length <= 2) {
-    //             return true;
-    //         } else { return false; }
-    //     }
-
-    //     changeMode(mode) {
-    //         this.mode = mode;
-    //         return this;
-    //     }
-
-    //     runmode(angle) {
-    //         if (this.mode === "deg") {
-    //             return (Math.PI / 180) * angle;
-    //         } else if (this.mode === "rad") {
-    //             return angle;
-    //         } else if (this.mode === 'grad') {
-    //             return (Math.PI / 200) * angle;
-    //         }
-    //     }
-
-    //     rotMat2d(angle) {
-    //         angle = this.runmode(angle);
-    //         return [
-    //             [Math.cos(angle), -Math.sin(angle), 0],
-    //             [Math.sin(angle), Math.cos(angle, 0), 0]
-    //         ];
-    //     }
-
-    //     // Pitch
-    //     rotX(ang) {
-    //         const angle = this.runmode(ang);
-    //         return [1, 0, 0, 0, 0, Math.cos(angle), -Math.sin(angle) * this.handedness, 0, 0, Math.sin(angle) * this.handedness, Math.cos(angle), 0, 0, 0, 0, 1];
-    //     }
-
-    //     // Yaw
-    //     rotY(ang) {
-    //         const angle = this.runmode(ang)
-    //         return [Math.cos(angle), 0, Math.sin(angle) * this.handedness, 0, 0, 1, 0, 0, -Math.sin(angle) * this.handedness, 0, Math.cos(angle), 0, 0, 0, 0, 1];
-    //     }
-
-    //     //Roll
-    //     rotZ(ang) {
-    //         const angle = this.runmode(ang)
-    //         return [Math.cos(angle), -Math.sin(angle) * this.handedness, 0, 0, Math.sin(angle) * this.handedness, Math.cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-    //     }
-
-    //     rot3d(x, y, z) {
-    //         return this.matMult(this.rotZ(z), this.matMult(this.rotY(y), this.rotX(x), [4, 4], [4, 4]), [4, 4], [4, 4]);
-    //     };
-
-    //     translMat2d(x, y) {
-    //         return [
-    //             [1, 0, x],
-    //             [0, 1, y],
-    //             [0, 0, 1]
-    //         ]
-    //     };
-
-    //     transl3d(x, y, z) {
-    //         return [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
-    //     }
-
-    //     scale3dim(x, y, z) {
-    //         return [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
-    //     }
-
-    //     refMat2d(param) {
-    //         if (param == "x") {
-    //             return [ // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //                 [1, 0, 0],
-    //                 [0, -1, 0],
-    //                 [0, 0, 1]
-    //             ];
-    //         }
-    //         if (param == "y") { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //             return [
-    //                 [-1, 0, 0],
-    //                 [0, 1, 0],
-    //                 [0, 0, 1]
-    //             ];
-    //         }
-    //         if (param == "y=x") { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //             return [
-    //                 [0, 1, 0],
-    //                 [1, 0, 0],
-    //                 [0, 0, 1]
-    //             ];
-    //         }
-    //         if (param == "y=-x") { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //             return [
-    //                 [0, -1, 0],
-    //                 [-1, 0, 0],
-    //                 [0, 0, 1]
-    //             ];
-    //         }
-    //         if (param == "o") { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //             return [
-    //                 [-1, 0, 0],
-    //                 [0, -1, 0],
-    //                 [0, 0, 1]
-    //             ];
-    //         } else return [ // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //             [1, 0, 0],
-    //             [0, 1, 0],
-    //             [0, 0, 1]
-    //         ];
-    //     }
-
-    //     scaleMat2d(x, y) { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //         return [
-    //             [x, 0, 0],
-    //             [0, y, 0],
-    //             [0, 0, 1]
-    //         ];
-    //     }
-
-    //     shearMat(angle, x, y) { // still under scrutiny will not work with the matrix operation functions unless modified!!!
-    //         angle = this.runmode(angle)
-    //         return [
-    //             [1, Math.tan(angle), 0],
-    //             [Math.tan(angle), 1, 0],
-    //             [0, 0, 1]
-    //         ];
-    //     }
-    // }
-
-
-
 
     const _Classes = (bases: any) : object =>
     {
@@ -451,6 +295,10 @@
         _BORDER_STYLE: string,
         _THETA : number,
         _ANGLE_UNIT : _ANGLE_UNIT_
+        _ANGLE_CONSTANT : number,
+        _REVERSE_ANGLE_CONSTANT : number,
+        _HANDEDNESS : _HANDEDNESS_;
+        _HANDEDNESS_CONSTANT : number,
         _X : _3D_VEC_,
         _Y :_3D_VEC_,
         _Z : _3D_VEC_,
@@ -473,8 +321,8 @@
         _DIST : number,
         _HALF_X : number,
         _HALF_Y : number,
-        _CAM_PROJECTION_MAT_ : _4_4_MAT_,
-        _INV_CAM_PROJECTION_MAT_ : _4_4_MAT_,
+        _PROJECTION_MAT_ : _4_4_MAT_,
+        _INV_PROJECTION_MAT_ : _4_4_MAT_,
         _OPEN_SIDEBAR : boolean,
     }
 
@@ -489,6 +337,10 @@
         _BORDER_STYLE:  "solid",
         _THETA : 0,
         _ANGLE_UNIT : "deg",
+        _ANGLE_CONSTANT : Math.PI/180,
+        _REVERSE_ANGLE_CONSTANT : 180/Math.PI,
+        _HANDEDNESS: "right",
+        _HANDEDNESS_CONSTANT: 1,
         _X : [1,0,0],
         _Y : [0,1,0],
         _Z : [0,0,1],
@@ -511,8 +363,8 @@
         _DIST : 1,
         _HALF_X : 1,
         _HALF_Y : 1,
-        _CAM_PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        _INV_CAM_PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _INV_PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         _OPEN_SIDEBAR : true,
         }
 
@@ -522,12 +374,12 @@
     {
         test_array: any;
         compatibility_error: boolean;
-        first_error_pos : null | number;
+        first_ERROR_pos : null | number;
         // Composition is used as we don't want to compute the basic error-checking everytime.
         constructor() {
             this.test_array = new Array();
             this.compatibility_error = false;
-            this.first_error_pos = null;
+            this.first_ERROR_pos = null;
 
             this.flat_exists();
             this.map_exists();
@@ -545,7 +397,7 @@
             for (let i = 0; i < test_array_len; i++) {
                 if (this.test_array[i] === false) {
                     this.compatibility_error = true;
-                    this.first_error_pos = i;
+                    this.first_ERROR_pos = i;
                     return;
                 }
             }
@@ -640,28 +492,48 @@
             this.setCanvas();
         }
 
+        changeAngleUnit(angleUnit: _ANGLE_UNIT_) : void {
+            MODIFIED_PARAMS._ANGLE_UNIT = angleUnit;
+            MODIFIED_PARAMS._ANGLE_CONSTANT = this.angleUnit(angleUnit);
+            MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT = this.revAngleUnit(angleUnit);
+        }
+
+        setHandedness(value : _HANDEDNESS_) : void {
+            if (value === 'left') MODIFIED_PARAMS._HANDEDNESS_CONSTANT = -1;
+            else if (value === 'right') MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1;
+        }
+
+        private angleUnit(angle_unit: _ANGLE_UNIT_) : number { // for sin, sinh, cos, cosh, tan and tanh  
+            if (angle_unit === "deg") return Math.PI/180; // deg to rad
+            else if (angle_unit === "rad") return 1; // rad to rad
+            else if (angle_unit === 'grad') return Math.PI/200; // grad to rad
+            else return _ERROR_._SETTINGS_ERROR_;
+        }
+    
+        private revAngleUnit(angle_unit: _ANGLE_UNIT_) : number { // for asin, asinh, acos, acosh, atan and atanh  
+            if (angle_unit === "deg") return 180/Math.PI; // rad to deg
+            else if (angle_unit === "rad") return 1; // rad to rad
+            else if (angle_unit === 'grad') return 200/Math.PI; // rad to grad
+            else return _ERROR_._SETTINGS_ERROR_;
+        }
     }
 
     const _BasicSettings = new BasicSettings();
-
+    
     class Miscellanous
     {
-        private angle_unit : string;
         constructor() 
         {
-            this.angle_unit = MODIFIED_PARAMS._ANGLE_UNIT;
         }
     
-        angleUnit(angle : number ) { // for sin, sinh, cos, cosh, tan and tanh
-            var _angle = 0;
-            if (this.angle_unit === "deg") _angle = (Math.PI / 180) * angle;
-            else if (this.angle_unit === "rad") _angle = angle;
-            else if (this.angle_unit === 'grad') _angle = (Math.PI / 200) * angle;
+        // rad_to_deg();
+        // rad_to_grad();
+        // deg_to_rad();
+        // deg_to_grad();
+        // grad_to_rad();
+        // grad_to_deg();
     
-            return _angle;
-        }
-    
-        getParamAsList(maxPLen : number , paramList : any[]) : any[] { //Function is memoized to increase perfomance
+        getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase perfomance
             if (arguments.length === 2) {
                 const key = `${paramList}-${maxPLen}`;
 
@@ -684,6 +556,7 @@
 
                 return compParamList;
             }
+            return _ERROR_._MISCELLANOUS_ERROR_;
         }
 
         getParamAsArg(maxPLen = Infinity, ...args : any[]) : any[] | _ERROR_ { //Function is memoized to increase perfomance
@@ -777,16 +650,6 @@
             var S = (a + b + c) / 2;
             return Math.sqrt(S * (S - a) * (S - b) * (S - c));
         }
-
-        revAngleUnit(angle : number, angle_unit : string = 'deg') { // for sin, sinh, cos, cosh, tan and tanh
-            var _angle = 0;
-    
-            if (this.angle_unit === "deg") _angle = (180 / Math.PI) * angle;
-            else if (this.angle_unit === "rad") _angle = angle;
-            else if (this.angle_unit === 'grad') _angle = (200 / Math.PI) * angle;
-    
-            return _angle;
-        }
     
         isInsideCirc(point : _2D_VEC_ , circle : _3D_VEC_) : boolean {
             const x = Math.abs(point[0] - circle[0]);
@@ -829,10 +692,9 @@
             }
         }
     
-        quarternion() : void | _ERROR_
+        quarternion() : void
         {
             // quarternion
-            if (typeof this.theta === "undefined") return _ERROR_._QUARTENION_ERROR_;
 
             const [v1, v2, v3] = this.q_vector;
             this.theta = this.theta as number
@@ -840,11 +702,9 @@
             this.q_quarternion = [a, v1 * b, v2 * b, v3 * b];
         };
     
-        inv_quartenion() : void | _ERROR_
+        inv_quartenion() : void
         {
             // inverse quarternion           
-            if (typeof this.theta === "undefined") return _ERROR_._QUARTENION_ERROR_;
-
             const [v1, v2, v3] = this.q_vector;
             this.theta = this.theta as number;
             const [a, b] = [Math.cos(this.theta * 0.5), Math.sin(this.theta * 0.5)];
@@ -869,15 +729,13 @@
             return this.q_mult(this.q_quarternion, this.q_mult(output_vec, this.q_inv_quarternion)).splice(1) as _3D_VEC_;
         }
     
-        q_rot(_angle : number = 0 , _vector : _3D_VEC_ = [0, 0, 1], _point : _3D_VEC_ = [0, 0, 0]) : _3D_VEC_ | _ERROR_ 
+        q_rot(_angle : number = 0 , _vector : _3D_VEC_ = [0, 0, 1], _point : _3D_VEC_ = [0, 0, 0]) : _3D_VEC_ | _ERROR_._QUARTERNION_ERROR_ 
         {
-            if (typeof this.theta === "undefined") return _ERROR_._QUARTENION_ERROR_
-
+            if (typeof this.theta === "undefined") return _ERROR_._QUARTERNION_ERROR_
             this.theta = this.theta as number
-            this.theta = _Miscellenous.angleUnit(_angle);
+            this.theta = MODIFIED_PARAMS._ANGLE_CONSTANT*_angle;
             this.vector(_vector);
-            this.quarternion();
-            this.inv_quartenion();
+            this.quarternion();this.inv_quartenion()
             return this.q_v_invq_mult(_point);
         }
     }
@@ -888,6 +746,51 @@
     {
         constructor()
         {}
+
+        // // Pitch
+        // rotX(ang : number) : _4_4_MAT_ {
+        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
+        //     return [1, 0, 0, 0, 0, Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1];
+        // }
+
+        // // Yaw
+        // rotY(ang : number) : _4_4_MAT_ {
+        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
+        //     return [Math.cos(angle), 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, 1, 0, 0, -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, Math.cos(angle), 0, 0, 0, 0, 1];
+        // }
+
+        // //Roll
+        // rotZ(ang : number) : _4_4_MAT_ {
+        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
+        //     return [Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+        // }
+
+        // rot3d(x : number, y : number, z : number) : _4_4_MAT_ {
+        //     return this.matMult(this.rotZ(z), this.matMult(this.rotY(y), this.rotX(x), [4, 4], [4, 4]), [4, 4], [4, 4]) as _4_4_MAT_;
+        // };
+        
+        // transl3d(x : number, y : number, z : number) : _4_4_MAT_ {
+        //     return [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
+        // }
+
+        // scale3dim(x : number, y : number, z : number) : _4_4_MAT_ {
+        //     return [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
+        // }
+
+        // setObjTransfMat(Sx, Sy, Sz, Rx, Ry, Rz, Tx, Ty, Tz) {
+        //     // None of the scale parameters should equal zero as that would make the determinant of the matrix
+        //     // equal to zero, thereby making it impossible to get the inverse of the matrix (Zero Division Error)
+        //     if (Sx === 0) {
+        //         Sx += 0.01;
+        //     }
+        //     if (Sy === 0) {
+        //         Sy += 0.01;
+        //     }
+        //     if (Sz === 0) {
+        //         Sz += 0.01;
+        //     }
+        //     this.objTransfMat = this.matMult(this.transl3d(Tx, Ty, Tz), this.matMult(this.rot3d(Rx, Ry, Rz), this.scale3dim(Sx, Sy, Sz), [4, 4], [4, 4]), [4, 4], [4, 4]);
+        // }
     
         matMult(matA : number[], matB : number[], shapeA : _2D_VEC_, shapeB : _2D_VEC_) : number[] {
             const matC : number[] = []
@@ -979,8 +882,8 @@
             return matOut;
         }
     
-        getDet(matIn : number | number [], shapeNum : number) : number {
-            if (shapeNum >= 0) {
+        getDet(matIn : number | number [], shapeNum : number) : number | _ERROR_._MATRIX_ERROR {
+            if (shapeNum > 0) {
                 // If it is a 1x1 matrix, return the matrix
                 if (shapeNum === 1) {
                     return matIn as number;
@@ -1006,15 +909,19 @@
     
                     for (let i = 0; i < cofLen; i++) {
                         var ret : number[] = this.getRest(matIn as number[], shapeNum, a, i);
-    
-                        res += (cofMatSgn[i] * tmp[i] * this.getDet(ret, shapeNum - 1));
+
+                        var verify = this.getDet(ret, shapeNum - 1);
+                    
+                        verify = verify > _ERROR_._NO_ERROR_? verify : 1;
+
+                        res += (cofMatSgn[i] * tmp[i] * verify);
                     }
     
                     return res;
                 }
             }
 
-            else return _ERROR_._MATRIX_ERROR_
+            else return _ERROR_._MATRIX_ERROR + _MATRIX_ERROR_._DET_*10;
         }
     
         getMinor(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
@@ -1023,7 +930,7 @@
             for (let i = 0; i < shapeNum; i++) {
                 for (let j = 0; j < shapeNum; j++) {
                     const result : number | _ERROR_ = this.getDet(this.getRest(matIn, shapeNum, i, j), shapeNum - 1)
-                    if (result >= _ERROR_._GENERIC_ERROR_) return _ERROR_._MATRIX_ERROR_;
+                    if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._MINOR_*100;
                     matOut.push(result)
                 }
             }
@@ -1031,7 +938,7 @@
             return matOut;
         }
     
-        getCofSgn(shapeMat : number[]) : number[] {
+        getCofSgn(shapeMat : _2D_VEC_) : number[] {
             const shpA : number = shapeMat[0];
             const shpB : number = shapeMat[1];
             const matOut : number[] = [];
@@ -1052,7 +959,7 @@
             var _minorMat : number[] | _ERROR_ = this.getMinor(matIn, shapeNum);
 
             if (typeof _minorMat === "number")
-                if (_minorMat as number >= _ERROR_._GENERIC_ERROR_) return _ERROR_._MATRIX_ERROR_
+                if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _MATRIX_ERROR_._COF_*1000;
                 
             const minorMat : number[] = _minorMat as number[]
             const matOut : number[] = [];
@@ -1068,20 +975,21 @@
         getAdj(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
             const result : number[] | _ERROR_ = this.getCof(matIn, shapeNum)
             if (typeof result === "number")
-                if (result >= _ERROR_._GENERIC_ERROR_) return _ERROR_._MATRIX_ERROR_;
+                if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._ADJ_*10000 ;
             return this.transposeMat((result as number[]), [shapeNum, shapeNum]);
         }
     
         getInvMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
             const det_result : number = this.getDet(matIn, shapeNum);
+
+            if (det_result > _ERROR_._NO_ERROR_) return det_result+_MATRIX_ERROR_._INV_*100000;
+
             const adj_result : number[] | _ERROR_ = this.getAdj(matIn,shapeNum);
 
             if (typeof adj_result === "number")
-                if (adj_result >= _ERROR_._GENERIC_ERROR_) return _ERROR_._MATRIX_ERROR_;
+                if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_MATRIX_ERROR_._INV_*100000;
             
-            if (det_result >= _ERROR_._GENERIC_ERROR_) return _ERROR_._MATRIX_ERROR_;
-
-            return this.scaMult(1/det_result,(adj_result as number[]));
+            return _Matrix.scaMult(1/det_result,(adj_result as number[]));
         }
     }
     
@@ -1122,7 +1030,7 @@
             // Use magnitudes and an angle if you know the magnitudes of the vectors and the angle between the two vectors.
     
             if (typeof angle === "number") { // Magnitude use.
-                const toRad = _Miscellenous.angleUnit(angle);
+                const toRad = MODIFIED_PARAMS._ANGLE_CONSTANT*angle;
                 return (vecA_or_magA as number) * (vecB_or_magB as number) * Math.cos(toRad);
             }
     
@@ -1150,7 +1058,7 @@
             const dot_product = this.dotProduct(vecA, vecB);
             const cosAng = Math.acos(dot_product / (this.mag(vecA) * this.mag(vecB)));
     
-            return _Miscellenous.revAngleUnit(cosAng);
+            return MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT*cosAng;
         }
     
         getCrossProductByMatrix(vecs : number[][], vecs_len : number) {
@@ -1201,7 +1109,7 @@
     
             if (typeof angle === "number") { // Magnitude use.
                 var magnitude = 1 // initial magnitude place holder
-                const toRad = _Miscellenous.angleUnit(angle);
+                const toRad = MODIFIED_PARAMS._ANGLE_CONSTANT*angle;
     
                 for (let i = 0; i < vecs_or_mags_len; i++) {
                     magnitude *= (vecs_or_mags as number[])[i];
@@ -1232,7 +1140,7 @@
     
             if (same_shape === 0) {
                 const sinAng = Math.asin(cross_product_mag / vecs_m);
-                const fromRad = _Miscellenous.revAngleUnit(sinAng);
+                const fromRad = MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT*sinAng;
                 cross_product_angle = fromRad;
             }
     
@@ -1274,23 +1182,23 @@
         }
     
         setPersProjectParam() {
-            if (MODIFIED_PARAMS._ASPECT_RATIO >= _ERROR_._GENERIC_ERROR_) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
+            if (MODIFIED_PARAMS._ASPECT_RATIO > _ERROR_._NO_ERROR_) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
             MODIFIED_PARAMS._AR_INV = 1 / MODIFIED_PARAMS._ASPECT_RATIO;
             MODIFIED_PARAMS._DIST = 1 / (Math.tan((MODIFIED_PARAMS._DIST / 2) * (Math.PI / 180)));
-            MODIFIED_PARAMS._CAM_PROJECTION_MAT_ = [MODIFIED_PARAMS._DIST * MODIFIED_PARAMS._AR_INV, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
+            MODIFIED_PARAMS._PROJECTION_MAT_ = [MODIFIED_PARAMS._DIST * MODIFIED_PARAMS._AR_INV, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
 
-            const inverse_res : number[] | _ERROR_ = _Matrix.getInvMat(MODIFIED_PARAMS._CAM_PROJECTION_MAT_, 4);
+            const inverse_res : number[] | _ERROR_ = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT_, 4);
             if (typeof inverse_res === "number") return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
             if (inverse_res.length !== 16) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
-            MODIFIED_PARAMS._INV_CAM_PROJECTION_MAT_ = inverse_res as _4_4_MAT_;
+            MODIFIED_PARAMS._INV_PROJECTION_MAT_ = inverse_res as _4_4_MAT_;
         }
     
         persProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._CAM_PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
+            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
         }
     
         invPersProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._INV_CAM_PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
+            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
         }
     }
 
@@ -1301,7 +1209,8 @@
     
         setCameraPos(input_array : _3D_VEC_) {
             MODIFIED_PARAMS._ACTUAL_CAM_POS = input_array;
-            MODIFIED_PARAMS._USED_CAM_POS = input_array; // reverse point for right to left hand coordinate system
+            MODIFIED_PARAMS._USED_CAM_POS = input_array; 
+            MODIFIED_PARAMS._USED_CAM_POS[2] = -MODIFIED_PARAMS._USED_CAM_POS[2] // reverse point for right to left hand coordinate system
         }
     
         lookAt(look_at_point : _3D_VEC_) {
@@ -1344,7 +1253,6 @@
 
             }
 
-
             MODIFIED_PARAMS._CAM_MATRIX = [...MODIFIED_PARAMS._U,MODIFIED_PARAMS._C[0], ...MODIFIED_PARAMS._V, MODIFIED_PARAMS._C[1], ...MODIFIED_PARAMS._N, MODIFIED_PARAMS._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
             MODIFIED_PARAMS._INV_CAM_MATRIX = _Matrix.getInvMat(MODIFIED_PARAMS._CAM_MATRIX, 4) as _4_4_MAT_;
         }
@@ -1361,32 +1269,106 @@
     
     const _Camera = new Camera()
 
+    class Light {
+        _ACTUAL_LIGHT_POS: _3D_VEC_;
+        _USED_LIGHT_POS: _3D_VEC_;
+        _LIGHT_U: _3D_VEC_;
+        _LIGHT_V: _3D_VEC_;
+        _LIGHT_N: _3D_VEC_;
+        _LIGHT_MATRIX : _4_4_MAT_;
+        _INV_LIGHT_MATRIX : _4_4_MAT_;
+        _C : _3D_VEC_;
+    
+        constructor() {
+            this._ACTUAL_LIGHT_POS = [0, 0, 0];
+            this._USED_LIGHT_POS = [0, 0, 0];
+        }
+        setCameraLight(input_array: _3D_VEC_) {
+            this._ACTUAL_LIGHT_POS = input_array;
+            this._USED_LIGHT_POS = input_array;
+            this._USED_LIGHT_POS[2] = -this._USED_LIGHT_POS[2] // reverse point for right to left hand coordinate system
+        }
+    
+        lookAt(look_at_point: _3D_VEC_) {
+            look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
+            const DIFF: _3D_VEC_ = _Matrix.addSub(look_at_point, this._USED_LIGHT_POS, true) as _3D_VEC_;
+            const UP: _3D_VEC_ = [0, 1, 0];
+    
+            this._LIGHT_N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
+            this._LIGHT_U = _Vector.normalizeVec(_Vector.crossProduct([UP, this._LIGHT_N]) as number[]) as _3D_VEC_;
+            this._LIGHT_V = _Vector.normalizeVec(_Vector.crossProduct([this._LIGHT_N, this._LIGHT_U]) as number[]) as _3D_VEC_;
+        }
+    
+        camRotate(plane: _PLANE_, angle: number): void | _ERROR_._LIGHT_ERROR_ {
+            if (plane === "U-V") {
+                const _N_U = _Quartenion.q_rot(angle, this._LIGHT_N, this._LIGHT_U);
+                const _N_V = _Quartenion.q_rot(angle, this._LIGHT_N, this._LIGHT_V);
+    
+                if (typeof _N_U === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _N_V === "number") return _ERROR_._LIGHT_ERROR_
+                this._LIGHT_U = _N_U as _3D_VEC_;
+                this._LIGHT_V = _N_V as _3D_VEC_;
+    
+            } else if (plane === "U-N") {
+                const _V_U = _Quartenion.q_rot(angle, this._LIGHT_V, this._LIGHT_U);
+                const _V_N = _Quartenion.q_rot(angle, this._LIGHT_V, this._LIGHT_N);
+    
+                if (typeof _V_U === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _V_N === "number") return _ERROR_._LIGHT_ERROR_
+                this._LIGHT_U = _V_U as _3D_VEC_;
+                this._LIGHT_V = _V_N as _3D_VEC_;
+    
+            } else if (plane === "V-N") {
+                const _U_V = _Quartenion.q_rot(angle, this._LIGHT_U, this._LIGHT_V);
+                const _U_N = _Quartenion.q_rot(angle, this._LIGHT_U, this._LIGHT_N);
+    
+                if (typeof _U_V === "number") return _ERROR_._LIGHT_ERROR_
+                if (typeof _U_N === "number") return _ERROR_._LIGHT_ERROR_
+                this._LIGHT_U = _U_V as _3D_VEC_;
+                this._LIGHT_V = _U_N as _3D_VEC_;
+    
+            }
+    
+            this._LIGHT_MATRIX = [...this._LIGHT_U, this._C[0], ...this._LIGHT_V, this._C[1], ...this._LIGHT_N, this._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this._INV_LIGHT_MATRIX = _Matrix.getInvMat(this._LIGHT_MATRIX, 4) as _4_4_MAT_;
+        }
+    
+        camTranslate(translation_array: _3D_VEC_) {
+            this._C = translation_array;
+            this._ACTUAL_LIGHT_POS = _Matrix.addSub(this._ACTUAL_LIGHT_POS, translation_array) as _3D_VEC_;
+            this._USED_LIGHT_POS = [...this._ACTUAL_LIGHT_POS];
+            this._USED_LIGHT_POS[2] = -this._ACTUAL_LIGHT_POS[2]; // reverse point for right to left hand coordinate system
+            this._LIGHT_MATRIX = [...this._LIGHT_U, this._C[0], ...this._LIGHT_V, this._C[1], ...this._LIGHT_N, this._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this._INV_LIGHT_MATRIX = _Matrix.getInvMat(this._LIGHT_MATRIX, 4) as _4_4_MAT_;
+        }
+    }
+
     class Clip {
         constructor() {}
     
-        canvasTo(arr : number []) {
-            const array = [...arr];
+        canvasTo(arr : _4D_VEC_) : _4D_VEC_ {
+            const array : _4D_VEC_ = [...arr];
             array[0] -= MODIFIED_PARAMS._HALF_X;
             array[1] -= MODIFIED_PARAMS._HALF_Y;
             return array;
         }
     
-        clipCoords(arr : number []) {
-            const array = [...arr];
+        clipCoords(arr : _4D_VEC_) : _4D_VEC_{
+            const array : _4D_VEC_ = [...arr];
             array[0] /= MODIFIED_PARAMS._HALF_X;
             array[1] /= MODIFIED_PARAMS._HALF_Y;
             return array;
         }
     
-        toCanvas(arr : number []) {
-            const array = [...arr];
+        toCanvas(arr : _4D_VEC_) : _4D_VEC_ {
+            const array : _4D_VEC_ = [...arr];
             array[0] += MODIFIED_PARAMS._HALF_X;
             array[1] += MODIFIED_PARAMS._HALF_Y;
             return array;
         }
     
-        unclipCoords(arr : number []) {
-            const array = [...arr];
+        unclipCoords(arr : _4D_VEC_) : _4D_VEC_ {
+            const array : _4D_VEC_ = [...arr];
             array[0] *= MODIFIED_PARAMS._HALF_X;
             array[1] *= MODIFIED_PARAMS._HALF_Y;
             return array;
@@ -1425,18 +1407,18 @@
     class CameraSpace {
         constructor() {};
     
-        worldToCamera(arr: number[]) {
-            arr[3] = 1;
+        worldToCamera(ar:  _3D_VEC_) : _4D_VEC_ {
+            const arr : _4D_VEC_ = [...ar,1]
             arr[2] = -arr[2] // reverse point for right to left hand coordinate system
-            const result = _Matrix.matMult(MODIFIED_PARAMS._CAM_MATRIX, arr, [4, 4], [4, 1]);
+            const result : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._CAM_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             return result;
         };
     
-        cameraToWorld(arr : number[]) {
-            const result = _Matrix.matMult(MODIFIED_PARAMS._INV_CAM_MATRIX, arr, [4, 4], [4, 1]);
+        cameraToWorld(arr : _4D_VEC_) : _3D_VEC_ {
+            const result : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_CAM_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             result[2] = -result[2] // reverse point for left to right hand coordinate system
-            result.length = 3;
-            return result;
+            const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
+            return new_result;
         };
     }
 
@@ -1445,15 +1427,15 @@
     class ClipSpace {
         constructor() {};
     
-        cameraToClip(arr : number[]) {
-            const cam_proj = _Matrix.matMult(MODIFIED_PARAMS._CAM_PROJECTION_MAT_, arr, [4, 4], [4, 1]);
-            const pers_div = _Matrix.scaMult(1 / cam_proj[3], cam_proj, true);
+        cameraToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+            const cam_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / cam_proj[3], cam_proj, true) as _4D_VEC_;
             return pers_div;
         };
     
-        clipToCamera(arr : number[]) {
-            const rev_pers_div = _Matrix.scaMult(arr[3], arr, true);
-            const rev_cam_proj = _Matrix.matMult(MODIFIED_PARAMS._INV_CAM_PROJECTION_MAT_, rev_pers_div, [4, 4], [4, 1]);
+        clipToCamera(arr :  _4D_VEC_) : _4D_VEC_ {
+            const rev_pers_div : _4D_VEC_ = _Matrix.scaMult(arr[3], arr, true) as _4D_VEC_;
+            const rev_cam_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
             return rev_cam_proj;
         };
     }
@@ -1461,21 +1443,321 @@
     class ScreenSpace {
         constructor() {};
     
-        clipToScreen(arr : number[]) {
+        clipToScreen(arr :  _4D_VEC_) : _4D_VEC_ | _ERROR_ {
             if (arr[2] >= -1.1 && arr[2] <= 1.1 && arr[2] != Infinity) {
-                const [i, j] = _Clip.unclipCoords(arr);
-                const [x, y] = _Clip.toCanvas([i, j]);
-                // reverse point for left to right hand coordinate system
-                return [x, y, -arr[2], arr[3]];
+                const [i, j, k, l] = _Clip.unclipCoords(arr);
+                const [w, x, y, z] = _Clip.toCanvas([i, j, k, l]);
+                // -array[2] (-y) reverse point for right to left hand coordinate system
+                return [w, x, -y, z];
             }
+            else return _ERROR_._NO_ERROR_;
         };
     
-        screenToClip(arr : number[]) {
-            const [i, j] = _Clip.canvasTo(arr);
-            const [x, y] = _Clip.clipCoords([i, j]);
-            // -array[2] reverse point for right to left hand coordinate system
-            return [x, y, -arr[2], arr[3]];
+        screenToClip(arr :  _4D_VEC_) : _4D_VEC_  {
+            const [i, j, k, l] = _Clip.canvasTo(arr);
+            const [w, x, y, z] = _Clip.clipCoords([i, j, k, l]);
+            // -array[2] (-y) reverse point for right to left hand coordinate system
+            return [w, x, -y, z];
         };
+    }
+
+    const _ScreenSpace = new ScreenSpace();
+
+    class ObjectManager{}
+
+      class InterPolRend  {
+
+        kernel_Size : number;
+        sigma_xy : number;
+        sampleArr : any [];
+        TotalArea : number;
+        triA : number;
+        triB : number;
+        triC : number;
+        aRatio: number;
+        bRatio : number;
+        cRatio : number;
+        opacityCoeff : number;
+        render : boolean;
+        shader : boolean;
+        Alight : any[];
+        Blight : any[];
+        Clight : any[];
+        Acam : any[];
+        Bcam : any[];
+        Ccam : any[];
+        avec : _3D_VEC_;
+        bvec : _3D_VEC_;
+        cvec : _3D_VEC_;
+        colA : _4D_VEC_;
+        colB : _4D_VEC_;
+        colC : _4D_VEC_;
+        
+        constructor() {
+            this.kernel_Size = 3;
+            this.sigma_xy = 1;
+            this.sampleArr = [];
+            this.TotalArea = 0;
+            this.triA = 0;
+            this.triB = 0;
+            this.triC = 0;
+            this.aRatio = 0;
+            this.bRatio = 0;
+            this.cRatio = 0;
+            this.opacityCoeff = 0;
+            this.render = false;
+            this.shader = false;
+            this.Alight = new Array();
+            this.Blight = new Array();
+            this.Clight = new Array();
+            this.Acam = new Array();
+            this.Bcam = new Array();
+            this.Ccam = new Array();
+            this.sample();
+        }
+
+        initParams(...vertArray : _3_7_MAT_) {
+            this.avec = vertArray[0].slice(0, 3) as _3D_VEC_;
+            this.bvec = vertArray[1].slice(0, 3) as _3D_VEC_;
+            this.cvec = vertArray[2].slice(0, 3) as _3D_VEC_;
+            this.colA = vertArray[0].slice(3) as _4D_VEC_;
+            this.colB = vertArray[1].slice(3) as _4D_VEC_;
+            this.colC = vertArray[2].slice(3) as _4D_VEC_;
+        }
+
+        interpolate(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
+            //MaxParamLength is assumed to be 4, since each input vector is assumed to be a 4X1 homogenous matrix
+
+            const indexList = [0, 1];
+            const Adist = _Miscellenous.getDist(bvec, cvec, indexList),
+                Bdist = _Miscellenous.getDist(avec, cvec, indexList),
+                Cdist = _Miscellenous.getDist(avec, bvec, indexList),
+                apdist = _Miscellenous.getDist(pvec, avec, indexList),
+                bpdist = _Miscellenous.getDist(pvec, bvec, indexList),
+                cpdist = _Miscellenous.getDist(pvec, cvec, indexList);
+
+            this.TotalArea = _Miscellenous.getTriArea(Adist, Bdist, Cdist);
+            this.triA = _Miscellenous.getTriArea(Adist, bpdist, cpdist);
+            this.triB = _Miscellenous.getTriArea(Bdist, apdist, cpdist);
+            this.triC = _Miscellenous.getTriArea(Cdist, apdist, bpdist);
+
+            this.aRatio = this.triA / this.TotalArea;
+            this.bRatio = this.triB / this.TotalArea;
+            this.cRatio = this.triC / this.TotalArea;
+
+            const
+                aPa : _3D_VEC_ = _Matrix.scaMult(this.aRatio, avec) as _3D_VEC_,
+                bPb : _3D_VEC_ = _Matrix.scaMult(this.bRatio, bvec) as _3D_VEC_,
+                cPc : _3D_VEC_ = _Matrix.scaMult(this.cRatio, cvec) as _3D_VEC_;
+
+            return _Matrix.addSub(_Matrix.addSub(aPa, bPb), cPc) as _3D_VEC_;
+        }
+
+        getBoundingRect(...vertices : _3_3_MAT_) : _4D_VEC_ {
+            return this.getBoundingRectImpl(vertices);
+        }
+
+        getBoundingRectImpl(vertices : _3_3_MAT_) : _4D_VEC_ {
+            var n = vertices.length;
+            var xArr : _3D_VEC_ = [0,0,0];
+            var yArr : _3D_VEC_ = [0,0,0];
+            var xmin = Infinity;
+            var ymin = Infinity;
+            var xmax = 0;
+            var ymax = 0;
+
+            for (let i = 0; i < n; i++) {
+                xArr[i] = vertices[i][0];
+                yArr[i] = vertices[i][1];
+
+                if (xArr[i] < xmin) {
+                    xmin = xArr[i];
+                }
+
+                if (yArr[i] < ymin) {
+                    ymin = yArr[i];
+                }
+
+                if (xArr[i] > xmax) {
+                    xmax = xArr[i];
+                }
+
+                if (yArr[i] > ymax) {
+                    ymax = yArr[i];
+                }
+            }
+
+            return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+
+        isInsideTri() : boolean {
+            var sum = this.triA + this.triB + this.triC
+            if (Math.round(sum) === Math.round(this.TotalArea)) {
+                return true;
+            }
+            return false;
+        }
+
+        sample() : void { //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
+            // Mean is taken as zero
+
+            this.kernel_Size = this.kernel_Size
+            const denom_ = ((2 * Math.PI) * (this.sigma_xy ** 2));
+            if (this.kernel_Size > 1 && this.kernel_Size % 2 === 1) {
+                const modifier = (this.kernel_Size - 1) / 2;
+                for (let i = 0; i < this.kernel_Size; i++) {
+                    const val_y = i - modifier;
+                    for (let j = 0; j < this.kernel_Size; j++) {
+                        const val_x = j - modifier;
+                        const numer_ = Math.exp(-((val_x ** 2) + (val_y ** 2)) / (4 * (this.sigma_xy ** 2)));
+                        this.sampleArr.push([val_x, val_y, numer_ / denom_]);
+                    }
+                }
+            }
+        }
+
+        partSample(x : number, y : number) : any[] {
+            const part_sample_arr : any [] = []
+
+            for (let sample of this.sampleArr) {
+                var val_x = sample[0] + x;
+                var val_y = sample[1] + y;
+
+                if (val_x < 0) {
+                    val_x = 0;
+                } else if (val_x >= MODIFIED_PARAMS._CANVAS_WIDTH) {
+                    val_x = MODIFIED_PARAMS._CANVAS_WIDTH - 1;
+                }
+                if (val_y < 0) {
+                    val_y = 0;
+                } else if (val_y >= MODIFIED_PARAMS._CANVAS_HEIGHT) {
+                    val_y = MODIFIED_PARAMS._CANVAS_HEIGHT - 1;
+                }
+
+                part_sample_arr.push([val_x, val_y, sample[2]]);
+            }
+
+            return part_sample_arr;
+        }
+
+        vertShader() {
+
+            if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
+                this.Alight = this.lightRender(this.avec);
+                this.Blight = this.lightRender(this.bvec);
+                this.Clight = this.lightRender(this.cvec);
+
+            } else return null;
+        }
+
+        vertRend() {
+            const avec = this.avec,
+                bvec = this.bvec,
+                cvec = this.cvec;
+
+
+                if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
+                    this.Acam = this.camRender(this.avec);
+                    this.Bcam = this.camRender(this.bvec);
+                    this.Ccam = this.camRender(this.cvec);
+            }
+
+            if (typeof this.A !== "undefined" && typeof this.B !== "undefined" && typeof this.C !== "undefined") {
+                this.render = true;
+            } else this.render = false;
+        }
+
+        fragShader() {
+            // Get 2d bounding rectangle
+            const ret = this.getBoundingRect(this.A, this.B, this.C),
+                // Simple rasterizing function
+                minX = Math.max(ret[0], 0),
+                minY = Math.max(ret[1], 0),
+                maxX = Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH),
+                maxY = Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT);
+
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    const point = [
+                        [x],
+                        [y]
+                    ];
+                    var interArray = this.interpolate(point, this.A, this.B, this.C),
+                        aCola = _Matrix.scaMult(this.aRatio, this.colA),
+                        bColb = _Matrix.scaMult(this.bRatio, this.colB),
+                        cColc = _Matrix.scaMult(this.cRatio, this.colC),
+                        pcolP = _Matrix.addSub(_Matrix.addSub(aCola, bColb), cColc);
+
+                    if (this.isInsideTri() === true) {
+
+                    }
+                }
+            }
+        }
+
+        fragRend() {
+            if (this.render === true) {
+                // Get 2d bounding rectangle
+                const ret = this.getBoundingRect(this.A, this.B, this.C),
+                    // Simple rasterizing function
+                    minX = Math.round(Math.max(ret[0], 0)),
+                    minY = Math.round(Math.max(ret[1], 0)),
+                    maxX = Math.round(Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH)),
+                    maxY = Math.round(Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT));
+
+                // Get Gaussian distribution array for particular pixel
+
+                for (let x = minX; x <= maxX; x++) {
+                    for (let y = minY; y <= maxY; y++) {
+
+                        const point = [
+                            [x],
+                            [y]
+                        ];
+
+                        var interArray = this.interpolate(point, this.A, this.B, this.C);
+
+                        if (this.isInsideTri() === true) {
+                            const aCola = _Matrix.scaMult(this.aRatio, this.colA);
+                            const bColb = _Matrix.scaMult(this.bRatio, this.colB);
+                            const cColc = _Matrix.scaMult(this.cRatio, this.colC);
+                            var pColp = _Matrix.addSub(_Matrix.addSub(aCola, bColb), cColc);
+
+                            if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
+                                this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0] = pColp[0];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1] = pColp[1];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2] = pColp[2];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3] = pColp[3];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        show() {
+            // Normalize coordinate system to use CSS pixels
+
+            octx.scale(this.scale, this.scale);
+            ctx.scale(this.scale, this.scale);
+
+            for (let y = 0; y < MODIFIED_PARAMS._CANVAS_HEIGHT; y++) {
+                for (let x = 0; x < MODIFIED_PARAMS._CANVAS_WIDTH; x++) {
+                    const r = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0];
+                    const g = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1];
+                    const b = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2];
+                    const alpha = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3];
+                    if (typeof r !== "undefined" && typeof g != "undefined" && typeof b !== "undeefined") {
+                        octx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha / 255 + ")";
+                        octx.fillRect(x, y, 1, 1);
+                    }
+                }
+            }
+
+            octx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5);
+            ctx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH, MODIFIED_PARAMS._CANVAS_HEIGHT);
+        }
     }
 
     
@@ -1707,352 +1989,7 @@
     //     }
     // }
 
-    // class Prerender extends CoordinateSpace {
-    //     constructor(canvas, ocanvas, menu) {
-    //         super(canvas, ocanvas, menu);
-    //     }
-    //     camRender(vertex) {
-    //         const clip = this.clip(vertex);
-    //         clip.push(1);
-    //         const vertTransformClip = this.matMult(this.objTransfMat, clip, [4, 4], [4, 1]);
-    //         const worldToCamSpace = this.matMult(this.cameraVec, vertTransformClip, [4, 4], [4, 1]);
-    //         const vertProjMat = this.matMult(this.camProjectionMatrix, worldToCamSpace, [4, 4], [4, 1]);
-    //         const vertProjArr = this.unmodArr(vertProjMat);
-    //         const persDiv = this.scaMult(1 / vertProjArr[3], vertProjArr, true);
-
-    //         if (persDiv[2] >= -1.1 && persDiv[2] <= 1.1 && persDiv[2] != Infinity) { //Culling
-    //             const vertTransformUnclip = this.unclip(persDiv),
-    //                 viewToCanvas = this.toCanvas(vertTransformUnclip)
-    //             return viewToCanvas;
-    //         } else return undefined;
-    //     }
-
-    //     lightRender(vertex) {
-    //         const clip = this.clip(vertex);
-    //         clip.push(1);
-    //         const vertTransformClip = this.matMult(this.objTransfMat, homoVec, [4, 4], [4, 1]);
-    //         const worldToLightSpace = this.matMult(this.lightVec, vertTransformClip, [4, 4], [4, 1]);
-    //         const vertProjMat = this.matMult(this.lightProjectionMatrix, worldToLightSpace, [4, 4], [4, 1]);
-    //         const vertProjArr = this.unmodArr(vertProjMat);
-    //         const persDiv = this.scaMult(1 / vertProjArr[3], vertProjArr, true);
-
-    //         if (persDiv[2] != Infinity) { //Preventing zero division error
-    //             const vertTransformUnclip = this.unclip(persDiv),
-    //                 viewToCanvas = this.toCanvas(vertTransformUnclip)
-    //             return viewToCanvas;
-    //         } else return undefined;
-    //     }
-
-    //     camUnrender(vertex) {
-    //         const canvasToView = this.canvasTo(vertex),
-    //             vertTransformClip = this.clip(canvasToView),
-    //             revPersDiv = this.scaMult(vertTransformClip[3], vertTransformClip, true),
-    //             homoVec = this.homoVec(revPersDiv),
-    //             vertProjMatInv = this.getInvMat(this.camProjectionMatrix),
-    //             revVertProjMat = this.matMult(vertProjMatInv, homoVec),
-    //             cameraVecInv = this.getInvMat(this.cameraVec),
-    //             camToWorldSpace = this.matMult(cameraVecInv, revVertProjMat),
-    //             vertTransformInv = this.getInvMat(this.objTransfMat),
-    //             revVertTransform = this.matMult(vertTransformInv, camToWorldSpace),
-    //             revClip = this.unclip(revVertTransform)
-
-    //         return revClip
-    //     }
-
-    //     lightUnrender(vertex) {
-    //         const canvasToView = this.canvasTo(vertex),
-    //             vertTransformClip = this.clip(canvasToView),
-    //             revPersDiv = this.scaMult(Math.abs(vertTransformClip[3]), vertTransformClip, true),
-    //             homoVec = this.homoVec(revPersDiv),
-    //             vertProjMatInv = this.getInvMat(this.lightProjectionMatrix),
-    //             revVertProjMat = this.matMult(vertProjMatInv, homoVec),
-    //             lightVecInv = this.getInvMat(this.lightVec),
-    //             lightToWorldSpace = this.matMult(lightVecInv, revVertProjMat),
-    //             vertTransformInv = this.getInvMat(this.objTransfMat),
-    //             revVertTransform = this.matMult(vertTransformInv, lightToWorldSpace),
-    //             revClip = this.unclip(revVertTransform)
-
-    //         return revClip
-    //     }
-    // }
-
-    // class InterPolRend extends Prerender {
-    //     constructor(canvas, ocanvas, menu) {
-    //         super(canvas, ocanvas, menu);
-    //         this.kernel_Size = 3;
-    //         this.sigma_xy = 1;
-    //         this.sampleArr = [];
-    //         this.TotalArea = 0;
-    //         this.triA = 0;
-    //         this.triB = 0;
-    //         this.triC = 0;
-    //         this.aRatio = 0;
-    //         this.bRatio = 0;
-    //         this.cRatio = 0;
-    //         this.opacityCoeff = 0;
-    //         this.render = false;
-    //         this.shader = false;
-    //         this.Alight = new Array();
-    //         this.Blight = new Array();
-    //         this.Clight = new Array();
-    //         this.Acam = new Array();
-    //         this.Bcam = new Array();
-    //         this.Ccam = new Array();
-    //         this.sample();
-    //     }
-
-    //     refParamsBasic() {
-    //         this.runSettings();
-    //         this.initCanvas();
-    //         this.setHalf();
-    //     }
-
-    //     initParams(...vertArray) {
-    //         this.avec = vertArray[0].slice(0, 3);
-    //         this.bvec = vertArray[1].slice(0, 3);
-    //         this.cvec = vertArray[2].slice(0, 3);
-    //         this.colA = vertArray[0].slice(3);
-    //         this.colB = vertArray[1].slice(3);
-    //         this.colC = vertArray[2].slice(3);
-    //     }
-
-    //     interpolate(pvec, avec, bvec, cvec) {
-    //         //MaxParamLength is assumed to be 4, since each input vector is assumed to be a 4X1 homogenous matrix
-
-    //         const indexList = [0, 1];
-    //         const Adist = this.getDist(bvec, cvec, indexList),
-    //             Bdist = this.getDist(avec, cvec, indexList),
-    //             Cdist = this.getDist(avec, bvec, indexList),
-    //             apdist = this.getDist(pvec, avec, indexList),
-    //             bpdist = this.getDist(pvec, bvec, indexList),
-    //             cpdist = this.getDist(pvec, cvec, indexList);
-
-    //         this.TotalArea = this.getTriArea(Adist, Bdist, Cdist);
-    //         this.triA = this.getTriArea(Adist, bpdist, cpdist);
-    //         this.triB = this.getTriArea(Bdist, apdist, cpdist);
-    //         this.triC = this.getTriArea(Cdist, apdist, bpdist);
-
-    //         this.aRatio = this.triA / this.TotalArea;
-    //         this.bRatio = this.triB / this.TotalArea;
-    //         this.cRatio = this.triC / this.TotalArea;
-
-    //         const
-    //             aPa = this.scaMult(this.aRatio, avec),
-    //             bPb = this.scaMult(this.bRatio, bvec),
-    //             cPc = this.scaMult(this.cRatio, cvec);
-
-    //         return this.addSub(this.addSub(aPa, bPb), cPc);
-    //     }
-
-    //     getBoundingRect(...vertices) {
-    //         return this.getBoundingRectImpl(vertices);
-    //     }
-
-    //     getBoundingRectImpl(vertices) {
-    //         var n = vertices.length;
-    //         var xArr = [];
-    //         var yArr = [];
-    //         var xmin = Infinity;
-    //         var ymin = Infinity;
-    //         var xmax = 0;
-    //         var ymax = 0;
-
-    //         for (let i = 0; i < n; i++) {
-    //             xArr[i] = vertices[i][0];
-    //             yArr[i] = vertices[i][1];
-
-    //             if (xArr[i] < xmin) {
-    //                 xmin = xArr[i];
-    //             }
-
-    //             if (yArr[i] < ymin) {
-    //                 ymin = yArr[i];
-    //             }
-
-    //             if (xArr[i] > xmax) {
-    //                 xmax = xArr[i];
-    //             }
-
-    //             if (yArr[i] > ymax) {
-    //                 ymax = yArr[i];
-    //             }
-    //         }
-
-    //         return [xmin, ymin, xmax - xmin, ymax - ymin];
-    //     }
-
-    //     isInsideTri() {
-    //         var sum = this.triA + this.triB + this.triC
-    //         if (Math.round(sum) === Math.round(this.TotalArea)) {
-    //             return true;
-    //         }
-    //         return false;
-    //     }
-
-    //     sample() { //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
-    //         // Mean is taken as zero
-
-    //         this.kernel_Size = this.kernel_Size
-    //         const denom_ = ((2 * Math.PI) * (this.sigma_xy ** 2));
-    //         if (this.kernel_Size > 1 && this.kernel_Size % 2 === 1) {
-    //             const modifier = (this.kernel_Size - 1) / 2;
-    //             for (let i = 0; i < this.kernel_Size; i++) {
-    //                 const val_y = i - modifier;
-    //                 for (let j = 0; j < this.kernel_Size; j++) {
-    //                     const val_x = j - modifier;
-    //                     const numer_ = Math.exp(-((val_x ** 2) + (val_y ** 2)) / (4 * (this.sigma_xy ** 2)));
-    //                     this.sampleArr.push([val_x, val_y, numer_ / denom_]);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     partSample(x, y) {
-    //         const part_sample_arr = []
-
-    //         for (let sample of this.sampleArr) {
-    //             var val_x = sample[0] + x;
-    //             var val_y = sample[1] + y;
-
-    //             if (val_x < 0) {
-    //                 val_x = 0;
-    //             } else if (val_x >= this.canvW) {
-    //                 val_x = this.canvW - 1;
-    //             }
-    //             if (val_y < 0) {
-    //                 val_y = 0;
-    //             } else if (val_y >= this.canvH) {
-    //                 val_y = this.canvH - 1;
-    //             }
-
-    //             part_sample_arr.push([val_x, val_y, sample[2]]);
-    //         }
-
-    //         return part_sample_arr;
-    //     }
-
-    //     vertShader() {
-    //         const avec = this.avec,
-    //             bvec = this.bvec,
-    //             cvec = this.cvec;
-
-    //         if (avec !== null && bvec !== null && cvec !== null) {
-    //             this.Alight = this.lightRender(avec);
-    //             this.Blight = this.lightRender(bvec);
-    //             this.Clight = this.lightRender(cvec);
-
-    //         } else return null;
-    //     }
-
-    //     vertRend() {
-    //         const avec = this.avec,
-    //             bvec = this.bvec,
-    //             cvec = this.cvec;
-
-
-    //         if (avec !== null && bvec !== null && cvec !== null) {
-    //             this.A = this.camRender(avec);
-    //             this.B = this.camRender(bvec);
-    //             this.C = this.camRender(cvec);
-    //         }
-
-    //         if (typeof this.A !== "undefined" && typeof this.B !== "undefined" && typeof this.C !== "undefined") {
-    //             this.render = true;
-    //         } else this.render = false;
-    //     }
-
-    //     fragShader() {
-    //         // Get 2d bounding rectangle
-    //         const ret = this.getBoundingRect(this.A, this.B, this.C),
-    //             // Simple rasterizing function
-    //             minX = Math.max(ret[0], 0),
-    //             minY = Math.max(ret[1], 0),
-    //             maxX = Math.min(ret[0] + ret[2], this.canvW),
-    //             maxY = Math.min(ret[1] + ret[3], this.canvH);
-
-    //         for (let x = minX; x <= maxX; x++) {
-    //             for (let y = minY; y <= maxY; y++) {
-    //                 const point = [
-    //                     [x],
-    //                     [y]
-    //                 ];
-    //                 var interArray = this.interpolate(point, this.A, this.B, this.C),
-    //                     aCola = this.scaMult(this.aRatio, this.colA),
-    //                     bColb = this.scaMult(this.bRatio, this.colB),
-    //                     cColc = this.scaMult(this.cRatio, this.colC),
-    //                     pcolP = this.addSub(this.addSub(aCola, bColb), cColc);
-
-    //                 if (this.isInsideTri() === true) {
-
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     fragRend() {
-    //         if (this.render === true) {
-    //             // Get 2d bounding rectangle
-    //             const ret = this.getBoundingRect(this.A, this.B, this.C),
-    //                 // Simple rasterizing function
-    //                 minX = Math.round(Math.max(ret[0], 0)),
-    //                 minY = Math.round(Math.max(ret[1], 0)),
-    //                 maxX = Math.round(Math.min(ret[0] + ret[2], this.canvW)),
-    //                 maxY = Math.round(Math.min(ret[1] + ret[3], this.canvH));
-
-    //             // Get Gaussian distribution array for particular pixel
-
-    //             for (let x = minX; x <= maxX; x++) {
-    //                 for (let y = minY; y <= maxY; y++) {
-
-    //                     const point = [
-    //                         [x],
-    //                         [y]
-    //                     ];
-
-    //                     var interArray = this.interpolate(point, this.A, this.B, this.C);
-
-    //                     if (this.isInsideTri() === true) {
-    //                         const aCola = this.scaMult(this.aRatio, this.colA);
-    //                         const bColb = this.scaMult(this.bRatio, this.colB);
-    //                         const cColc = this.scaMult(this.cRatio, this.colC);
-    //                         var pColp = this.addSub(this.addSub(aCola, bColb), cColc);
-
-    //                         if (this.depthBuffer[(y * this.canvW) + x] > interArray[2]) {
-    //                             this.depthBuffer[(y * this.canvW) + x] = interArray[2];
-    //                             this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 0] = pColp[0];
-    //                             this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 1] = pColp[1];
-    //                             this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 2] = pColp[2];
-    //                             this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 3] = pColp[3];
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     show() {
-    //         // Normalize coordinate system to use CSS pixels
-
-    //         octx.scale(this.scale, this.scale);
-    //         ctx.scale(this.scale, this.scale);
-
-    //         for (let y = 0; y < this.canvH; y++) {
-    //             for (let x = 0; x < this.canvW; x++) {
-    //                 const r = this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 0];
-    //                 const g = this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 1];
-    //                 const b = this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 2];
-    //                 const alpha = this.frameBuffer[(y * this.canvW * 4) + (x * 4) + 3];
-    //                 if (typeof r !== "undefined" && typeof g != "undefined" && typeof b !== "undeefined") {
-    //                     octx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha / 255 + ")";
-    //                     octx.fillRect(x, y, 1, 1);
-    //                 }
-    //             }
-    //         }
-
-    //         octx.drawImage(ocanvas, 0, 0, this.canvW * 0.5, this.canvH * 0.5);
-    //         ctx.drawImage(ocanvas, 0, 0, this.canvW * 0.5, this.canvH * 0.5, 0, 0, this.canvW, this.canvH);
-    //     }
-    // }
+   
 
     // class DrawObject {
     //     constructor(vertexRadius, lineWidth) {
@@ -2911,15 +2848,15 @@
     //         this.opacity = 1;
     //         this.aspectRatio = 1;
     //         this.deviceRatio = window.devicePixelRatio;
-    //         this.handedness = 1; // default
+    //         MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1; // default
     //         this.scale = window.devicePixelRatio;
     //         this.runSettings();
     //     }
 
     //     setHandedness(value) {
     //         if (value === 'left') {
-    //             this.handedness = -1;
-    //         } else this.handedness = 1; //default
+    //             MODIFIED_PARAMS._HANDEDNESS_CONSTANT = -1;
+    //         } else MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1; //default
     //     }
 
     //     runSettings() {
@@ -2930,32 +2867,32 @@
     //         this.menu.style.backgroundColor = this.mCol;
 
     //         if (this.width >= 600 && this.width < 768) {
-    //             this.canvW = this.width - 150;
-    //             this.canvH = this.height - 40;
+    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 150;
+    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height - 40;
     //             this.menu.style.top = `${this.canvas.offsetTop}px`;
     //             this.menu.style.right = `${this.canvas.offsetLeft}px`;
-    //             this.menu.style.width = `${this.width - this.canvW - 18}px`;
-    //             this.menu.style.height = `${this.canvH+2}px`;
+    //             this.menu.style.width = `${this.width - MODIFIED_PARAMS._CANVAS_WIDTH - 18}px`;
+    //             this.menu.style.height = `${MODIFIED_PARAMS._CANVAS_HEIGHT+2}px`;
     //         } else if (this.width >= 768) {
-    //             this.canvW = this.width - 300;
-    //             this.canvH = this.height - 40;
+    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 300;
+    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height - 40;
     //             this.menu.style.top = `${this.canvas.offsetTop}px`;
     //             this.menu.style.right = `${this.canvas.offsetLeft}px`;
-    //             this.menu.style.width = `${this.width - this.canvW - 18}px`;
-    //             this.menu.style.height = `${this.canvH+2}px`;
+    //             this.menu.style.width = `${this.width - MODIFIED_PARAMS._CANVAS_WIDTH - 18}px`;
+    //             this.menu.style.height = `${MODIFIED_PARAMS._CANVAS_HEIGHT+2}px`;
     //         } else {
-    //             this.canvW = this.width - 20;
-    //             this.canvH = this.height / 2;
-    //             this.menu.style.top = `${this.canvas.offsetTop+2+this.canvH}px`;
+    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 20;
+    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height / 2;
+    //             this.menu.style.top = `${this.canvas.offsetTop+2+MODIFIED_PARAMS._CANVAS_HEIGHT}px`;
     //             this.menu.style.right = `${this.canvas.offsetLeft + 2}px`;
     //             this.menu.style.width = `${this.width-18}px`;
-    //             this.menu.style.height = `${this.height-this.canvH-40}px`;
+    //             this.menu.style.height = `${this.height-MODIFIED_PARAMS._CANVAS_HEIGHT-40}px`;
     //         }
 
-    //         this.canvW = Math.floor(this.scale * this.canvW);
-    //         this.canvH = Math.floor(this.scale * this.canvH);
+    //         MODIFIED_PARAMS._CANVAS_WIDTH = Math.floor(this.scale * MODIFIED_PARAMS._CANVAS_WIDTH);
+    //         MODIFIED_PARAMS._CANVAS_HEIGHT = Math.floor(this.scale * MODIFIED_PARAMS._CANVAS_HEIGHT);
 
-    //         this.aspectRatio = this.canvW / this.canvH;
+    //         this.aspectRatio = MODIFIED_PARAMS._CANVAS_WIDTH / MODIFIED_PARAMS._CANVAS_HEIGHT;
     //         return this;
     //     }
     // }
