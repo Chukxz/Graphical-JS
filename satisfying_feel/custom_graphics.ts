@@ -480,6 +480,40 @@
             MODIFIED_PARAMS._ASPECT_RATIO = width / height;
         }
 
+        resizeDepthBuffer(instance : any) {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            instance.depthBuffer = new Float64Array(elementNum);
+            this.resetDepthBuffer(instance);
+        }
+
+        resetDepthBuffer(instance : any) {
+            instance.depthBuffer.fill(Infinity);
+        }
+
+        resizeFrameBuffer(instance : any) {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            instance.frameBuffer = new Uint8Array(elementNum * 4);
+            this.resetFrameBuffer(instance);
+        }
+
+        resetFrameBuffer(instance : any) {
+            instance.frameBuffer = instance.frameBuffer.map((value : number, index : number) => {
+                const mod4 = index % 4;
+                if (mod4 < 3) { return value = 0 } else return value = 255;
+            });
+        }
+
+        // initCanvas() {
+        //     this.ocanvas.width = this.canvW;
+        //     this.ocanvas.height = this.canvH;
+        //     this.canvas.style.borderStyle = this.bordStyle;
+        //     this.canvas.style.borderWidth = `${this.bordW}px`;
+        //     this.canvas.style.borderColor = this.color;
+        //     this.canvas.style.opacity = this.opacity;
+        //     this.canvas.width = this.canvW;
+        //     this.canvas.height = this.canvH;
+        // }
+
         resetCanvasToDefault() : void{
             canvas.style.borderColor = DEFAULT_PARAMS._BORDER_COLOR
             canvas.style.borderWidth = DEFAULT_PARAMS._BORDER_WIDTH
@@ -609,6 +643,33 @@
 
             return _ERROR_._MISCELLANOUS_ERROR_;
         }
+
+        createArrayFromArgs(length : any) {
+            var arr = new Array(length || 0),
+                i = length;
+
+            if (arguments.length > 1) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                while (i--) {
+                    arr[length - 1 - i] = this.createArrayFromArgs.apply(this, args);
+                }
+            }
+            return arr;
+        }
+
+        createArrayFromList(param : number[]) {
+            var arr = new Array(param[0] || 0),
+                i = param[0];
+
+            if (param.length > 1) {
+                var args = Array.prototype.slice.call(param, 1);
+                while (i--) {
+                    arr[param[0] - 1 - i] = this.createArrayFromArgs.apply(this, args);
+                }
+            }
+            return arr;
+        }
+
 
         deepCopy(val : any) {
             var res : any = JSON.parse(JSON.stringify(val))
@@ -1205,6 +1266,7 @@
     const _PerspectiveProjection = new PerspectiveProjection()
     
     class Camera {
+        depthBuffer
         constructor() {}
     
         setCameraPos(input_array : _3D_VEC_) {
@@ -1593,9 +1655,9 @@
             this.opacityCoeff = 0;
             this.render = false;
             this.shader = false;
-            this.Alight = new Array();
-            this.Blight = new Array();
-            this.Clight = new Array();
+            this.Alight = new Array() as _4D_VEC_; 
+            this.Blight = new Array() as _4D_VEC_;
+            this.Clight = new Array() as _4D_VEC_;
             this.Acam = new Array();
             this.Bcam = new Array();
             this.Ccam = new Array();
@@ -1726,7 +1788,7 @@
             return part_sample_arr;
         }
 
-        vertShader() {
+        vertShader() : void | _ERROR_ {
             if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
                 this.Alight = _Light_Objects.render(this.avec);
                 if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
