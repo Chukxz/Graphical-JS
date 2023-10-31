@@ -567,7 +567,7 @@
         // grad_to_rad();
         // grad_to_deg();
     
-        getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase perfomance
+        getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase performance
             if (arguments.length === 2) {
                 const key = `${paramList}-${maxPLen}`;
 
