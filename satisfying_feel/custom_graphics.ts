@@ -1532,9 +1532,9 @@
             this.optical_element_array[this.instance_number] = new OpticalElement("light")
         }
 
-        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) this.createNewCameraObject(); num--}
+        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) this.createNewCameraObject(); num--;}
 
-        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) this.createNewLightObject(); num--}
+        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) this.createNewLightObject(); num--;}
         
         deleteCameraObject(instance_number : number) : void {
             const arrLen = this.optical_element_array.length;
