@@ -65,7 +65,6 @@
         _CLIP_ERROR_,
         _LOCAL_SPACE_ERROR_,
         _WORLD_SPACE_ERROR_,
-        _CAMERA_SPACE_ERROR_,
         _CLIP_SPACE_ERROR_,
         _SCREEN_SPACE_ERROR_,
         _OPTICAL_ELEMENT_OBJECT_ERROR_,
@@ -307,14 +306,6 @@
         _NZ : number,
         _FZ : number,
         _PROJ_ANGLE : number,
-        _ACTUAL_CAM_POS : _3D_VEC_,
-        _USED_CAM_POS : _3D_VEC_;
-        _U : _3D_VEC_,
-        _V : _3D_VEC_,
-        _N : _3D_VEC_,
-        _C : _3D_VEC_,
-        _CAM_MATRIX : _4_4_MAT_,
-        _INV_CAM_MATRIX : _4_4_MAT_,
         _ASPECT_RATIO : number,
         _AR_INV : number ,
         _DIST : number,
@@ -349,14 +340,6 @@
         _NZ : 0.1,
         _FZ : 100,
         _PROJ_ANGLE : 60,
-        _ACTUAL_CAM_POS : [0,0,1],
-        _USED_CAM_POS : [0,0,-1],
-        _U : [1,0,0],
-        _V : [0,1,0],
-        _N : [0,0,1],
-        _C : [0,0,0],
-        _CAM_MATRIX : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-        _INV_CAM_MATRIX : [1, -0, 0, -0, -0, 1, -0, 0, 0, -0, 1, -0, -0, 0, -0, 1],
         _ASPECT_RATIO : 1,
         _AR_INV : 1,
         _DIST : 1,
@@ -1323,30 +1306,10 @@
     
     const _WorldSpace = new WorldSpace()
 
-    class CameraSpace {
-        constructor() {};
-    
-        worldToOpticalObjectCamera(ar:  _3D_VEC_) : _4D_VEC_ {
-            const arr : _4D_VEC_ = [...ar,1]
-            arr[2] = -arr[2] // reverse point for right to left hand coordinate system
-            const result : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._CAM_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
-            return result;
-        };
-    
-        cameraToWorld(arr : _4D_VEC_) : _3D_VEC_ {
-            const result : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_CAM_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
-            result[2] = -result[2] // reverse point for left to right hand coordinate system
-            const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
-            return new_result;
-        };
-    }
-
-    const _CameraSpace = new CameraSpace();
-
     class ClipSpace {
         constructor() {};
     
-        camera_or_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+        camera_or_light_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
             const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
             const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
             return pers_div;
@@ -1401,6 +1364,12 @@
 
     class OpticalElement {
         // Default
+
+        // _CAM_MATRIX : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        // _INV_CAM_MATRIX : [1, -0, 0, -0, -0, 1, -0, 0, 0, -0, 1, -0, -0, 0, -0, 1],
+        // actpos = [0,0,1],
+        // usedpos = [0,0,-1]
+
         instance : OPTICALELEMENT = {
             instance_number : 0,
             optical_type : "none",
@@ -1416,8 +1385,10 @@
             frameBuffer : _Miscellenous.initFrameBuffer(),
         }    
 
-        constructor(optical_type_input : _OPTICAL_) : void {
+        constructor(optical_type_input : _OPTICAL_)
+        {
             this.instance.optical_type = optical_type_input;
+            return this;
         }
 
         resetBuffers() : void{
@@ -1489,15 +1460,14 @@
             arr[2] = -arr[2] // reverse point for right to left hand coordinate system
             const result : _4D_VEC_ = _Matrix.matMult(this.instance._MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             return result;
-        };
+        }
     
         opticalObjectToWorld(arr : _4D_VEC_) : _3D_VEC_ {
             const result : _4D_VEC_ = _Matrix.matMult(this.instance._INV_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             result[2] = -result[2] // reverse point for left to right hand coordinate system
             const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
             return new_result;
-        };
-
+        }
     }
 
     class OpticalElement_Objects{
@@ -1539,64 +1509,75 @@
             this.arrlen++;
         }
 
-        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) this.createNewCameraObject(); num--;}
+        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) {this.createNewCameraObject(); num--;}}
 
-        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) this.createNewLightObject(); num--;}
-        
+        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) {this.createNewLightObject(); num--;}}
+
+        deleteOpticalObject(instance_number_input : number,index : number) : void {
+            this.optical_element_array.splice(index,1);
+            delete this.instance_number_to_list_map[instance_number_input];
+
+            for (const key in this.instance_number_to_list_map){
+                if (Number(key) > instance_number_input){
+                    this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
+                }
+            }
+        }
+
         deleteCameraObject(instance_number_input : number) : void {
             if (instance_number_input > 0 && instance_number_input <= this.max_camera_instance_number)
             {
-                var index = this.instance_number_to_list_map[instance_number_input];
-                if(this.optical_element_array[index].instance.optical_type === "camera") // addition safety checks
+                const index = this.instance_number_to_list_map[instance_number_input];
+                if(this.optical_element_array[index].instance.optical_type === "camera")// additional safety checks
                 {
-                    this.optical_element_array.splice(index,1);
-
-                    delete this.instance_number_to_list_map[instance_number_input];
-
-                    for (const key in this.instance_number_to_list_map){
-                        if (Number(key) > instance_number_input){
-                            this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
-                        }
-                    }
+                    this.deleteOpticalObject(instance_number_input,index);
+                    this.arrlen = this.optical_element_array.length;
                 }
             }            
         }
 
-        deleteLightObject(instance_number_input : number) : void {
+        deleteLightObject(instance_number_input : number) : void 
+        {
             if (instance_number_input > 0 && instance_number_input <= this.max_light_instance_number)
             {
-                var index = this.instance_number_to_list_map[instance_number_input];
-                if(this.optical_element_array[index].instance.optical_type === "light") // addition safety checks
+                const index = this.instance_number_to_list_map[instance_number_input];
+                if(this.optical_element_array[index].instance.optical_type === "light") // additional safety checks
                 {
-                    this.optical_element_array.splice(index,1);
-
-                    delete this.instance_number_to_list_map[instance_number_input];
-
-                    for (const key in this.instance_number_to_list_map){
-                        if (Number(key) > instance_number_input){
-                            this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
-                        }
-                    }
+                    this.deleteOpticalObject(instance_number_input,index);
+                    this.arrlen = this.optical_element_array.length;
                 }
             }           
         }
 
         // doesn't delete the first one
-        deleteAllCameraObjects():void{
-            this.instance_number = 1
-            this.optical_element_array.length = 1;
+        deleteAllCameraObjects():void
+        {
+            for (const key in this.instance_number_to_list_map){
+                const index = this.instance_number_to_list_map[key];
+                if (index !== 0 && this.optical_element_array[index].instance.optical_type === "camera")
+                {
+                    this.deleteOpticalObject(Number(key),index);
+                }
+            }
+            this.arrlen = this.optical_element_array.length;
         }
 
         // doesn't delete the first one
         deleteAllLightObjects():void{
-            this.instance_number = 1
-            this.optical_element_array.length = 1;
+            for (const key in this.instance_number_to_list_map){
+                const index = this.instance_number_to_list_map[key];
+                if (index !== 1 && this.optical_element_array[index].instance.optical_type === "light")
+                {
+                    this.deleteOpticalObject(Number(key),index);
+                }
+            }
+            this.arrlen = this.optical_element_array.length;
         }
 
         select_camera_instance(selection : number) : void{
             if (selection >= 0 && selection < this.optical_element_array.length)
             {
-                if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_light_instance = selection;
+                if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_camera_instance = selection;
             }
         }
 
@@ -1608,12 +1589,16 @@
         }
 
         render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
+            var world_to_optical_object_space : _4D_VEC_ = [0,0,0,0];
+
             switch (optical_type){
-                case "camera" : return this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
-                case "light" : return this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
-                case "none" :
-                default : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
+                case "none" : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
+                case "camera" : world_to_optical_object_space = this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
+                case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
             }
+
+            const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.camera_or_light_ToClip(world_to_optical_object_space);
+            return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
         }
     }
 
@@ -1639,9 +1624,9 @@
         Alight : _4D_VEC_ | _ERROR_;
         Blight : _4D_VEC_ | _ERROR_;
         Clight : _4D_VEC_ | _ERROR_;
-        Acam : any[];
-        Bcam : any[];
-        Ccam : any[];
+        Acam : _4D_VEC_ | _ERROR_;
+        Bcam : _4D_VEC_ | _ERROR_;
+        Ccam : _4D_VEC_ | _ERROR_;
         avec : _3D_VEC_;
         bvec : _3D_VEC_;
         cvec : _3D_VEC_;
@@ -1666,9 +1651,9 @@
             this.Alight = new Array() as _4D_VEC_; 
             this.Blight = new Array() as _4D_VEC_;
             this.Clight = new Array() as _4D_VEC_;
-            this.Acam = new Array();
-            this.Bcam = new Array();
-            this.Ccam = new Array();
+            this.Acam = new Array()  as _4D_VEC_;
+            this.Bcam = new Array()  as _4D_VEC_;
+            this.Ccam = new Array()  as _4D_VEC_;
             this.sample();
         }
 
@@ -1796,57 +1781,64 @@
             return part_sample_arr;
         }
 
-        vertShader() : void | _ERROR_ {
+        vertexShader() : void | _ERROR_ {
             if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
-                this.Alight = _Objects.render(this.avec);
-                if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-                this.Blight = _Objects.render(this.bvec);
-                if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_
-                this.Clight = _Objects.render(this.cvec);
-                if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_
+                this.Alight = _Optical_Objects.render(this.avec,"light");
+                if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_;
+                this.Blight = _Optical_Objects.render(this.bvec,"light");
+                if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_;
+                this.Clight = _Optical_Objects.render(this.cvec,"light");
+                if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_;
             } else return _ERROR_._NO_ERROR_;
         }
 
         vertRend() {
-            const avec = this.avec,
-                bvec = this.bvec,
-                cvec = this.cvec;
-
-
                 if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
-                    this.Acam = this.camRender(this.avec);
-                    this.Bcam = this.camRender(this.bvec);
-                    this.Ccam = this.camRender(this.cvec);
-            }
-
-            if (typeof this.A !== "undefined" && typeof this.B !== "undefined" && typeof this.C !== "undefined") {
-                this.render = true;
-            } else this.render = false;
+                    this.Acam = _Optical_Objects.render(this.avec,"camera");
+                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
+                    this.Bcam = _Optical_Objects.render(this.bvec,"camera");
+                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
+                    this.Ccam = _Optical_Objects.render(this.cvec,"camera");
+                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
+            } else return _ERROR_._NO_ERROR_;
         }
 
-        fragShader() {
-            // Get 2d bounding rectangle
-            const ret = this.getBoundingRect(this.A, this.B, this.C),
-                // Simple rasterizing function
-                minX = Math.max(ret[0], 0),
-                minY = Math.max(ret[1], 0),
-                maxX = Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH),
-                maxY = Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT);
+        fragmentShader() {
+            if (this.render === true) {
+                // Get 2d bounding rectangle
+                const ret = this.getBoundingRect(this.Alight, this.Blight, this.Clight),
+                    // Simple rasterizing function
+                    minX = Math.round(Math.max(ret[0], 0)),
+                    minY = Math.round(Math.max(ret[1], 0)),
+                    maxX = Math.round(Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH)),
+                    maxY = Math.round(Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT));
 
-            for (let x = minX; x <= maxX; x++) {
-                for (let y = minY; y <= maxY; y++) {
-                    const point = [
-                        [x],
-                        [y]
-                    ];
-                    var interArray = this.interpolate(point, this.A, this.B, this.C),
-                        aCola = _Matrix.scaMult(this.aRatio, this.colA),
-                        bColb = _Matrix.scaMult(this.bRatio, this.colB),
-                        cColc = _Matrix.scaMult(this.cRatio, this.colC),
-                        pcolP = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
+                // Get Gaussian distribution array for particular pixel
 
-                    if (this.isInsideTri() === true) {
+                for (let x = minX; x <= maxX; x++) {
+                    for (let y = minY; y <= maxY; y++) {
 
+                        const point = [
+                            [x],
+                            [y]
+                        ];
+
+                        var interArray = this.interpolate(point, this.A, this.B, this.C);
+
+                        if (this.isInsideTri() === true) {
+                            const aCola = _Matrix.scaMult(this.aRatio, this.colA);
+                            const bColb = _Matrix.scaMult(this.bRatio, this.colB);
+                            const cColc = _Matrix.scaMult(this.cRatio, this.colC);
+                            var pColp = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
+
+                            if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
+                                this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0] = pColp[0];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1] = pColp[1];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2] = pColp[2];
+                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3] = pColp[3];
+                            }
+                        }
                     }
                 }
             }
