@@ -3,10 +3,7 @@
 "use strict"
 
 {
-
-    const MAX_DEPTH = Infinity;
-
-    const pListCache : {} = {};
+    const pListCache : {} = {};     
     const pArgCache : {} = {};
 
     // //CHECK IF DEVICE IS A MOBILE DEVICE OR NOT--3
@@ -53,6 +50,8 @@
 
     type _HANDEDNESS_ = "left" | "right";
 
+    type _OPTICAL_ = "light" | "camera" | "none";
+
     enum _ERROR_ 
     {
         _NO_ERROR_ = 1e12,
@@ -63,7 +62,7 @@
         _VECTOR_ERROR_,
         _PERSPECTIVE_PROJ_ERROR_,
         _CAMERA_ERROR_,
-        _LIGHT_ERROR_,
+        _ERROR_,
         _CLIP_ERROR_,
         _LOCAL_SPACE_ERROR_,
         _WORLD_SPACE_ERROR_,
@@ -480,29 +479,6 @@
             MODIFIED_PARAMS._ASPECT_RATIO = width / height;
         }
 
-        resizeDepthBuffer(instance : any) {
-            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
-            instance.depthBuffer = new Float64Array(elementNum);
-            this.resetDepthBuffer(instance);
-        }
-
-        resetDepthBuffer(instance : any) {
-            instance.depthBuffer.fill(Infinity);
-        }
-
-        resizeFrameBuffer(instance : any) {
-            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
-            instance.frameBuffer = new Uint8Array(elementNum * 4);
-            this.resetFrameBuffer(instance);
-        }
-
-        resetFrameBuffer(instance : any) {
-            instance.frameBuffer = instance.frameBuffer.map((value : number, index : number) => {
-                const mod4 = index % 4;
-                if (mod4 < 3) { return value = 0 } else return value = 255;
-            });
-        }
-
         // initCanvas() {
         //     this.ocanvas.width = this.canvW;
         //     this.ocanvas.height = this.canvH;
@@ -566,6 +542,27 @@
         // deg_to_grad();
         // grad_to_rad();
         // grad_to_deg();
+
+        initDepthBuffer() : Float64Array {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            return new Float64Array(elementNum);
+        }
+
+        resetDepthBuffer(depthBuffer : Float64Array) : Float64Array {
+            return depthBuffer.fill(Infinity);
+        }
+
+        initFrameBuffer() : Uint8Array {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            return new Uint8Array(elementNum * 4);
+        }
+
+        resetFrameBuffer(frameBuffer : Uint8Array) : Uint8Array {
+            return frameBuffer.map((value : number, index : number) => {
+                const mod4 = index % 4;
+                if (mod4 < 3) { return value = 0 } else return value = 255;
+            });
+        }
     
         getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase performance
             if (arguments.length === 2) {
@@ -883,7 +880,7 @@
             return matOut;
         }
     
-        addSub(matA : number[], matB : number[], neg : boolean = false) : number[] {
+        matAdd(matA : number[], matB : number[], neg : boolean = false) : number[] {
             const matC : number[] = [];
             const matAlen : number = matA.length;
             const matBlen : number = matB.length;
@@ -902,7 +899,7 @@
             return matC;
         }
     
-        transposeMat(matIn : number[], shapeMat: _2D_VEC_): number[] {
+        getTranspMat(matIn : number[], shapeMat: _2D_VEC_): number[] {
             const shpA = shapeMat[0];
             const shpB = shapeMat[1];
             const matOut : number[] = [];
@@ -916,7 +913,7 @@
             return matOut;
         }
     
-        identityMat(val : number) : number[]{
+        getIdentMat(val : number) : number[]{
             const num : number = val ** 2;
             const matOut : number[] = [];
     
@@ -929,7 +926,7 @@
             return matOut;
         }
     
-        getRest(matIn : number[], shapeNum : number, row : number, column : number) : number[] {
+        getRestMat(matIn : number[], shapeNum : number, row : number, column : number) : number[] {
             const matOut : number[] = [];
     
             for (let i = 0; i < shapeNum; i++) {
@@ -963,13 +960,13 @@
                         tmp.push(matIn[i]);
                     }
     
-                    const cofMatSgn = this.getCofSgn([1, shapeNum]);
+                    const cofMatSgn = this.getCofSgnMat([1, shapeNum]);
     
                     var a = 0;
                     const cofLen : number = cofMatSgn.length;
     
                     for (let i = 0; i < cofLen; i++) {
-                        var ret : number[] = this.getRest(matIn as number[], shapeNum, a, i);
+                        var ret : number[] = this.getRestMat(matIn as number[], shapeNum, a, i);
 
                         var verify = this.getDet(ret, shapeNum - 1);
                     
@@ -985,12 +982,12 @@
             else return _ERROR_._MATRIX_ERROR + _MATRIX_ERROR_._DET_*10;
         }
     
-        getMinor(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
+        getMinorMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
             const matOut : number[] = [];
     
             for (let i = 0; i < shapeNum; i++) {
                 for (let j = 0; j < shapeNum; j++) {
-                    const result : number | _ERROR_ = this.getDet(this.getRest(matIn, shapeNum, i, j), shapeNum - 1)
+                    const result : number | _ERROR_ = this.getDet(this.getRestMat(matIn, shapeNum, i, j), shapeNum - 1)
                     if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._MINOR_*100;
                     matOut.push(result)
                 }
@@ -999,7 +996,7 @@
             return matOut;
         }
     
-        getCofSgn(shapeMat : _2D_VEC_) : number[] {
+        getCofSgnMat(shapeMat : _2D_VEC_) : number[] {
             const shpA : number = shapeMat[0];
             const shpB : number = shapeMat[1];
             const matOut : number[] = [];
@@ -1015,9 +1012,9 @@
             return matOut;
         }
     
-        getCof(matIn : number[], shapeNum : number) : number [] | _ERROR_ {
-            const cofMatSgn : number[] = this.getCofSgn([shapeNum, shapeNum]);
-            var _minorMat : number[] | _ERROR_ = this.getMinor(matIn, shapeNum);
+        getCofMat(matIn : number[], shapeNum : number) : number [] | _ERROR_ {
+            const cofMatSgn : number[] = this.getCofSgnMat([shapeNum, shapeNum]);
+            var _minorMat : number[] | _ERROR_ = this.getMinorMat(matIn, shapeNum);
 
             if (typeof _minorMat === "number")
                 if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _MATRIX_ERROR_._COF_*1000;
@@ -1033,11 +1030,11 @@
             return matOut;
         }
     
-        getAdj(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
-            const result : number[] | _ERROR_ = this.getCof(matIn, shapeNum)
+        getAdjMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
+            const result : number[] | _ERROR_ = this.getCofMat(matIn, shapeNum)
             if (typeof result === "number")
                 if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._ADJ_*10000 ;
-            return this.transposeMat((result as number[]), [shapeNum, shapeNum]);
+            return this.getTranspMat((result as number[]), [shapeNum, shapeNum]);
         }
     
         getInvMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
@@ -1045,7 +1042,7 @@
 
             if (det_result > _ERROR_._NO_ERROR_) return det_result+_MATRIX_ERROR_._INV_*100000;
 
-            const adj_result : number[] | _ERROR_ = this.getAdj(matIn,shapeNum);
+            const adj_result : number[] | _ERROR_ = this.getAdjMat(matIn,shapeNum);
 
             if (typeof adj_result === "number")
                 if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_MATRIX_ERROR_._INV_*100000;
@@ -1144,10 +1141,10 @@
     
             if (same_shape === 0) { // All the vectors are the same dimension of n + 1.
                 const matrix_array = [...matrix_array_top_row, ...other_rows_array];
-                const storeCofSgn = _Matrix.getCofSgn([proper_vec_len, 1]);
+                const storeCofSgn = _Matrix.getCofSgnMat([proper_vec_len, 1]);
     
                 for (let i = 0; i < proper_vec_len; i++) {
-                    const rest_matrix_array = _Matrix.getRest(matrix_array, proper_vec_len, 0, i);
+                    const rest_matrix_array = _Matrix.getRestMat(matrix_array, proper_vec_len, 0, i);
                     cross_product[i] = storeCofSgn[i] * _Matrix.getDet(rest_matrix_array, vecs_len);
                 }
             }
@@ -1263,73 +1260,7 @@
         }
     }
 
-    const _PerspectiveProjection = new PerspectiveProjection()
-    
-    class Camera {
-        depthBuffer
-        constructor() {}
-    
-        setCameraPos(input_array : _3D_VEC_) {
-            MODIFIED_PARAMS._ACTUAL_CAM_POS = input_array;
-            MODIFIED_PARAMS._USED_CAM_POS = input_array; 
-            MODIFIED_PARAMS._USED_CAM_POS[2] = -MODIFIED_PARAMS._USED_CAM_POS[2] // reverse point for right to left hand coordinate system
-        }
-    
-        lookAt(look_at_point : _3D_VEC_) {
-            look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
-            const DIFF :_3D_VEC_  = _Matrix.addSub(look_at_point, MODIFIED_PARAMS._USED_CAM_POS, true) as _3D_VEC_;
-            const UP : _3D_VEC_ = [0, 1, 0];
-
-            MODIFIED_PARAMS._N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
-            MODIFIED_PARAMS._U = _Vector.normalizeVec(_Vector.crossProduct([UP, MODIFIED_PARAMS._N]) as number[]) as _3D_VEC_;
-            MODIFIED_PARAMS._V = _Vector.normalizeVec(_Vector.crossProduct([MODIFIED_PARAMS._N,MODIFIED_PARAMS._U]) as number[]) as _3D_VEC_;
-        }
-    
-        camRotate(plane : _PLANE_, angle: number) : void | _ERROR_._CAMERA_ERROR_ {
-            if (plane === "U-V") {
-                const _N_U = _Quartenion.q_rot(angle, MODIFIED_PARAMS._N, MODIFIED_PARAMS._U);
-                const _N_V = _Quartenion.q_rot(angle, MODIFIED_PARAMS._N, MODIFIED_PARAMS._V);
-
-                if (typeof _N_U === "number") return _ERROR_._CAMERA_ERROR_
-                if (typeof _N_V === "number") return _ERROR_._CAMERA_ERROR_
-                MODIFIED_PARAMS._U = _N_U as _3D_VEC_;
-                MODIFIED_PARAMS._V = _N_V as _3D_VEC_;
-
-            } else if (plane === "U-N") {
-                const _V_U = _Quartenion.q_rot(angle, MODIFIED_PARAMS._V,MODIFIED_PARAMS._U);
-                const _V_N = _Quartenion.q_rot(angle, MODIFIED_PARAMS._V, MODIFIED_PARAMS._N);
-
-                if (typeof _V_U === "number") return _ERROR_._CAMERA_ERROR_
-                if (typeof _V_N === "number") return _ERROR_._CAMERA_ERROR_
-                MODIFIED_PARAMS._U = _V_U as _3D_VEC_;
-                MODIFIED_PARAMS._V = _V_N as _3D_VEC_;
-
-            } else if (plane === "V-N") {
-                const _U_V = _Quartenion.q_rot(angle, MODIFIED_PARAMS._U,MODIFIED_PARAMS._V);
-                const _U_N = _Quartenion.q_rot(angle, MODIFIED_PARAMS._U, MODIFIED_PARAMS._N);
-
-                if (typeof _U_V === "number") return _ERROR_._CAMERA_ERROR_
-                if (typeof _U_N === "number") return _ERROR_._CAMERA_ERROR_
-                MODIFIED_PARAMS._U = _U_V as _3D_VEC_;
-                MODIFIED_PARAMS._V = _U_N as _3D_VEC_;
-
-            }
-
-            MODIFIED_PARAMS._CAM_MATRIX = [...MODIFIED_PARAMS._U,MODIFIED_PARAMS._C[0], ...MODIFIED_PARAMS._V, MODIFIED_PARAMS._C[1], ...MODIFIED_PARAMS._N, MODIFIED_PARAMS._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            MODIFIED_PARAMS._INV_CAM_MATRIX = _Matrix.getInvMat(MODIFIED_PARAMS._CAM_MATRIX, 4) as _4_4_MAT_;
-        }
-    
-        camTranslate(translation_array : _3D_VEC_) {
-            MODIFIED_PARAMS._C = translation_array;
-            MODIFIED_PARAMS._ACTUAL_CAM_POS = _Matrix.addSub(MODIFIED_PARAMS._ACTUAL_CAM_POS, translation_array) as _3D_VEC_;
-            MODIFIED_PARAMS._USED_CAM_POS = [...MODIFIED_PARAMS._ACTUAL_CAM_POS];
-            MODIFIED_PARAMS._USED_CAM_POS[2] = -MODIFIED_PARAMS._ACTUAL_CAM_POS[2]; // reverse point for right to left hand coordinate system
-            MODIFIED_PARAMS._CAM_MATRIX = [...MODIFIED_PARAMS._U,MODIFIED_PARAMS._C[0], ...MODIFIED_PARAMS._V, MODIFIED_PARAMS._C[1], ...MODIFIED_PARAMS._N, MODIFIED_PARAMS._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            MODIFIED_PARAMS._INV_CAM_MATRIX = _Matrix.getInvMat(MODIFIED_PARAMS._CAM_MATRIX, 4) as _4_4_MAT_;
-        }
-    }
-    
-    const _Camera = new Camera()
+    const _PerspectiveProjection = new PerspectiveProjection()  
 
     class Clip {
         constructor() {}
@@ -1382,7 +1313,7 @@
     class WorldSpace {
         constructor() {}
         ObjectTransform(point : _3D_VEC_, translation_array : _3D_VEC_, state : _OBJ_STATE_) {
-            if (state === "world") return _Matrix.addSub(point, translation_array);
+            if (state === "world") return _Matrix.matAdd(point, translation_array);
         };
     
         objectRevolve(point : _3D_VEC_, axis : _3D_VEC_, angle : number, state : _OBJ_STATE_) {
@@ -1415,7 +1346,7 @@
     class ClipSpace {
         constructor() {};
     
-        camera_or_light_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+        camera_or_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
             const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
             const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
             return pers_div;
@@ -1453,163 +1384,224 @@
 
     const _ScreenSpace = new ScreenSpace();
 
-    interface LIGHT {
+    interface OPTICALELEMENT {
         instance_number : number;
-        _ACTUAL_LIGHT_POS: _3D_VEC_;
-        _USED_LIGHT_POS: _3D_VEC_;
-        _LIGHT_U: _3D_VEC_;
-        _LIGHT_V: _3D_VEC_;
-        _LIGHT_N: _3D_VEC_;
+        optical_type : _OPTICAL_
+        _ACTUAL_POS: _3D_VEC_;
+        _USED_POS: _3D_VEC_;
+        _U: _3D_VEC_;
+        _V: _3D_VEC_;
+        _N: _3D_VEC_;
         _C : _3D_VEC_;
-        _LIGHT_MATRIX : _4_4_MAT_;
-        _INV_LIGHT_MATRIX : _4_4_MAT_;
+        _MATRIX : _4_4_MAT_;
+        _INV_MATRIX : _4_4_MAT_,
+        depthBuffer : Float64Array,
+        frameBuffer : Uint8Array,
     }
 
-    class Light {
+    class OpticalElement {
         // Default
-        instance : LIGHT = {
+        instance : OPTICALELEMENT = {
             instance_number : 0,
-            _ACTUAL_LIGHT_POS : [0,0,0],
-            _USED_LIGHT_POS : [0,0,0],
-            _LIGHT_U : [0,0,0],
-            _LIGHT_V : [0,0,0],
-            _LIGHT_N : [0,0,0],
+            optical_type : "none",
+            _ACTUAL_POS : [0,0,0],
+            _USED_POS : [0,0,0],
+            _U : [0,0,0],
+            _V : [0,0,0],
+            _N : [0,0,0],
             _C : [0,0,0],
-            _LIGHT_MATRIX : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] as _4_4_MAT_,
-            _INV_LIGHT_MATRIX : _Matrix.getInvMat([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 4) as _4_4_MAT_            
+            _MATRIX : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] as _4_4_MAT_,
+            _INV_MATRIX : _Matrix.getInvMat([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 4) as _4_4_MAT_,
+            depthBuffer : _Miscellenous.initDepthBuffer(),
+            frameBuffer : _Miscellenous.initFrameBuffer(),
         }    
-        constructor()
-        {
+
+        constructor(optical_type_input : _OPTICAL_) : void {
+            this.instance.optical_type = optical_type_input;
         }
+
+        resetBuffers() : void{
+            _Miscellenous.resetDepthBuffer(this.instance.depthBuffer);
+            _Miscellenous.resetFrameBuffer(this.instance.frameBuffer);
+        }
+
         setLightPos(input_array: _3D_VEC_) {
-            this.instance._ACTUAL_LIGHT_POS = input_array;
-            this.instance._USED_LIGHT_POS = input_array;
-            this.instance._USED_LIGHT_POS[2] = -this.instance._USED_LIGHT_POS[2] // reverse point for right to left hand coordinate system
+            this.instance._ACTUAL_POS = input_array;
+            this.instance._USED_POS = input_array;
+            this.instance._USED_POS[2] = -this.instance._USED_POS[2] // reverse point for right to left hand coordinate system
         }
     
         lookAt(look_at_point: _3D_VEC_) {
             look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
-            const DIFF: _3D_VEC_ = _Matrix.addSub(look_at_point, this.instance._USED_LIGHT_POS, true) as _3D_VEC_;
+            const DIFF: _3D_VEC_ = _Matrix.matAdd(look_at_point, this.instance._USED_POS, true) as _3D_VEC_;
             const UP: _3D_VEC_ = [0, 1, 0];
     
-            this.instance._LIGHT_N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
-            this.instance._LIGHT_U = _Vector.normalizeVec(_Vector.crossProduct([UP, this.instance._LIGHT_N]) as number[]) as _3D_VEC_;
-            this.instance._LIGHT_V = _Vector.normalizeVec(_Vector.crossProduct([this.instance._LIGHT_N, this.instance._LIGHT_U]) as number[]) as _3D_VEC_;
+            this.instance._N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
+            this.instance._U = _Vector.normalizeVec(_Vector.crossProduct([UP, this.instance._N]) as number[]) as _3D_VEC_;
+            this.instance._V = _Vector.normalizeVec(_Vector.crossProduct([this.instance._N, this.instance._U]) as number[]) as _3D_VEC_;
         }
     
-        lightRotate(plane: _PLANE_, angle: number): void | _ERROR_._LIGHT_ERROR_ {
+        rotate(plane: _PLANE_, angle: number): void | _ERROR_._ERROR_ {
             if (plane === "U-V") {
-                const _N_U = _Quartenion.q_rot(angle, this.instance._LIGHT_N, this.instance._LIGHT_U);
-                const _N_V = _Quartenion.q_rot(angle, this.instance._LIGHT_N, this.instance._LIGHT_V);
+                const _N_U = _Quartenion.q_rot(angle, this.instance._N, this.instance._U);
+                const _N_V = _Quartenion.q_rot(angle, this.instance._N, this.instance._V);
     
-                if (typeof _N_U === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _N_V === "number") return _ERROR_._LIGHT_ERROR_
-                this.instance._LIGHT_U = _N_U as _3D_VEC_;
-                this.instance._LIGHT_V = _N_V as _3D_VEC_;
+                if (typeof _N_U === "number") return _ERROR_._ERROR_
+                if (typeof _N_V === "number") return _ERROR_._ERROR_
+                this.instance._U = _N_U as _3D_VEC_;
+                this.instance._V = _N_V as _3D_VEC_;
     
             } else if (plane === "U-N") {
-                const _V_U = _Quartenion.q_rot(angle, this.instance._LIGHT_V, this.instance._LIGHT_U);
-                const _V_N = _Quartenion.q_rot(angle, this.instance._LIGHT_V, this.instance._LIGHT_N);
+                const _V_U = _Quartenion.q_rot(angle, this.instance._V, this.instance._U);
+                const _V_N = _Quartenion.q_rot(angle, this.instance._V, this.instance._N);
     
-                if (typeof _V_U === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _V_N === "number") return _ERROR_._LIGHT_ERROR_
-                this.instance._LIGHT_U = _V_U as _3D_VEC_;
-                this.instance._LIGHT_V = _V_N as _3D_VEC_;
+                if (typeof _V_U === "number") return _ERROR_._ERROR_
+                if (typeof _V_N === "number") return _ERROR_._ERROR_
+                this.instance._U = _V_U as _3D_VEC_;
+                this.instance._V = _V_N as _3D_VEC_;
     
             } else if (plane === "V-N") {
-                const _U_V = _Quartenion.q_rot(angle, this.instance._LIGHT_U, this.instance._LIGHT_V);
-                const _U_N = _Quartenion.q_rot(angle, this.instance._LIGHT_U, this.instance._LIGHT_N);
+                const _U_V = _Quartenion.q_rot(angle, this.instance._U, this.instance._V);
+                const _U_N = _Quartenion.q_rot(angle, this.instance._U, this.instance._N);
     
-                if (typeof _U_V === "number") return _ERROR_._LIGHT_ERROR_
-                if (typeof _U_N === "number") return _ERROR_._LIGHT_ERROR_
-                this.instance._LIGHT_U = _U_V as _3D_VEC_;
-                this.instance._LIGHT_V = _U_N as _3D_VEC_;
+                if (typeof _U_V === "number") return _ERROR_._ERROR_
+                if (typeof _U_N === "number") return _ERROR_._ERROR_
+                this.instance._U = _U_V as _3D_VEC_;
+                this.instance._V = _U_N as _3D_VEC_;
     
             }
     
-            this.instance._LIGHT_MATRIX = [...this.instance._LIGHT_U, this.instance._C[0], ...this.instance._LIGHT_V, this.instance._C[1], ...this.instance._LIGHT_N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this.instance._INV_LIGHT_MATRIX = _Matrix.getInvMat(this.instance._LIGHT_MATRIX, 4) as _4_4_MAT_;
+            this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _4_4_MAT_;
         }
     
-        lightTranslate(translation_array: _3D_VEC_) {
+        translate(translation_array: _3D_VEC_) {
             this.instance._C = translation_array;
-            this.instance._ACTUAL_LIGHT_POS = _Matrix.addSub(this.instance._ACTUAL_LIGHT_POS, translation_array) as _3D_VEC_;
-            this.instance._USED_LIGHT_POS = [...this.instance._ACTUAL_LIGHT_POS];
-            this.instance._USED_LIGHT_POS[2] = -this.instance._ACTUAL_LIGHT_POS[2]; // reverse point for right to left hand coordinate system
-            this.instance._LIGHT_MATRIX = [...this.instance._LIGHT_U, this.instance._C[0], ...this.instance._LIGHT_V, this.instance._C[1], ...this.instance._LIGHT_N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this.instance._INV_LIGHT_MATRIX = _Matrix.getInvMat(this.instance._LIGHT_MATRIX, 4) as _4_4_MAT_;
+            this.instance._ACTUAL_POS = _Matrix.matAdd(this.instance._ACTUAL_POS, translation_array) as _3D_VEC_;
+            this.instance._USED_POS = [...this.instance._ACTUAL_POS];
+            this.instance._USED_POS[2] = -this.instance._ACTUAL_POS[2]; // reverse point for right to left hand coordinate system
+            this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
+            this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _4_4_MAT_;
         }
 
-        worldToLight(ar:  _3D_VEC_) : _4D_VEC_ {
+        worldTo(ar:  _3D_VEC_) : _4D_VEC_ {
             const arr : _4D_VEC_ = [...ar,1]
             arr[2] = -arr[2] // reverse point for right to left hand coordinate system
-            const result : _4D_VEC_ = _Matrix.matMult(this.instance._LIGHT_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            const result : _4D_VEC_ = _Matrix.matMult(this.instance._MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             return result;
         };
     
         lightToWorld(arr : _4D_VEC_) : _3D_VEC_ {
-            const result : _4D_VEC_ = _Matrix.matMult(this.instance._INV_LIGHT_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            const result : _4D_VEC_ = _Matrix.matMult(this.instance._INV_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             result[2] = -result[2] // reverse point for left to right hand coordinate system
             const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
             return new_result;
         };
+
     }
 
-    class Light_Objects{
-        light_array : Light[]
+    class OpticalElement_Objects{
+        optical_element_array : OpticalElement[]
         instance_number : number;
 
-        selected_instance : number;
+        selected_light_instance : number;
+        selected_camera_instance : number;
 
-        constructor(){
+        max_camera_instance_number : number;
+        max_light_instance_number : number;
+
+
+        constructor()
+        {
             this.instance_number = 0;
-            this.selected_instance = 0;
-            this.light_array[0] = new Light()
-            this.light_array[0].setLightPos([-25,25,25]);
-            this.light_array[0].lookAt([0,0,0])
+            this.selected_light_instance = 0;
+            this.selected_camera_instance = 0;
+            this.createNewCameraObject();
+            this.createNewCameraObject();
         }
 
-        createNewLightObject(){
+        createNewCameraObject() : void{
             this.instance_number++;
-            this.light_array[this.instance_number] = new Light()
+            this.max_camera_instance_number = this.instance_number;
+            this.optical_element_array[this.instance_number] = new OpticalElement("camera")
+        }
+
+        createNewLightObject() : void{
+            this.instance_number++;
+            this.max_light_instance_number = this.instance_number;
+            this.optical_element_array[this.instance_number] = new OpticalElement("light")
+        }
+
+        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) this.createNewCameraObject(); num--}
+
+        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) this.createNewLightObject(); num--}
+        
+        deleteCameraObject(instance_number : number) : void {
+            const arrLen = this.optical_element_array.length;
+            if (instance_number > 0 && instance_number <= this.max_camera_instance_number)
+            {
+                if (instance_number === this.max_camera_instance_number)
+                {
+                    do {
+                        this.optical_element_array[instance_number] = this.optical_element_array[instance_number+1];
+                        instance_number++;
+                    } while(instance_number < arrLen - 1)
+                    this.optical_element_array.length = arrLen - 1;
+                }
+                this.optical_element_array
+            }            
         }
 
         deleteLightObject(instance_number : number) : void {
-            this.instance_number--;
-            const arrLen = this.light_array.length;
-            if (instance_number > 0 && instance_number < arrLen)
+            const arrLen = this.optical_element_array.length;
+            if (instance_number > 0 && instance_number <= this.max_light_instance_number)
             {
-                if (arrLen - 1 > instance_number)
+                if (instance_number === this.max_light_instance_number)
                 {
                     do {
-                        this.light_array[instance_number] = this.light_array[instance_number+1];
+                        this.optical_element_array[instance_number] = this.optical_element_array[instance_number+1];
                         instance_number++;
                     } while(instance_number < arrLen - 1)
-                    this.light_array.length = arrLen - 1;
+                    this.optical_element_array.length = arrLen - 1;
                 }
-                this.light_array.length = arrLen - 1;
-            }
-            
+                this.optical_element_array.length = arrLen - 1;
+            }            
+        }
+
+        // doesn't delete the first one
+        deleteAllCameraObjects():void{
+            this.instance_number = 1
+            this.optical_element_array.length = 1;
         }
 
         // doesn't delete the first one
         deleteAllLightObjects():void{
-            this.instance_number = 0;
-            this.light_array.length = 1;
+            this.instance_number = 1
+            this.optical_element_array.length = 1;
         }
 
-        select_instance(selection : number) : void{
-            if (selection >= 0 && selection < this.light_array.length) this.selected_instance = selection;
+        select_camera_instance(selection : number) : void{
+            if (selection >= 0 && selection < this.optical_element_array.length)
+            {
+                if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_light_instance = selection;
+            }
+        }
+
+        select_light_instance(selection : number) : void{
+            if (selection >= 0 && selection < this.optical_element_array.length)
+            {
+                if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_light_instance = selection;
+            }
         }
 
         render(vertex : _3D_VEC_) : _4D_VEC_ | _ERROR_{
-            const world_to_light : _4D_VEC_ = this.light_array[this.selected_instance].worldToLight(vertex);
-            const _light_to_clip : _4D_VEC_ = _ClipSpace.camera_or_light_ToClip(world_to_light);
-            return _ScreenSpace.clipToScreen(_light_to_clip);
+            const world_to_: _4D_VEC_ = this.optical_element_array[this.selected_instance].worldToLight(vertex);
+            const _to_clip : _4D_VEC_ = _ClipSpace.camera_or_ToClip(world_to_;
+            return _ScreenSpace.clipToScreen(_to_clip);
         }
     }
 
-    const _Light_Objects = new Light_Objects()
+    const _Optical_Objects = new OpticalElement_Objects()
 
     class ObjectManager{}
 
@@ -1698,7 +1690,7 @@
                 bPb : _3D_VEC_ = _Matrix.scaMult(this.bRatio, bvec) as _3D_VEC_,
                 cPc : _3D_VEC_ = _Matrix.scaMult(this.cRatio, cvec) as _3D_VEC_;
 
-            return _Matrix.addSub(_Matrix.addSub(aPa, bPb), cPc) as _3D_VEC_;
+            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc) as _3D_VEC_;
         }
 
         getBoundingRect(...vertices : _3_3_MAT_) : _4D_VEC_ {
@@ -1790,11 +1782,11 @@
 
         vertShader() : void | _ERROR_ {
             if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
-                this.Alight = _Light_Objects.render(this.avec);
+                this.Alight = _Objects.render(this.avec);
                 if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-                this.Blight = _Light_Objects.render(this.bvec);
+                this.Blight = _Objects.render(this.bvec);
                 if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_
-                this.Clight = _Light_Objects.render(this.cvec);
+                this.Clight = _Objects.render(this.cvec);
                 if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_
             } else return _ERROR_._NO_ERROR_;
         }
@@ -1835,7 +1827,7 @@
                         aCola = _Matrix.scaMult(this.aRatio, this.colA),
                         bColb = _Matrix.scaMult(this.bRatio, this.colB),
                         cColc = _Matrix.scaMult(this.cRatio, this.colC),
-                        pcolP = _Matrix.addSub(_Matrix.addSub(aCola, bColb), cColc);
+                        pcolP = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
 
                     if (this.isInsideTri() === true) {
 
@@ -1870,7 +1862,7 @@
                             const aCola = _Matrix.scaMult(this.aRatio, this.colA);
                             const bColb = _Matrix.scaMult(this.bRatio, this.colB);
                             const cColc = _Matrix.scaMult(this.cRatio, this.colC);
-                            var pColp = _Matrix.addSub(_Matrix.addSub(aCola, bColb), cColc);
+                            var pColp = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
 
                             if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
                                 this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];

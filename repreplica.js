@@ -567,7 +567,7 @@
         initDepthBuffer() {
             const elements = Math.ceil(this.canvH * this.canvW);
             this.depthBuffer = this.createArrayFromArgs(elements);
-            this.resetDepthBuffer();
+            this.reseTDepthBuffer();
         }
 
         resetDepthBuffer() {
@@ -1504,7 +1504,7 @@
         initParamsBasic() {
             this.runSettings();
             this.initCanvas();
-            this.initDepthBuffer();
+            this.iniTDepthBuffer();
             this.initFrameBuffer();
             this.setHalf();
         }
