@@ -61,7 +61,6 @@
         _MATRIX_ERROR,
         _VECTOR_ERROR_,
         _PERSPECTIVE_PROJ_ERROR_,
-        _CAMERA_ERROR_,
         _ERROR_,
         _CLIP_ERROR_,
         _LOCAL_SPACE_ERROR_,
@@ -69,6 +68,7 @@
         _CAMERA_SPACE_ERROR_,
         _CLIP_SPACE_ERROR_,
         _SCREEN_SPACE_ERROR_,
+        _OPTICAL_ELEMENT_OBJECT_ERROR_,
         _PRERENDER_ERROR_,
         _INTERPOL_REND_ERROR_,
         _DRAW_CANVAS_ERROR_,
@@ -1326,7 +1326,7 @@
     class CameraSpace {
         constructor() {};
     
-        worldToCamera(ar:  _3D_VEC_) : _4D_VEC_ {
+        worldToOpticalObjectCamera(ar:  _3D_VEC_) : _4D_VEC_ {
             const arr : _4D_VEC_ = [...ar,1]
             arr[2] = -arr[2] // reverse point for right to left hand coordinate system
             const result : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._CAM_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
@@ -1484,14 +1484,14 @@
             this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _4_4_MAT_;
         }
 
-        worldTo(ar:  _3D_VEC_) : _4D_VEC_ {
+        worldToOpticalObject(ar:  _3D_VEC_) : _4D_VEC_ {
             const arr : _4D_VEC_ = [...ar,1]
             arr[2] = -arr[2] // reverse point for right to left hand coordinate system
             const result : _4D_VEC_ = _Matrix.matMult(this.instance._MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             return result;
         };
     
-        lightToWorld(arr : _4D_VEC_) : _3D_VEC_ {
+        opticalObjectToWorld(arr : _4D_VEC_) : _3D_VEC_ {
             const result : _4D_VEC_ = _Matrix.matMult(this.instance._INV_MATRIX, arr, [4, 4], [4, 1]) as _4D_VEC_;
             result[2] = -result[2] // reverse point for left to right hand coordinate system
             const new_result : _3D_VEC_ = result.slice(0,3) as _3D_VEC_;
@@ -1503,6 +1503,7 @@
     class OpticalElement_Objects{
         optical_element_array : OpticalElement[]
         instance_number : number;
+        arrlen : number;
 
         selected_light_instance : number;
         selected_camera_instance : number;
@@ -1510,9 +1511,11 @@
         max_camera_instance_number : number;
         max_light_instance_number : number;
 
+        instance_number_to_list_map : object;
 
         constructor()
         {
+            this.arrlen = 0;
             this.instance_number = 0;
             this.selected_light_instance = 0;
             this.selected_camera_instance = 0;
@@ -1521,51 +1524,61 @@
         }
 
         createNewCameraObject() : void{
-            this.instance_number++;
             this.max_camera_instance_number = this.instance_number;
-            this.optical_element_array[this.instance_number] = new OpticalElement("camera")
+            this.optical_element_array[this.arrlen] = new OpticalElement("camera");
+            this.instance_number_to_list_map[this.instance_number] = this.arrlen;
+            this.instance_number++;
+            this.arrlen++;
         }
 
         createNewLightObject() : void{
-            this.instance_number++;
             this.max_light_instance_number = this.instance_number;
-            this.optical_element_array[this.instance_number] = new OpticalElement("light")
+            this.optical_element_array[this.arrlen] = new OpticalElement("light");
+            this.instance_number_to_list_map[this.instance_number] = this.arrlen;
+            this.instance_number++;
+            this.arrlen++;
         }
 
         createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) this.createNewCameraObject(); num--;}
 
         createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) this.createNewLightObject(); num--;}
         
-        deleteCameraObject(instance_number : number) : void {
-            const arrLen = this.optical_element_array.length;
-            if (instance_number > 0 && instance_number <= this.max_camera_instance_number)
+        deleteCameraObject(instance_number_input : number) : void {
+            if (instance_number_input > 0 && instance_number_input <= this.max_camera_instance_number)
             {
-                if (instance_number === this.max_camera_instance_number)
+                var index = this.instance_number_to_list_map[instance_number_input];
+                if(this.optical_element_array[index].instance.optical_type === "camera") // addition safety checks
                 {
-                    do {
-                        this.optical_element_array[instance_number] = this.optical_element_array[instance_number+1];
-                        instance_number++;
-                    } while(instance_number < arrLen - 1)
-                    this.optical_element_array.length = arrLen - 1;
+                    this.optical_element_array.splice(index,1);
+
+                    delete this.instance_number_to_list_map[instance_number_input];
+
+                    for (const key in this.instance_number_to_list_map){
+                        if (Number(key) > instance_number_input){
+                            this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
+                        }
+                    }
                 }
-                this.optical_element_array
             }            
         }
 
-        deleteLightObject(instance_number : number) : void {
-            const arrLen = this.optical_element_array.length;
-            if (instance_number > 0 && instance_number <= this.max_light_instance_number)
+        deleteLightObject(instance_number_input : number) : void {
+            if (instance_number_input > 0 && instance_number_input <= this.max_light_instance_number)
             {
-                if (instance_number === this.max_light_instance_number)
+                var index = this.instance_number_to_list_map[instance_number_input];
+                if(this.optical_element_array[index].instance.optical_type === "light") // addition safety checks
                 {
-                    do {
-                        this.optical_element_array[instance_number] = this.optical_element_array[instance_number+1];
-                        instance_number++;
-                    } while(instance_number < arrLen - 1)
-                    this.optical_element_array.length = arrLen - 1;
+                    this.optical_element_array.splice(index,1);
+
+                    delete this.instance_number_to_list_map[instance_number_input];
+
+                    for (const key in this.instance_number_to_list_map){
+                        if (Number(key) > instance_number_input){
+                            this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
+                        }
+                    }
                 }
-                this.optical_element_array.length = arrLen - 1;
-            }            
+            }           
         }
 
         // doesn't delete the first one
@@ -1594,10 +1607,13 @@
             }
         }
 
-        render(vertex : _3D_VEC_) : _4D_VEC_ | _ERROR_{
-            const world_to_: _4D_VEC_ = this.optical_element_array[this.selected_instance].worldToLight(vertex);
-            const _to_clip : _4D_VEC_ = _ClipSpace.camera_or_ToClip(world_to_;
-            return _ScreenSpace.clipToScreen(_to_clip);
+        render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
+            switch (optical_type){
+                case "camera" : return this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
+                case "light" : return this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
+                case "none" :
+                default : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
+            }
         }
     }
 
@@ -1947,7 +1963,7 @@
     // console.log(c)
     // const d = basic_manager.objectRevolve(c, basic_manager.Y, 90, "world")
     // console.log(d)
-    // const e = basic_manager.worldToCamera(d);
+    // const e = basic_manager.worldToOpticalObjectCamera(d);
     // const f = basic_manager.cameraToWorld(e);
     // console.log(e, f);
     // const g = basic_manager.cameraToClip(e);
