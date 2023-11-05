@@ -87,7 +87,7 @@ class CanvasObject {
         this.id = null;
         this.exists = true;
         this.depth_occlusion = true;
-        this.comp_error = compatibilitySettings.compatibility_error;
+        // this.comp_error = compatibilitySettings.compatibility_error;
         this.space = "local"; // Possible values: local/object, world, camera/view, clip, screen
     }
 
@@ -254,21 +254,25 @@ class BoxObject extends CanvasObject {
     box_vertex_density(number) {
         this.box_vertex_density_number = Math.abs(Math.round(number));
         if (this.reload_box_functions_bool === true) this.reload_box_functions();
+        return this;
     }
 
     box_width(number) {
         this.box_width_number = Math.abs(number);
         if (this.reload_box_functions_bool === true) this.reload_box_functions();
+        return this;
     }
 
     box_height(number) {
         this.box_height_number = Math.abs(number);
         if (this.reload_box_functions_bool === true) this.reload_box_functions();
+        return this;
     }
 
     box_depth(number) {
         this.box_depth_number = Math.abs(number);
         if (this.reload_box_functions_bool === true) this.reload_box_functions();
+        return this;
     }
 
     get_box_vertex_dimensions(vertex_no) {
@@ -279,6 +283,7 @@ class BoxObject extends CanvasObject {
     reload_box_functions() {
         this.box_dimensions_core();
         this.box_vertex_density_core();
+        return this;
     }
 
     getVertexNum(vertex_density_number) {
@@ -286,8 +291,52 @@ class BoxObject extends CanvasObject {
     }
 }
 
-const _box_ = new BoxObject()
+// const _box_ = new BoxObject()
 
-const a = _box_
+// const a = _box_.box_width(24).box_height(12).box_depth(18).box_vertex_density(2).reload_box_functions()
 
-console.log(a)
+// console.log(a.box_vertices)
+
+const v = [-24, -12, -18, -24, -12, 18, -24,
+    12, -18, -24, 12, 18, 24, -12, -18, 24, -12, 18, 24, 12, -18,
+    24, 12, 18
+]
+
+// v = [-24, -12, -18, -24, -12, 18, -24, 12, -18, -24, 12, 18,
+//     24, -12, -18, 24, -12, 18, 24, 12, -18, 24, 12, 18, -24, -12, 0, -24, 0, -18, 0, -12, -18, -24, 0, 18, -24, 12, 0, 0, 12, 18, 0, -12, 18, 24, -12, 0,
+//     24, 0, 18, 0, 12, -18, 24, 0, -18, 24, 12, 0
+// ]
+
+var pos = 0;
+var neg = 0;
+var zer = 0;
+
+var pos_v = [];
+
+var neg_v = [];
+
+var zero_v = [];
+
+for (i in v) {
+
+    if (i % 3 === 2) {
+        if (v[i] > 0) {
+            pos_v[pos] = [v[i - 2], v[i - 1], v[i]];
+            pos++;
+        }
+        if (v[i] < 0) {
+            neg_v[neg] = [v[i - 2], v[i - 1], v[i]];
+            neg++;
+        }
+        if (v[i] === 0) {
+            zero_v[zer] = [v[i - 2], v[i - 1], v[i]];
+            zer++;
+        }
+    }
+}
+
+console.log(pos_v);
+
+console.log(neg_v);
+
+console.log(zero_v)
