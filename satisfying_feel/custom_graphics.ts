@@ -35,14 +35,18 @@
     type _3D_VEC_ = [number, number, number];
 
     type _4D_VEC_ = [number,number,number,number];
+    
+    type _7D_VEC_ = [..._3D_VEC_,..._4D_VEC_];
 
-    type _7D_VEC_ = [..._3D_VEC_,..._4D_VEC_]
+    type _9D_VEC_ = [..._3D_VEC_,..._3D_VEC_,..._3D_VEC_];
+    
+    type _16D_VEC_ = [..._4D_VEC_,..._4D_VEC_,..._4D_VEC_,..._4D_VEC_];
 
     type _3_3_MAT_ = [_3D_VEC_,_3D_VEC_,_3D_VEC_]
 
     type _3_7_MAT_ = [_7D_VEC_,_7D_VEC_,_7D_VEC_]
 
-    type _4_4_MAT_ = [number, number, number,number,number, number, number,number,number, number, number,number,number, number, number,number];
+
     
     type _PLANE_ = "U-V" | "U-N" | "V-N";
 
@@ -58,22 +62,20 @@
         _SETTINGS_ERROR_,
         _MISCELLANOUS_ERROR_,
         _QUARTERNION_ERROR_,
-        _MATRIX_ERROR,
+        _MATRIX_ERROR_,
         _VECTOR_ERROR_,
         _PERSPECTIVE_PROJ_ERROR_,
-        _ERROR_,
         _CLIP_ERROR_,
         _LOCAL_SPACE_ERROR_,
         _WORLD_SPACE_ERROR_,
         _CLIP_SPACE_ERROR_,
         _SCREEN_SPACE_ERROR_,
         _OPTICAL_ELEMENT_OBJECT_ERROR_,
-        _PRERENDER_ERROR_,
-        _INTERPOL_REND_ERROR_,
+        _RENDER_ERROR_,
         _DRAW_CANVAS_ERROR_,
     }
 
-    enum _MATRIX_ERROR_
+    enum _ERROR_MATRIX_
     {
         _DET_ = 1,
         _MINOR_,
@@ -307,12 +309,11 @@
         _FZ : number,
         _PROJ_ANGLE : number,
         _ASPECT_RATIO : number,
-        _AR_INV : number ,
         _DIST : number,
         _HALF_X : number,
         _HALF_Y : number,
-        _PROJECTION_MAT_ : _4_4_MAT_,
-        _INV_PROJECTION_MAT_ : _4_4_MAT_,
+        _PROJECTION_MAT : _16D_VEC_,
+        _INV_PROJECTION_MAT : _16D_VEC_,
         _OPEN_SIDEBAR : boolean,
     }
 
@@ -337,16 +338,15 @@
         _Q_VEC : [0,0,0],
         _Q_QUART : [0,0,0,0],
         _Q_INV_QUART : [0,0,0,0],
-        _NZ : 0.1,
-        _FZ : 100,
+        _NZ : -0.1,
+        _FZ : -100,
         _PROJ_ANGLE : 60,
         _ASPECT_RATIO : 1,
-        _AR_INV : 1,
         _DIST : 1,
         _HALF_X : 1,
         _HALF_Y : 1,
-        _PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        _INV_PROJECTION_MAT_ : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _PROJECTION_MAT : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _INV_PROJECTION_MAT : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         _OPEN_SIDEBAR : true,
         }
 
@@ -356,12 +356,12 @@
     {
         test_array: any;
         compatibility_error: boolean;
-        first_ERROR_pos : null | number;
+        error_pos : number [];
         // Composition is used as we don't want to compute the basic error-checking everytime.
         constructor() {
             this.test_array = new Array();
             this.compatibility_error = false;
-            this.first_ERROR_pos = null;
+            this.error_pos = [];
 
             this.flat_exists();
             this.map_exists();
@@ -376,12 +376,13 @@
         detect_compatibility_issues()
         {
             const test_array_len = this.test_array.length;
+            var inc = 0;
             for (let i = 0; i < test_array_len; i++) {
                 if (this.test_array[i] === false) {
-                    this.compatibility_error = true;
-                    this.first_ERROR_pos = i;
-                    return;
+                    this.error_pos[inc] = i;
+                    inc++;
                 }
+                this.compatibility_error = this.error_pos.length > 0;
             }
         }
 
@@ -707,19 +708,18 @@
 
     class Quarternion
     {
-        private normalize : boolean
-        private theta : number | undefined
-
-        private q_vector : _3D_VEC_
-        private q_quarternion : _4D_VEC_
-        private q_inv_quarternion : _4D_VEC_
+        private normalize : boolean;
+        private theta : number;
+        private q_vector : _3D_VEC_;
+        private q_quarternion : _4D_VEC_;
+        private q_inv_quarternion : _4D_VEC_;
 
         constructor()
         {
             this.q_vector = DEFAULT_PARAMS._Q_VEC
-            this.q_quarternion = DEFAULT_PARAMS._Q_QUART
-            this.q_inv_quarternion = DEFAULT_PARAMS._Q_INV_QUART
-            this.theta = undefined
+            this.q_quarternion = DEFAULT_PARAMS._Q_QUART;
+            this.q_inv_quarternion = DEFAULT_PARAMS._Q_INV_QUART;
+            this.theta = DEFAULT_PARAMS._THETA;
         }
     
         vector(input_vec : _3D_VEC_)
@@ -738,7 +738,6 @@
             // quarternion
 
             const [v1, v2, v3] = this.q_vector;
-            this.theta = this.theta as number
             const [a, b] = [Math.cos(this.theta * 0.5), Math.sin(this.theta * 0.5)];
             this.q_quarternion = [a, v1 * b, v2 * b, v3 * b];
         };
@@ -747,7 +746,6 @@
         {
             // inverse quarternion           
             const [v1, v2, v3] = this.q_vector;
-            this.theta = this.theta as number;
             const [a, b] = [Math.cos(this.theta * 0.5), Math.sin(this.theta * 0.5)];
             this.q_inv_quarternion = [a, -v1 * b, -v2 * b, -v3 * b];
         };
@@ -770,13 +768,12 @@
             return this.q_mult(this.q_quarternion, this.q_mult(output_vec, this.q_inv_quarternion)).splice(1) as _3D_VEC_;
         }
     
-        q_rot(_angle : number = 0 , _vector : _3D_VEC_ = [0, 0, 1], _point : _3D_VEC_ = [0, 0, 0]) : _3D_VEC_ | _ERROR_._QUARTERNION_ERROR_ 
+        q_rot(_angle : number = 0 , _vector : _3D_VEC_ = [0, 0, 1], _point : _3D_VEC_ = [0, 0, 0]) : _3D_VEC_
         {
-            if (typeof this.theta === "undefined") return _ERROR_._QUARTERNION_ERROR_
-            this.theta = this.theta as number
             this.theta = MODIFIED_PARAMS._ANGLE_CONSTANT*_angle;
             this.vector(_vector);
-            this.quarternion();this.inv_quartenion()
+            this.quarternion();
+            this.inv_quartenion()
             return this.q_v_invq_mult(_point);
         }
     }
@@ -789,32 +786,32 @@
         {}
 
         // // Pitch
-        // rotX(ang : number) : _4_4_MAT_ {
+        // rotX(ang : number) : _16D_VEC_ {
         //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
         //     return [1, 0, 0, 0, 0, Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1];
         // }
 
         // // Yaw
-        // rotY(ang : number) : _4_4_MAT_ {
+        // rotY(ang : number) : _16D_VEC_ {
         //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
         //     return [Math.cos(angle), 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, 1, 0, 0, -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, Math.cos(angle), 0, 0, 0, 0, 1];
         // }
 
         // //Roll
-        // rotZ(ang : number) : _4_4_MAT_ {
+        // rotZ(ang : number) : _16D_VEC_ {
         //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
         //     return [Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
         // }
 
-        // rot3d(x : number, y : number, z : number) : _4_4_MAT_ {
-        //     return this.matMult(this.rotZ(z), this.matMult(this.rotY(y), this.rotX(x), [4, 4], [4, 4]), [4, 4], [4, 4]) as _4_4_MAT_;
+        // rot3d(x : number, y : number, z : number) : _16D_VEC_ {
+        //     return this.matMult(this.rotZ(z), this.matMult(this.rotY(y), this.rotX(x), [4, 4], [4, 4]), [4, 4], [4, 4]) as _16D_VEC_;
         // };
         
-        // transl3d(x : number, y : number, z : number) : _4_4_MAT_ {
+        // transl3d(x : number, y : number, z : number) : _16D_VEC_ {
         //     return [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
         // }
 
-        // scale3dim(x : number, y : number, z : number) : _4_4_MAT_ {
+        // scale3dim(x : number, y : number, z : number) : _16D_VEC_ {
         //     return [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
         // }
 
@@ -834,6 +831,10 @@
         // }
     
         matMult(matA : number[], matB : number[], shapeA : _2D_VEC_, shapeB : _2D_VEC_) : number[] {
+            
+            if (shapeA[1] !== shapeB[0]) return _ERROR_._MATRIX_ERROR_;
+            else
+            {
             const matC : number[] = []
     
             for (let i = 0; i < shapeA[0]; i++) {
@@ -846,6 +847,7 @@
                 }
             }
             return matC;
+            }
         }
     
         scaMult(scalarVal : number, matIn : number [], leaveLast : boolean = false) : number[] {
@@ -854,7 +856,7 @@
             for (let i = 0; i < matInlen; i++) {
                 if (i === matInlen - 1 && leaveLast === true) {
                     // Do nothing...don't multiply the last matrix value by the scalar value
-                    // useful when perspective divide is going on.
+                    // useful when perspective division is going on.
                     matOut.push(matIn[i]);
                 } else {
                     matOut.push(matIn[i] * scalarVal);
@@ -867,7 +869,7 @@
             const matC : number[] = [];
             const matAlen : number = matA.length;
             const matBlen : number = matB.length;
-            var sgn : number  = 1;
+            var sgn : number = 1;
     
             if (neg === true) {
                 sgn = -1;
@@ -923,7 +925,7 @@
             return matOut;
         }
     
-        getDet(matIn : number | number [], shapeNum : number) : number | _ERROR_._MATRIX_ERROR {
+        getDet(matIn : number | number [], shapeNum : number) : number | _ERROR_._MATRIX_ERROR_ {
             if (shapeNum > 0) {
                 // If it is a 1x1 matrix, return the matrix
                 if (shapeNum === 1) {
@@ -962,7 +964,7 @@
                 }
             }
 
-            else return _ERROR_._MATRIX_ERROR + _MATRIX_ERROR_._DET_*10;
+            else return _ERROR_._MATRIX_ERROR_ + _ERROR_MATRIX_._DET_*10;
         }
     
         getMinorMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
@@ -971,7 +973,7 @@
             for (let i = 0; i < shapeNum; i++) {
                 for (let j = 0; j < shapeNum; j++) {
                     const result : number | _ERROR_ = this.getDet(this.getRestMat(matIn, shapeNum, i, j), shapeNum - 1)
-                    if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._MINOR_*100;
+                    if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._MINOR_*100;
                     matOut.push(result)
                 }
             }
@@ -1000,7 +1002,7 @@
             var _minorMat : number[] | _ERROR_ = this.getMinorMat(matIn, shapeNum);
 
             if (typeof _minorMat === "number")
-                if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _MATRIX_ERROR_._COF_*1000;
+                if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _ERROR_MATRIX_._COF_*1000;
                 
             const minorMat : number[] = _minorMat as number[]
             const matOut : number[] = [];
@@ -1016,19 +1018,19 @@
         getAdjMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
             const result : number[] | _ERROR_ = this.getCofMat(matIn, shapeNum)
             if (typeof result === "number")
-                if (result > _ERROR_._NO_ERROR_) return result + _MATRIX_ERROR_._ADJ_*10000 ;
+                if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._ADJ_*10000 ;
             return this.getTranspMat((result as number[]), [shapeNum, shapeNum]);
         }
     
         getInvMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
             const det_result : number = this.getDet(matIn, shapeNum);
 
-            if (det_result > _ERROR_._NO_ERROR_) return det_result+_MATRIX_ERROR_._INV_*100000;
+            if (det_result > _ERROR_._NO_ERROR_) return det_result+_ERROR_MATRIX_._INV_*100000;
 
             const adj_result : number[] | _ERROR_ = this.getAdjMat(matIn,shapeNum);
 
             if (typeof adj_result === "number")
-                if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_MATRIX_ERROR_._INV_*100000;
+                if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_ERROR_MATRIX_._INV_*100000;
             
             return _Matrix.scaMult(1/det_result,(adj_result as number[]));
         }
@@ -1185,7 +1187,7 @@
                 cross_product_angle = fromRad;
             }
     
-            return typeof cross_product_angle === "undefined" ? cross_product_angle = _ERROR_._VECTOR_ERROR_ : cross_product_angle
+            return typeof cross_product_angle === "undefined" ? cross_product_angle = _ERROR_._VECTOR_ERROR_ : cross_product_angle;
         }
     
         getCrossPUnitVec(vecs : number[]) {
@@ -1208,38 +1210,37 @@
         }
     
         changeNearZ(val : number) {
-            MODIFIED_PARAMS._NZ = val;
+            MODIFIED_PARAMS._NZ = -val; // right to left hand coordinate system
             this.setPersProjectParam();
         }
     
         changeFarZ(val : number) {
-            MODIFIED_PARAMS._FZ = val;
+            MODIFIED_PARAMS._FZ = -val; // right to left hand coordinate system
             this.setPersProjectParam();
         }
     
         changeProjAngle(val : number) {
-            MODIFIED_PARAMS._FZ = val
+            MODIFIED_PARAMS._PROJ_ANGLE = val
             this.setPersProjectParam();
         }
     
-        setPersProjectParam() {
+        setPersProjectParam() : void {
             if (MODIFIED_PARAMS._ASPECT_RATIO > _ERROR_._NO_ERROR_) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
-            MODIFIED_PARAMS._AR_INV = 1 / MODIFIED_PARAMS._ASPECT_RATIO;
-            MODIFIED_PARAMS._DIST = 1 / (Math.tan((MODIFIED_PARAMS._DIST / 2) * (Math.PI / 180)));
-            MODIFIED_PARAMS._PROJECTION_MAT_ = [MODIFIED_PARAMS._DIST * MODIFIED_PARAMS._AR_INV, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
+            MODIFIED_PARAMS._DIST = 1 / (Math.tan(MODIFIED_PARAMS._PROJ_ANGLE / 2 * MODIFIED_PARAMS._ANGLE_CONSTANT));
+            MODIFIED_PARAMS._PROJECTION_MAT = [MODIFIED_PARAMS._DIST / MODIFIED_PARAMS._ASPECT_RATIO, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
 
-            const inverse_res : number[] | _ERROR_ = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT_, 4);
+            const inverse_res : number[] | _ERROR_ = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT, 4);
             if (typeof inverse_res === "number") return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
             if (inverse_res.length !== 16) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
-            MODIFIED_PARAMS._INV_PROJECTION_MAT_ = inverse_res as _4_4_MAT_;
+            MODIFIED_PARAMS._INV_PROJECTION_MAT = inverse_res as _16D_VEC_;
         }
     
         persProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
+            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, input_array, [4, 4], [4, 1]);
         }
     
         invPersProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, input_array, [4, 4], [4, 1]);
+            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, input_array, [4, 4], [4, 1]);
         }
     }
 
@@ -1309,15 +1310,15 @@
     class ClipSpace {
         constructor() {};
     
-        camera_or_light_ToClip(arr :  _4D_VEC_) : _4D_VEC_ {
-            const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT_, arr, [4, 4], [4, 1]) as _4D_VEC_;
+        opticalObjectToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+            const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, arr, [4, 4], [4, 1]) as _4D_VEC_;
             const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
             return pers_div;
         };
     
-        clip_ToCamera_or_ToLight(arr :  _4D_VEC_) : _4D_VEC_ {
+        clipToOpticalObject(arr :  _4D_VEC_) : _4D_VEC_ {
             const rev_pers_div : _4D_VEC_ = _Matrix.scaMult(arr[3], arr, true) as _4D_VEC_;
-            const rev_orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT_, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
+            const rev_orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
             return rev_orig_proj;
         };
     }
@@ -1329,19 +1330,20 @@
     
         clipToScreen(arr :  _4D_VEC_) : _4D_VEC_ | _ERROR_ {
             if (arr[2] >= -1.1 && arr[2] <= 1.1 && arr[2] != Infinity) {
+                arr[2] = -arr[2];
+                // -array[2] (-z) reverse point for left to right hand coordinate system
                 const [i, j, k, l] = _Clip.unclipCoords(arr);
-                const [w, x, y, z] = _Clip.toCanvas([i, j, k, l]);
-                // -array[2] (-y) reverse point for right to left hand coordinate system
-                return [w, x, -y, z];
+                const [x, y, z, w] = _Clip.toCanvas([i, j, k, l]);
+                return [x, y, z, w];
             }
-            else return _ERROR_._NO_ERROR_;
+            else return _ERROR_._SCREEN_SPACE_ERROR_;
         };
     
         screenToClip(arr :  _4D_VEC_) : _4D_VEC_  {
             const [i, j, k, l] = _Clip.canvasTo(arr);
-            const [w, x, y, z] = _Clip.clipCoords([i, j, k, l]);
-            // -array[2] (-y) reverse point for right to left hand coordinate system
-            return [w, x, -y, z];
+            const [x, y, z, w] = _Clip.clipCoords([i, j, k, l]);
+            // -array[2] (-z) reverse point for right to left hand coordinate system
+            return  [x, y, -z, w];
         };
     }
 
@@ -1349,15 +1351,16 @@
 
     interface OPTICALELEMENT {
         instance_number : number;
-        optical_type : _OPTICAL_
+        optical_type : _OPTICAL_;
         _ACTUAL_POS: _3D_VEC_;
-        _USED_POS: _3D_VEC_;
+        _USED_POS : _3D_VEC_;
+        _LOOK_AT_POINT : _3D_VEC_;
         _U: _3D_VEC_;
         _V: _3D_VEC_;
         _N: _3D_VEC_;
         _C : _3D_VEC_;
-        _MATRIX : _4_4_MAT_;
-        _INV_MATRIX : _4_4_MAT_,
+        _MATRIX : _16D_VEC_;
+        _INV_MATRIX : _16D_VEC_,
         depthBuffer : Float64Array,
         frameBuffer : Uint8Array,
     }
@@ -1375,12 +1378,13 @@
             optical_type : "none",
             _ACTUAL_POS : [0,0,0],
             _USED_POS : [0,0,0],
+            _LOOK_AT_POINT : [0,0,0],
             _U : [0,0,0],
             _V : [0,0,0],
             _N : [0,0,0],
             _C : [0,0,0],
-            _MATRIX : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] as _4_4_MAT_,
-            _INV_MATRIX : _Matrix.getInvMat([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 4) as _4_4_MAT_,
+            _MATRIX : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1] as _16D_VEC_,
+            _INV_MATRIX : _Matrix.getInvMat([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1], 4) as _16D_VEC_,
             depthBuffer : _Miscellenous.initDepthBuffer(),
             frameBuffer : _Miscellenous.initFrameBuffer(),
         }    
@@ -1396,39 +1400,51 @@
             _Miscellenous.resetFrameBuffer(this.instance.frameBuffer);
         }
 
-        setLightPos(input_array: _3D_VEC_) {
+        setPos(input_array: _3D_VEC_) {
             this.instance._ACTUAL_POS = input_array;
             this.instance._USED_POS = input_array;
             this.instance._USED_POS[2] = -this.instance._USED_POS[2] // reverse point for right to left hand coordinate system
         }
-    
-        lookAt(look_at_point: _3D_VEC_) {
-            look_at_point[2] = -look_at_point[2]; // reverse point for right to left hand coordinate system
-            const DIFF: _3D_VEC_ = _Matrix.matAdd(look_at_point, this.instance._USED_POS, true) as _3D_VEC_;
+        
+        setCoordSystem(){
+            const DIFF: _3D_VEC_ = _Matrix.matAdd(this._LOOK_AT_POINT, this.instance._USED_POS, true) as _3D_VEC_;
             const UP: _3D_VEC_ = [0, 1, 0];
-    
+            
             this.instance._N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
             this.instance._U = _Vector.normalizeVec(_Vector.crossProduct([UP, this.instance._N]) as number[]) as _3D_VEC_;
             this.instance._V = _Vector.normalizeVec(_Vector.crossProduct([this.instance._N, this.instance._U]) as number[]) as _3D_VEC_;
         }
+        
+        setConversionMatrices(){
+          this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _16D_VEC_;
+            this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _16D_VEC_;
+        }
+    
+        setLookAtPos(look_at_point: _3D_VEC_) {
+            look_at_point[2] = -look_at_point[2];// reverse point for right to left hand coordinate system
+            this._LOOK_AT_POINT = look_at_point;
+            
+            this.setCoordSystem()
+            this.setConversionMatrices()
+        }
     
         rotate(plane: _PLANE_, angle: number): void | _ERROR_._ERROR_ {
             if (plane === "U-V") {
-                const _N_U = _Quartenion.q_rot(angle, this.instance._N, this.instance._U);
-                const _N_V = _Quartenion.q_rot(angle, this.instance._N, this.instance._V);
-    
-                if (typeof _N_U === "number") return _ERROR_._ERROR_
-                if (typeof _N_V === "number") return _ERROR_._ERROR_
-                this.instance._U = _N_U as _3D_VEC_;
-                this.instance._V = _N_V as _3D_VEC_;
-    
-            } else if (plane === "U-N") {
-                const _V_U = _Quartenion.q_rot(angle, this.instance._V, this.instance._U);
+                const _U_N = _Quartenion.q_rot(angle, this.instance._U, this.instance._N);
                 const _V_N = _Quartenion.q_rot(angle, this.instance._V, this.instance._N);
     
-                if (typeof _V_U === "number") return _ERROR_._ERROR_
+                if (typeof _U_N === "number") return _ERROR_._ERROR_
                 if (typeof _V_N === "number") return _ERROR_._ERROR_
-                this.instance._U = _V_U as _3D_VEC_;
+                this.instance._U = _U_N as _3D_VEC_;
+                this.instance._V = _V_N as _3D_VEC_;
+    
+            } else if (plane === "U-N") {
+                const _U_V = _Quartenion.q_rot(angle, this.instance._U, this.instance._V);
+                const _V_N = _Quartenion.q_rot(angle, this.instance._V, this.instance._N);
+    
+                if (typeof _U_V === "number") return _ERROR_._ERROR_
+                if (typeof _V_N === "number") return _ERROR_._ERROR_
+                this.instance._U = _U_V as _3D_VEC_;
                 this.instance._V = _V_N as _3D_VEC_;
     
             } else if (plane === "V-N") {
@@ -1439,20 +1455,19 @@
                 if (typeof _U_N === "number") return _ERROR_._ERROR_
                 this.instance._U = _U_V as _3D_VEC_;
                 this.instance._V = _U_N as _3D_VEC_;
-    
             }
-    
-            this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _4_4_MAT_;
+            
+            this.setConversionMatrices()
         }
-    
+        
         translate(translation_array: _3D_VEC_) {
             this.instance._C = translation_array;
             this.instance._ACTUAL_POS = _Matrix.matAdd(this.instance._ACTUAL_POS, translation_array) as _3D_VEC_;
             this.instance._USED_POS = [...this.instance._ACTUAL_POS];
             this.instance._USED_POS[2] = -this.instance._ACTUAL_POS[2]; // reverse point for right to left hand coordinate system
-            this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _4_4_MAT_;
-            this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _4_4_MAT_;
+            
+            this.setCoordSystem()
+            this.setConversionMatrices()
         }
 
         worldToOpticalObject(ar:  _3D_VEC_) : _4D_VEC_ {
@@ -1513,7 +1528,7 @@
 
         createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) {this.createNewLightObject(); num--;}}
 
-        deleteOpticalObject(instance_number_input : number,index : number) : void {
+        private deleteOpticalObject(instance_number_input : number,index : number) : void {
             this.optical_element_array.splice(index,1);
             delete this.instance_number_to_list_map[instance_number_input];
 
@@ -1525,7 +1540,7 @@
         }
 
         deleteCameraObject(instance_number_input : number) : void {
-            if (instance_number_input > 0 && instance_number_input <= this.max_camera_instance_number)
+            if (instance_number_input > 1 && instance_number_input <= this.max_camera_instance_number)
             {
                 const index = this.instance_number_to_list_map[instance_number_input];
                 if(this.optical_element_array[index].instance.optical_type === "camera")// additional safety checks
@@ -1538,7 +1553,7 @@
 
         deleteLightObject(instance_number_input : number) : void 
         {
-            if (instance_number_input > 0 && instance_number_input <= this.max_light_instance_number)
+            if (instance_number_input > 1 && instance_number_input <= this.max_light_instance_number)
             {
                 const index = this.instance_number_to_list_map[instance_number_input];
                 if(this.optical_element_array[index].instance.optical_type === "light") // additional safety checks
@@ -1554,7 +1569,7 @@
         {
             for (const key in this.instance_number_to_list_map){
                 const index = this.instance_number_to_list_map[key];
-                if (index !== 0 && this.optical_element_array[index].instance.optical_type === "camera")
+                if (index > 1 && this.optical_element_array[index].instance.optical_type === "camera")
                 {
                     this.deleteOpticalObject(Number(key),index);
                 }
@@ -1566,7 +1581,7 @@
         deleteAllLightObjects():void{
             for (const key in this.instance_number_to_list_map){
                 const index = this.instance_number_to_list_map[key];
-                if (index !== 1 && this.optical_element_array[index].instance.optical_type === "light")
+                if (index > 1 && this.optical_element_array[index].instance.optical_type === "light")
                 {
                     this.deleteOpticalObject(Number(key),index);
                 }
@@ -1574,17 +1589,25 @@
             this.arrlen = this.optical_element_array.length;
         }
 
-        select_camera_instance(selection : number) : void{
-            if (selection >= 0 && selection < this.optical_element_array.length)
-            {
+        select_camera_instance(instance_number_input : number) : void{
+            
+            if (instance_number_input !== 1 && instance_number_input <= this.max_camera_instance_number){
+            
+                 const selection = this.instance_number_to_list_map[instance_number_input];
+    
                 if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_camera_instance = selection;
+                }
             }
         }
 
-        select_light_instance(selection : number) : void{
-            if (selection >= 0 && selection < this.optical_element_array.length)
-            {
-                if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_light_instance = selection;
+        select_light_instance (instance_number_input : number) : void{
+            
+            if (instance_number_input !== 0 && instance_number_input <= this.max_light_instance_number){
+            
+                 const selection = this.instance_number_to_list_map[instance_number_input];
+    
+                if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_camera_instance = selection;
+                }
             }
         }
 
@@ -1597,7 +1620,7 @@
                 case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
             }
 
-            const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.camera_or_light_ToClip(world_to_optical_object_space);
+            const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.opticalObjectToClip(world_to_optical_object_space);
             return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
         }
     }
@@ -1606,7 +1629,7 @@
 
     class ObjectManager{}
 
-      class InterPolRend  {
+      class RENDER {
 
         kernel_Size : number;
         sigma_xy : number;
@@ -1648,6 +1671,12 @@
             this.opacityCoeff = 0;
             this.render = false;
             this.shader = false;
+            this.avec : [0, 0, 0];
+            this.bvec : [0, 0, 0];
+            this.cvec : [0, 0, 0];
+            this.colA : [0, 0, 0, 0];
+            this.colB : [0, 0, 0, 0];
+            this.colC : [0, 0, 0, 0];
             this.Alight = new Array() as _4D_VEC_; 
             this.Blight = new Array() as _4D_VEC_;
             this.Clight = new Array() as _4D_VEC_;
@@ -1667,7 +1696,6 @@
         }
 
         interpolate(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
-            //MaxParamLength is assumed to be 4, since each input vector is assumed to be a 4X1 homogenous matrix
 
             const indexList = [0, 1];
             const Adist = _Miscellenous.getDist(bvec, cvec, indexList),
@@ -1782,25 +1810,25 @@
         }
 
         vertexShader() : void | _ERROR_ {
-            if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
+ 
                 this.Alight = _Optical_Objects.render(this.avec,"light");
                 if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_;
                 this.Blight = _Optical_Objects.render(this.bvec,"light");
                 if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_;
                 this.Clight = _Optical_Objects.render(this.cvec,"light");
                 if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_;
-            } else return _ERROR_._NO_ERROR_;
+                
         }
 
         vertRend() {
-                if (this.avec !== null && this.bvec !== null && this.cvec !== null) {
+                
                     this.Acam = _Optical_Objects.render(this.avec,"camera");
                     if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
                     this.Bcam = _Optical_Objects.render(this.bvec,"camera");
                     if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
                     this.Ccam = _Optical_Objects.render(this.cvec,"camera");
                     if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-            } else return _ERROR_._NO_ERROR_;
+
         }
 
         fragmentShader() {
