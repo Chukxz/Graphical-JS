@@ -1650,18 +1650,18 @@
             }
         }
 
-        // render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
-        //     var world_to_optical_object_space : _4D_VEC_ = [0,0,0,0];
+        render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
+            var world_to_optical_object_space : _4D_VEC_ = [0,0,0,0];
 
-        //     switch (optical_type){
-        //         case "none" : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
-        //         case "camera" : world_to_optical_object_space = this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
-        //         case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
-        //     }
+            switch (optical_type){
+                case "none" : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
+                case "camera" : world_to_optical_object_space = this.optical_element_array[this.selected_camera_instances[0]].worldToOpticalObject(vertex);
+                case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instances[0]].worldToOpticalObject(vertex);
+            }
 
-        //     const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.opticalObjectToClip(world_to_optical_object_space);
-        //     return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
-        // }
+            const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.opticalObjectToClip(world_to_optical_object_space);
+            return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
+        }
     }
 
     const _Optical_Objects = new OpticalElement_Objects()
