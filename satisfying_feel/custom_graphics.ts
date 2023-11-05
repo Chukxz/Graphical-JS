@@ -42,10 +42,11 @@
     
     type _16D_VEC_ = [..._4D_VEC_,..._4D_VEC_,..._4D_VEC_,..._4D_VEC_];
 
-    type _3_3_MAT_ = [_3D_VEC_,_3D_VEC_,_3D_VEC_]
+    type _3_3_MAT_ = [_3D_VEC_,_3D_VEC_,_3D_VEC_];
 
-    type _3_7_MAT_ = [_7D_VEC_,_7D_VEC_,_7D_VEC_]
+    type _3_4_MAT_ = [_4D_VEC_,_4D_VEC_,_4D_VEC_];
 
+    type _3_7_MAT_ = [_7D_VEC_,_7D_VEC_,_7D_VEC_];
 
     
     type _PLANE_ = "U-V" | "U-N" | "V-N";
@@ -830,7 +831,7 @@
         //     this.objTransfMat = this.matMult(this.transl3d(Tx, Ty, Tz), this.matMult(this.rot3d(Rx, Ry, Rz), this.scale3dim(Sx, Sy, Sz), [4, 4], [4, 4]), [4, 4], [4, 4]);
         // }
     
-        matMult(matA : number[], matB : number[], shapeA : _2D_VEC_, shapeB : _2D_VEC_) : number[] {
+        matMult(matA : number[], matB : number[], shapeA : _2D_VEC_, shapeB : _2D_VEC_) : number[] | _ERROR_ {
             
             if (shapeA[1] !== shapeB[0]) return _ERROR_._MATRIX_ERROR_;
             else
@@ -1224,7 +1225,7 @@
             this.setPersProjectParam();
         }
     
-        setPersProjectParam() : void {
+        setPersProjectParam() : void | _ERROR_ {
             if (MODIFIED_PARAMS._ASPECT_RATIO > _ERROR_._NO_ERROR_) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
             MODIFIED_PARAMS._DIST = 1 / (Math.tan(MODIFIED_PARAMS._PROJ_ANGLE / 2 * MODIFIED_PARAMS._ANGLE_CONSTANT));
             MODIFIED_PARAMS._PROJECTION_MAT = [MODIFIED_PARAMS._DIST / MODIFIED_PARAMS._ASPECT_RATIO, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
@@ -1235,12 +1236,12 @@
             MODIFIED_PARAMS._INV_PROJECTION_MAT = inverse_res as _16D_VEC_;
         }
     
-        persProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, input_array, [4, 4], [4, 1]);
+        persProject(input_array : _4D_VEC_) : _4D_VEC_ {
+            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, input_array, [4, 4], [4, 1]) as _4D_VEC_;
         }
     
-        invPersProject(input_array : _4D_VEC_) {
-            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, input_array, [4, 4], [4, 1]);
+        invPersProject(input_array : _4D_VEC_) : _4D_VEC_ {
+            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, input_array, [4, 4], [4, 1]) as _4D_VEC_;
         }
     }
 
@@ -1292,7 +1293,7 @@
         }
     }
 
-    const _LocalSpace = new LocalSpace()
+    const _LocalSpace = new LocalSpace();
     
     class WorldSpace {
         constructor() {}
@@ -1305,49 +1306,7 @@
         }
     }
     
-    const _WorldSpace = new WorldSpace()
-
-    class ClipSpace {
-        constructor() {};
-    
-        opticalObjectToClip(arr :  _4D_VEC_) : _4D_VEC_ {
-            const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, arr, [4, 4], [4, 1]) as _4D_VEC_;
-            const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
-            return pers_div;
-        };
-    
-        clipToOpticalObject(arr :  _4D_VEC_) : _4D_VEC_ {
-            const rev_pers_div : _4D_VEC_ = _Matrix.scaMult(arr[3], arr, true) as _4D_VEC_;
-            const rev_orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
-            return rev_orig_proj;
-        };
-    }
-
-    const _ClipSpace = new ClipSpace()
-    
-    class ScreenSpace {
-        constructor() {};
-    
-        clipToScreen(arr :  _4D_VEC_) : _4D_VEC_ | _ERROR_ {
-            if (arr[2] >= -1.1 && arr[2] <= 1.1 && arr[2] != Infinity) {
-                arr[2] = -arr[2];
-                // -array[2] (-z) reverse point for left to right hand coordinate system
-                const [i, j, k, l] = _Clip.unclipCoords(arr);
-                const [x, y, z, w] = _Clip.toCanvas([i, j, k, l]);
-                return [x, y, z, w];
-            }
-            else return _ERROR_._SCREEN_SPACE_ERROR_;
-        };
-    
-        screenToClip(arr :  _4D_VEC_) : _4D_VEC_  {
-            const [i, j, k, l] = _Clip.canvasTo(arr);
-            const [x, y, z, w] = _Clip.clipCoords([i, j, k, l]);
-            // -array[2] (-z) reverse point for right to left hand coordinate system
-            return  [x, y, -z, w];
-        };
-    }
-
-    const _ScreenSpace = new ScreenSpace();
+    const _WorldSpace = new WorldSpace();
 
     interface OPTICALELEMENT {
         instance_number : number;
@@ -1407,7 +1366,7 @@
         }
         
         setCoordSystem(){
-            const DIFF: _3D_VEC_ = _Matrix.matAdd(this._LOOK_AT_POINT, this.instance._USED_POS, true) as _3D_VEC_;
+            const DIFF: _3D_VEC_ = _Matrix.matAdd(this.instance._LOOK_AT_POINT, this.instance._USED_POS, true) as _3D_VEC_;
             const UP: _3D_VEC_ = [0, 1, 0];
             
             this.instance._N = _Vector.normalizeVec(DIFF) as _3D_VEC_;
@@ -1416,25 +1375,25 @@
         }
         
         setConversionMatrices(){
-          this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _16D_VEC_;
+            this.instance._MATRIX = [...this.instance._U, this.instance._C[0], ...this.instance._V, this.instance._C[1], ...this.instance._N, this.instance._C[2], ...[0, 0, 0, 1]] as _16D_VEC_;
             this.instance._INV_MATRIX = _Matrix.getInvMat(this.instance._MATRIX, 4) as _16D_VEC_;
         }
     
         setLookAtPos(look_at_point: _3D_VEC_) {
             look_at_point[2] = -look_at_point[2];// reverse point for right to left hand coordinate system
-            this._LOOK_AT_POINT = look_at_point;
+            this.instance._LOOK_AT_POINT = look_at_point;
             
             this.setCoordSystem()
             this.setConversionMatrices()
         }
     
-        rotate(plane: _PLANE_, angle: number): void | _ERROR_._ERROR_ {
+        rotate(plane: _PLANE_, angle: number): void | _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_ {
             if (plane === "U-V") {
                 const _U_N = _Quartenion.q_rot(angle, this.instance._U, this.instance._N);
                 const _V_N = _Quartenion.q_rot(angle, this.instance._V, this.instance._N);
     
-                if (typeof _U_N === "number") return _ERROR_._ERROR_
-                if (typeof _V_N === "number") return _ERROR_._ERROR_
+                if (typeof _U_N === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
+                if (typeof _V_N === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
                 this.instance._U = _U_N as _3D_VEC_;
                 this.instance._V = _V_N as _3D_VEC_;
     
@@ -1442,8 +1401,8 @@
                 const _U_V = _Quartenion.q_rot(angle, this.instance._U, this.instance._V);
                 const _V_N = _Quartenion.q_rot(angle, this.instance._V, this.instance._N);
     
-                if (typeof _U_V === "number") return _ERROR_._ERROR_
-                if (typeof _V_N === "number") return _ERROR_._ERROR_
+                if (typeof _U_V === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
+                if (typeof _V_N === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
                 this.instance._U = _U_V as _3D_VEC_;
                 this.instance._V = _V_N as _3D_VEC_;
     
@@ -1451,8 +1410,8 @@
                 const _U_V = _Quartenion.q_rot(angle, this.instance._U, this.instance._V);
                 const _U_N = _Quartenion.q_rot(angle, this.instance._U, this.instance._N);
     
-                if (typeof _U_V === "number") return _ERROR_._ERROR_
-                if (typeof _U_N === "number") return _ERROR_._ERROR_
+                if (typeof _U_V === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
+                if (typeof _U_N === "number") return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_
                 this.instance._U = _U_V as _3D_VEC_;
                 this.instance._V = _U_N as _3D_VEC_;
             }
@@ -1485,13 +1444,55 @@
         }
     }
 
+    class ClipSpace {
+        constructor() {};
+    
+        opticalObjectToClip(arr :  _4D_VEC_) : _4D_VEC_ {
+            const orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, arr, [4, 4], [4, 1]) as _4D_VEC_;
+            const pers_div : _4D_VEC_ = _Matrix.scaMult(1 / orig_proj[3], orig_proj, true) as _4D_VEC_;
+            return pers_div;
+        };
+    
+        clipToOpticalObject(arr :  _4D_VEC_) : _4D_VEC_ {
+            const rev_pers_div : _4D_VEC_ = _Matrix.scaMult(arr[3], arr, true) as _4D_VEC_;
+            const rev_orig_proj : _4D_VEC_ = _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, rev_pers_div, [4, 4], [4, 1]) as _4D_VEC_;
+            return rev_orig_proj;
+        };
+    }
+
+    const _ClipSpace = new ClipSpace();
+    
+    class ScreenSpace {
+        constructor() {};
+    
+        clipToScreen(arr :  _4D_VEC_) : _4D_VEC_ | _ERROR_ {
+            if (arr[2] >= -1.1 && arr[2] <= 1.1 && arr[2] != Infinity) {
+                arr[2] = -arr[2];
+                // -array[2] (-z) reverse point for left to right hand coordinate system
+                const [i, j, k, l] = _Clip.unclipCoords(arr);
+                const [x, y, z, w] = _Clip.toCanvas([i, j, k, l]);
+                return [x, y, z, w];
+            }
+            else return _ERROR_._SCREEN_SPACE_ERROR_;
+        };
+    
+        screenToClip(arr :  _4D_VEC_) : _4D_VEC_  {
+            const [i, j, k, l] = _Clip.canvasTo(arr);
+            const [x, y, z, w] = _Clip.clipCoords([i, j, k, l]);
+            // -array[2] (-z) reverse point for right to left hand coordinate system
+            return  [x, y, -z, w];
+        };
+    }
+
+    const _ScreenSpace = new ScreenSpace();
+
     class OpticalElement_Objects{
         optical_element_array : OpticalElement[]
         instance_number : number;
         arrlen : number;
 
-        selected_light_instance : number;
-        selected_camera_instance : number;
+        selected_light_instances : object;
+        selected_camera_instances : object;
 
         max_camera_instance_number : number;
         max_light_instance_number : number;
@@ -1502,8 +1503,8 @@
         {
             this.arrlen = 0;
             this.instance_number = 0;
-            this.selected_light_instance = 0;
-            this.selected_camera_instance = 0;
+            this.selected_light_instances = {};
+            this.selected_camera_instances = {};
             this.createNewCameraObject();
             this.createNewCameraObject();
         }
@@ -1537,6 +1538,12 @@
                     this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
                 }
             }
+
+            if (instance_number_input in this.selected_camera_instances) delete this.selected_camera_instances[instance_number_input];
+            if (instance_number_input in this.selected_light_instances) delete this.selected_light_instances[instance_number_input];
+
+            if (Object.keys(this.selected_camera_instances).length === 0) this.selected_camera_instances[0] = 0;
+            if (Object.keys(this.selected_light_instances).length === 0) this.selected_light_instances[1] = 1;
         }
 
         deleteCameraObject(instance_number_input : number) : void {
@@ -1589,1487 +1596,366 @@
             this.arrlen = this.optical_element_array.length;
         }
 
-        select_camera_instance(instance_number_input : number) : void{
-            
+        // doesn't delete the first two
+        deleteAllOpticalObjects():void{
+            for (const key in this.instance_number_to_list_map){
+                const index = this.instance_number_to_list_map[key];
+                if (index > 1)
+                {
+                    this.deleteOpticalObject(Number(key),index);
+                }
+            }
+            this.arrlen = this.optical_element_array.length;
+        }
+
+        select_camera_instance(instance_number_input : number) : void{            
+            if (instance_number_input !== 1 && instance_number_input <= this.max_camera_instance_number){            
+                const selection = this.instance_number_to_list_map[instance_number_input];    
+                if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_camera_instances[instance_number_input] = selection;
+            }
+        }
+
+        deselect_camera_instance(instance_number_input : number) : void | _ERROR_{
             if (instance_number_input !== 1 && instance_number_input <= this.max_camera_instance_number){
-            
-                 const selection = this.instance_number_to_list_map[instance_number_input];
-    
-                if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_camera_instance = selection;
+                if (instance_number_input in this.selected_camera_instances){
+                    const selection = this.instance_number_to_list_map[instance_number_input];
+                    if (this.optical_element_array[selection].instance.optical_type === "camera") delete this.selected_camera_instances[instance_number_input];
+
+                    if (Object.keys(this.selected_camera_instances).length === 0){
+                        this.selected_camera_instances[0] = 0;
+                        if (instance_number_input === 0) return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;                
+                    }
                 }
             }
         }
 
-        select_light_instance (instance_number_input : number) : void{
-            
+        select_light_instance(instance_number_input : number) : void{            
+            if (instance_number_input !== 0 && instance_number_input <= this.max_light_instance_number){            
+                const selection = this.instance_number_to_list_map[instance_number_input]    
+                if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_light_instances[instance_number_input] = selection;
+            }
+        }
+
+        deselect_light_instance(instance_number_input : number) : void | _ERROR_{
             if (instance_number_input !== 0 && instance_number_input <= this.max_light_instance_number){
-            
-                 const selection = this.instance_number_to_list_map[instance_number_input];
-    
-                if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_camera_instance = selection;
+                if (instance_number_input in this.selected_light_instances){
+                    const selection = this.instance_number_to_list_map[instance_number_input];
+                    if (this.optical_element_array[selection].instance.optical_type === "light") delete this.selected_light_instances[instance_number_input];
+
+                    if (Object.keys(this.selected_light_instances).length === 0){
+                        this.selected_light_instances[1] = 1;
+                        if (instance_number_input === 1) return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;  
+                    }
                 }
             }
         }
 
-        render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
-            var world_to_optical_object_space : _4D_VEC_ = [0,0,0,0];
+        // render(vertex : _3D_VEC_,optical_type : _OPTICAL_) : _4D_VEC_ | _ERROR_{
+        //     var world_to_optical_object_space : _4D_VEC_ = [0,0,0,0];
 
-            switch (optical_type){
-                case "none" : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
-                case "camera" : world_to_optical_object_space = this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
-                case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
-            }
+        //     switch (optical_type){
+        //         case "none" : return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;
+        //         case "camera" : world_to_optical_object_space = this.optical_element_array[this.selected_camera_instance].worldToOpticalObject(vertex);
+        //         case "light" : world_to_optical_object_space =  this.optical_element_array[this.selected_light_instance].worldToOpticalObject(vertex);
+        //     }
 
-            const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.opticalObjectToClip(world_to_optical_object_space);
-            return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
-        }
+        //     const optical_object_to_clip_space : _4D_VEC_ = _ClipSpace.opticalObjectToClip(world_to_optical_object_space);
+        //     return _ScreenSpace.clipToScreen(optical_object_to_clip_space);
+        // }
     }
 
     const _Optical_Objects = new OpticalElement_Objects()
 
     class ObjectManager{}
 
-      class RENDER {
+    class PointLight{}
 
-        kernel_Size : number;
-        sigma_xy : number;
-        sampleArr : any [];
-        TotalArea : number;
-        triA : number;
-        triB : number;
-        triC : number;
-        aRatio: number;
-        bRatio : number;
-        cRatio : number;
-        opacityCoeff : number;
-        render : boolean;
-        shader : boolean;
-        Alight : _4D_VEC_ | _ERROR_;
-        Blight : _4D_VEC_ | _ERROR_;
-        Clight : _4D_VEC_ | _ERROR_;
-        Acam : _4D_VEC_ | _ERROR_;
-        Bcam : _4D_VEC_ | _ERROR_;
-        Ccam : _4D_VEC_ | _ERROR_;
-        avec : _3D_VEC_;
-        bvec : _3D_VEC_;
-        cvec : _3D_VEC_;
-        colA : _4D_VEC_;
-        colB : _4D_VEC_;
-        colC : _4D_VEC_;
+    class DirectionalLight{}
+
+    class SpotLight{}
+
+    class AreaLight{}
+
+    class AmbientLight{}
+
+    class AmbientLighting{}
+
+    class DiffuseLighting{}
+
+    class SpecularLighting{}
+
+    class FlatShading{}
+
+    class GouraudShading{}
+
+    class PhongShading{}
+
+    class BlinnPhongShading{}
+
+    //   class RENDER {
+
+    //     kernel_Size : number;
+    //     sigma_xy : number;
+    //     sampleArr : any [];
+    //     TotalArea : number;
+    //     triA : number;
+    //     triB : number;
+    //     triC : number;
+    //     aRatio: number;
+    //     bRatio : number;
+    //     cRatio : number;
+    //     opacityCoeff : number;
+    //     avec : _3D_VEC_;
+    //     bvec : _3D_VEC_;
+    //     cvec : _3D_VEC_;
+    //     colA : _4D_VEC_;
+    //     colB : _4D_VEC_;
+    //     colC : _4D_VEC_;
         
-        constructor() {
-            this.kernel_Size = 3;
-            this.sigma_xy = 1;
-            this.sampleArr = [];
-            this.TotalArea = 0;
-            this.triA = 0;
-            this.triB = 0;
-            this.triC = 0;
-            this.aRatio = 0;
-            this.bRatio = 0;
-            this.cRatio = 0;
-            this.opacityCoeff = 0;
-            this.render = false;
-            this.shader = false;
-            this.avec : [0, 0, 0];
-            this.bvec : [0, 0, 0];
-            this.cvec : [0, 0, 0];
-            this.colA : [0, 0, 0, 0];
-            this.colB : [0, 0, 0, 0];
-            this.colC : [0, 0, 0, 0];
-            this.Alight = new Array() as _4D_VEC_; 
-            this.Blight = new Array() as _4D_VEC_;
-            this.Clight = new Array() as _4D_VEC_;
-            this.Acam = new Array()  as _4D_VEC_;
-            this.Bcam = new Array()  as _4D_VEC_;
-            this.Ccam = new Array()  as _4D_VEC_;
-            this.sample();
-        }
-
-        initParams(...vertArray : _3_7_MAT_) {
-            this.avec = vertArray[0].slice(0, 3) as _3D_VEC_;
-            this.bvec = vertArray[1].slice(0, 3) as _3D_VEC_;
-            this.cvec = vertArray[2].slice(0, 3) as _3D_VEC_;
-            this.colA = vertArray[0].slice(3) as _4D_VEC_;
-            this.colB = vertArray[1].slice(3) as _4D_VEC_;
-            this.colC = vertArray[2].slice(3) as _4D_VEC_;
-        }
-
-        interpolate(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
-
-            const indexList = [0, 1];
-            const Adist = _Miscellenous.getDist(bvec, cvec, indexList),
-                Bdist = _Miscellenous.getDist(avec, cvec, indexList),
-                Cdist = _Miscellenous.getDist(avec, bvec, indexList),
-                apdist = _Miscellenous.getDist(pvec, avec, indexList),
-                bpdist = _Miscellenous.getDist(pvec, bvec, indexList),
-                cpdist = _Miscellenous.getDist(pvec, cvec, indexList);
-
-            this.TotalArea = _Miscellenous.getTriArea(Adist, Bdist, Cdist);
-            this.triA = _Miscellenous.getTriArea(Adist, bpdist, cpdist);
-            this.triB = _Miscellenous.getTriArea(Bdist, apdist, cpdist);
-            this.triC = _Miscellenous.getTriArea(Cdist, apdist, bpdist);
-
-            this.aRatio = this.triA / this.TotalArea;
-            this.bRatio = this.triB / this.TotalArea;
-            this.cRatio = this.triC / this.TotalArea;
-
-            const
-                aPa : _3D_VEC_ = _Matrix.scaMult(this.aRatio, avec) as _3D_VEC_,
-                bPb : _3D_VEC_ = _Matrix.scaMult(this.bRatio, bvec) as _3D_VEC_,
-                cPc : _3D_VEC_ = _Matrix.scaMult(this.cRatio, cvec) as _3D_VEC_;
-
-            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc) as _3D_VEC_;
-        }
-
-        getBoundingRect(...vertices : _3_3_MAT_) : _4D_VEC_ {
-            return this.getBoundingRectImpl(vertices);
-        }
-
-        getBoundingRectImpl(vertices : _3_3_MAT_) : _4D_VEC_ {
-            var n = vertices.length;
-            var xArr : _3D_VEC_ = [0,0,0];
-            var yArr : _3D_VEC_ = [0,0,0];
-            var xmin = Infinity;
-            var ymin = Infinity;
-            var xmax = 0;
-            var ymax = 0;
-
-            for (let i = 0; i < n; i++) {
-                xArr[i] = vertices[i][0];
-                yArr[i] = vertices[i][1];
-
-                if (xArr[i] < xmin) {
-                    xmin = xArr[i];
-                }
-
-                if (yArr[i] < ymin) {
-                    ymin = yArr[i];
-                }
-
-                if (xArr[i] > xmax) {
-                    xmax = xArr[i];
-                }
-
-                if (yArr[i] > ymax) {
-                    ymax = yArr[i];
-                }
-            }
-
-            return [xmin, ymin, xmax - xmin, ymax - ymin];
-        }
-
-        isInsideTri() : boolean {
-            var sum = this.triA + this.triB + this.triC
-            if (Math.round(sum) === Math.round(this.TotalArea)) {
-                return true;
-            }
-            return false;
-        }
-
-        sample() : void { //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
-            // Mean is taken as zero
-
-            this.kernel_Size = this.kernel_Size
-            const denom_ = ((2 * Math.PI) * (this.sigma_xy ** 2));
-            if (this.kernel_Size > 1 && this.kernel_Size % 2 === 1) {
-                const modifier = (this.kernel_Size - 1) / 2;
-                for (let i = 0; i < this.kernel_Size; i++) {
-                    const val_y = i - modifier;
-                    for (let j = 0; j < this.kernel_Size; j++) {
-                        const val_x = j - modifier;
-                        const numer_ = Math.exp(-((val_x ** 2) + (val_y ** 2)) / (4 * (this.sigma_xy ** 2)));
-                        this.sampleArr.push([val_x, val_y, numer_ / denom_]);
-                    }
-                }
-            }
-        }
-
-        partSample(x : number, y : number) : any[] {
-            const part_sample_arr : any [] = []
-
-            for (let sample of this.sampleArr) {
-                var val_x = sample[0] + x;
-                var val_y = sample[1] + y;
-
-                if (val_x < 0) {
-                    val_x = 0;
-                } else if (val_x >= MODIFIED_PARAMS._CANVAS_WIDTH) {
-                    val_x = MODIFIED_PARAMS._CANVAS_WIDTH - 1;
-                }
-                if (val_y < 0) {
-                    val_y = 0;
-                } else if (val_y >= MODIFIED_PARAMS._CANVAS_HEIGHT) {
-                    val_y = MODIFIED_PARAMS._CANVAS_HEIGHT - 1;
-                }
-
-                part_sample_arr.push([val_x, val_y, sample[2]]);
-            }
-
-            return part_sample_arr;
-        }
-
-        vertexShader() : void | _ERROR_ {
- 
-                this.Alight = _Optical_Objects.render(this.avec,"light");
-                if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_;
-                this.Blight = _Optical_Objects.render(this.bvec,"light");
-                if (typeof this.Blight === "number") return _ERROR_._NO_ERROR_;
-                this.Clight = _Optical_Objects.render(this.cvec,"light");
-                if (typeof this.Clight === "number") return _ERROR_._NO_ERROR_;
-                
-        }
-
-        vertRend() {
-                
-                    this.Acam = _Optical_Objects.render(this.avec,"camera");
-                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-                    this.Bcam = _Optical_Objects.render(this.bvec,"camera");
-                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-                    this.Ccam = _Optical_Objects.render(this.cvec,"camera");
-                    if (typeof this.Alight === "number") return _ERROR_._NO_ERROR_
-
-        }
-
-        fragmentShader() {
-            if (this.render === true) {
-                // Get 2d bounding rectangle
-                const ret = this.getBoundingRect(this.Alight, this.Blight, this.Clight),
-                    // Simple rasterizing function
-                    minX = Math.round(Math.max(ret[0], 0)),
-                    minY = Math.round(Math.max(ret[1], 0)),
-                    maxX = Math.round(Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH)),
-                    maxY = Math.round(Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT));
-
-                // Get Gaussian distribution array for particular pixel
-
-                for (let x = minX; x <= maxX; x++) {
-                    for (let y = minY; y <= maxY; y++) {
-
-                        const point = [
-                            [x],
-                            [y]
-                        ];
-
-                        var interArray = this.interpolate(point, this.A, this.B, this.C);
-
-                        if (this.isInsideTri() === true) {
-                            const aCola = _Matrix.scaMult(this.aRatio, this.colA);
-                            const bColb = _Matrix.scaMult(this.bRatio, this.colB);
-                            const cColc = _Matrix.scaMult(this.cRatio, this.colC);
-                            var pColp = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
-
-                            if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
-                                this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0] = pColp[0];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1] = pColp[1];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2] = pColp[2];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3] = pColp[3];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        fragRend() {
-            if (this.render === true) {
-                // Get 2d bounding rectangle
-                const ret = this.getBoundingRect(this.A, this.B, this.C),
-                    // Simple rasterizing function
-                    minX = Math.round(Math.max(ret[0], 0)),
-                    minY = Math.round(Math.max(ret[1], 0)),
-                    maxX = Math.round(Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH)),
-                    maxY = Math.round(Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT));
-
-                // Get Gaussian distribution array for particular pixel
-
-                for (let x = minX; x <= maxX; x++) {
-                    for (let y = minY; y <= maxY; y++) {
-
-                        const point = [
-                            [x],
-                            [y]
-                        ];
-
-                        var interArray = this.interpolate(point, this.A, this.B, this.C);
-
-                        if (this.isInsideTri() === true) {
-                            const aCola = _Matrix.scaMult(this.aRatio, this.colA);
-                            const bColb = _Matrix.scaMult(this.bRatio, this.colB);
-                            const cColc = _Matrix.scaMult(this.cRatio, this.colC);
-                            var pColp = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
-
-                            if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
-                                this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0] = pColp[0];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1] = pColp[1];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2] = pColp[2];
-                                this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3] = pColp[3];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        show() {
-            // Normalize coordinate system to use CSS pixels
-
-            octx.scale(this.scale, this.scale);
-            ctx.scale(this.scale, this.scale);
-
-            for (let y = 0; y < MODIFIED_PARAMS._CANVAS_HEIGHT; y++) {
-                for (let x = 0; x < MODIFIED_PARAMS._CANVAS_WIDTH; x++) {
-                    const r = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0];
-                    const g = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1];
-                    const b = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2];
-                    const alpha = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3];
-                    if (typeof r !== "undefined" && typeof g != "undefined" && typeof b !== "undeefined") {
-                        octx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha / 255 + ")";
-                        octx.fillRect(x, y, 1, 1);
-                    }
-                }
-            }
-
-            octx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5);
-            ctx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH, MODIFIED_PARAMS._CANVAS_HEIGHT);
-        }
-    }
-
-    
-    class BasicManager {
-        constructor() {
-            _PerspectiveProjection.setPersProjectParam();
-    
-            // canvas.addEventListener("mousemove", (event) => this.pick(event, hovered));
-            // canvas.addEventListener("click", (event) => this.pick(event, selected));
-            // canvas.addEventListener("click", (event) => this.selectionManager(event));
-        }
-    }
-
-    const _Basic_Manager = new BasicManager();
-
-    
-    class DrawCanvas {
-        protected static drawCount = 0;
-        constructor()
-        {
-            window.addEventListener("resize", () => this.drawCanvas());
-        }
-        drawCanvas() {
-            canvas.style.borderStyle = MODIFIED_PARAMS._BORDER_STYLE;
-            canvas.style.borderWidth = MODIFIED_PARAMS._BORDER_WIDTH;
-            canvas.style.borderColor = MODIFIED_PARAMS._BORDER_COLOR;
-            canvas.style.opacity = MODIFIED_PARAMS._GLOBAL_ALPHA;
-            canvas.width = MODIFIED_PARAMS._CANVAS_WIDTH;
-            canvas.height = MODIFIED_PARAMS._CANVAS_HEIGHT;
-
-            DrawCanvas.drawCount++;
-        }
-    }   
-
-    const _DrawCanvas = new DrawCanvas()
-
-    _DrawCanvas.drawCanvas()
-
-    
-    // const point = [0.5, 0.8, 0.9];
-    // const a = basic_manager.objectRotate(point, basic_manager.Y, 90, "object");
-    // console.log(a)
-    // const b = basic_manager.objectRotate(a, basic_manager.Y, -90, "local")
-    // console.log(b)
-    // const c = basic_manager.ObjectTransform(a, [20, 10, 4], "world")
-    // console.log(c)
-    // const d = basic_manager.objectRevolve(c, basic_manager.Y, 90, "world")
-    // console.log(d)
-    // const e = basic_manager.worldToOpticalObjectCamera(d);
-    // const f = basic_manager.cameraToWorld(e);
-    // console.log(e, f);
-    // const g = basic_manager.cameraToClip(e);
-    // const h = basic_manager.clipToCamera(g);
-    // console.log(g, h)
-    // const k = basic_manager.clipToScreen(g);
-    // const l = basic_manager.screenToClip(k);
-    // console.log(k, l)
-    // const w = basic_manager.ObjectTransform(f, [-20, -10, -4], "world")
-    // console.log(w)
-    
-    // class CanvasObject {
     //     constructor() {
-    //         // default values
-    //         this.base_vertices = [];
-    //         this.vertices_sign = [];
-    //         this.center = [0, 0, 0];
-    //         this.id = null;
-    //         this.exists = true;
-    //         this.depth_occlusion = true;
-    //         this.comp_error = compatibilitySettings.compatibility_error;
-    //         this.space = "local"; // Possible values: local/object, world, camera/view, clip, screen
-    //     }
-    
-    //     is_x_value(vertex_array_index) {
-    //         if (vertex_array_index % 3 == 0) return true
-    //         else return false;
-    //     }
-    
-    //     is_y_value(vertex_array_index) {
-    //         if (vertex_array_index % 3 == 1) return true
-    //         else return false;
-    //     }
-    
-    //     is_z_value(vertex_array_index) {
-    //         if (vertex_array_index % 3 == 2) return true
-    //         else return false;
-    //     }
-    
-    //     add_vertices(vertex_array, add_vertex_array) {}
-    
-    //     clear_all_vertices(vertex_array) {}
-    
-    //     clear_selected_vertex(vertex_array, vertex_id_array) {}
-    // }
-    
-    // class GridObject extends CanvasObject {
-    //     constructor(width, height, aspect_ratio, num) {
-    //         super();
-    //     }
-    
-    //     refreshParams(width, height, aspect_ratio, num = this.num) {
-    //         this.width = width;
-    //         this.height = height;
-    //         this.aspect_ratio = aspect_ratio;
-    //         this.refreshLines(num);
-    //     }
-    
-    //     refreshLines(num) {
-    //         this.num = num;
-    //         if (this.aspectRatio > 1) {
-    //             this.numX = Math.round(num * this.aspectRatio);
-    //             this.numY = num;
-    //         } else {
-    //             this.numX = num;
-    //             this.numY = Math.round(num * (1 / this.aspectRatio));
-    //         }
-    //         this.verList = new Int16Array(this.numX + 1);
-    //         this.horList = new Int16Array(this.numY + 1);
-    //         this.generateGridVertices();
-    //         this.drawLines(ctx, "blue", 2);
-    //     }
-    
-    //     generateGridVertices() {
-    //         this.vlen = this.verList.length;
-    //         this.hlen = this.horList.length;
-    //         this.canvas_grid_vert = new Int16Array(this.hlen * this.vlen * 3);
-    //         for (let y = 0; y < this.hlen; y++) {
-    //             for (let x = 0; x < this.vlen; x++) {
-    //                 const mult = y * this.vlen * 3 + x * 3;
-    //                 this.canvas_grid_vert[mult] = this.verList[x];
-    //                 this.canvas_grid_vert[mult + 1] = this.horList[y];
-    //                 this.canvas_grid_vert[mult + 3] = 0;
-    //             }
-    //         }
-    //     }
-    
-    //     lineMatrixHorizontal(R, ctx, color, lineWidth) { //the horizontal lines
-    //         let hor = this.numY / R;
-    //         ctx.beginPath();
-    //         ctx.moveTo(0, Math.round(this.height / hor));
-    //         ctx.lineTo(Math.round(this.width), Math.round(this.height / hor));
-    //         ctx.strokeStyle = color;
-    //         ctx.lineWidth = lineWidth;
-    //         ctx.stroke();
-    //         ctx.closePath();
-    
-    //         this.horList[R] = Math.round(this.height / hor);
-    //         return this.horList;
-    //     }
-    
-    //     lineMatrixVertical(R, ctx, color, lineWidth) { //the vertical lines
-    //         var ver = this.numX / R;
-    //         ctx.beginPath();
-    //         ctx.moveTo(Math.round(this.width / ver), 0);
-    //         ctx.lineTo(Math.round(this.width / ver), Math.round(this.height));
-    //         ctx.strokeStyle = color;
-    //         ctx.lineWidth = lineWidth;
-    //         ctx.stroke();
-    //         ctx.closePath();
-    
-    //         this.verList[R] = Math.round(this.width / ver);
-    //         return this.verList;
-    //     }
-    
-    //     drawLines(ctx, color, lineWidth) { //draws the vertical and horizontal canvas lines
-    
-    //         for (let R = 0; R <= this.numY; R++) {
-    //             this.lineMatrixHorizontal(R, ctx, color, lineWidth);
-    //         }
-    
-    //         for (let R = 0; R <= this.numX; R++) {
-    //             this.lineMatrixVertical(R, ctx, color, lineWidth);
-    //         }
-    //     }
-    // }
-    
-    // class ObjectManager extends Counter {
-    //     constructor() {
-    //         super();
-    //         this.counter = 0;
-    //         this.objects_dict = {};
-    //     }
-    //     createObject(instance_of_object) {}
-    //     registerObject() {}
-    //     deleteObject(object_id) {
-    //         delete this.objects_dict[`${object_id}`];
-    //     }
-    // }
-    
-    
-    // // var obj2 = {
-    // //     "0": [
-    // //         { object_id: 0, object_name: 'Square_Object_0', object_vertices: [2, 5, 3.8] },
-    // //     ],
-    // //     "1": [
-    // //         { object_id: 1, object_name: 'Circle_Object_0', object_vertices: [7, 8, 3.9] }
-    // //     ]
-    // // }
-    
-    // class RefreshObjects extends ObjectManager {
-    //     constructor() { super(); }
-    //     refresh_objects(objects, basic_m) {
-    //         const object_len = objects.length;
-    //         for (let i = 0; i < object_len; i++) {
-    //             objects[i].refreshParams(basic_m.width, basic_m.height, basic_m.aspect_ratio);
-    //         }
-    //     }
-    // }
-    
-    
-    // class CanvasManager extends RefreshObjects {
-    //     constructor(basic_m) {
-    //         super();
-    //         this.basic_m = basic_m;
-    //         this.objects = [];
-    
-    //         window.addEventListener('resize', {} = () => {
-    //             this.basic_m.refreshCanvas();
-    //             this.basic_m.setPersProjectParam();
-    
-    //             this.basic_m.object_vertices = [];
-    //             this.basic_m.prev_hovered_vertices_array = [];
-    //             this.basic_m.hovered_vertices_array = [];
-    //             this.basic_m.pre_selected_vertices_array = [];
-    //             this.basic_m.selected_vertices_array = [];
-    
-    //             this.refresh_objects(this.objects, basic_m);
-    //         });
-    //     }
-    // }
-
-   
-
-    // class DrawObject {
-    //     constructor(vertexRadius, lineWidth) {
-    //         this.vertR = vertexRadius
-    //         this.LineW = lineWidth
+    //         this.kernel_Size = 3;
+    //         this.sigma_xy = 1;
+    //         this.sampleArr = [];
+    //         this.TotalArea = 0;
+    //         this.triA = 0;
+    //         this.triB = 0;
+    //         this.triC = 0;
+    //         this.aRatio = 0;
+    //         this.bRatio = 0;
+    //         this.cRatio = 0;
+    //         this.opacityCoeff = 0;
+    //         this.avec = [0, 0, 0];
+    //         this.bvec = [0, 0, 0];
+    //         this.cvec = [0, 0, 0];
+    //         this.colA = [0, 0, 0, 0];
+    //         this.colB = [0, 0, 0, 0];
+    //         this.colC = [0, 0, 0, 0];
+    //         this.sample();
     //     }
 
-    //     drawVertex(point, fill = "black", stroke = fill) {
-    //         ctx.beginPath()
-    //         ctx.arc(point[0][0], point[1][0], this.vertR, 0, 2 * Math.PI)
-    //         ctx.lineWidth = this.LineW
-    //         ctx.strokeStyle = stroke
-    //         ctx.stroke()
-    //         ctx.fillStyle = fill
-    //         ctx.fill()
+    //     initParams(...vertArray : _3_7_MAT_) {
+    //         this.avec = vertArray[0].slice(0, 3) as _3D_VEC_;
+    //         this.bvec = vertArray[1].slice(0, 3) as _3D_VEC_;
+    //         this.cvec = vertArray[2].slice(0, 3) as _3D_VEC_;
+    //         this.colA = vertArray[0].slice(3) as _4D_VEC_;
+    //         this.colB = vertArray[1].slice(3) as _4D_VEC_;
+    //         this.colC = vertArray[2].slice(3) as _4D_VEC_;
     //     }
 
-    //     drawCircle(point, fill = "black", stroke = fill, radius) {
-    //         ctx.beginPath()
-    //         ctx.arc(point[0][0], point[1][0], radius, 0, 2 * Math.PI)
-    //         ctx.lineWidth = this.LineW
-    //         ctx.strokeStyle = stroke
-    //         ctx.stroke()
-    //         ctx.fillStyle = fill
-    //         ctx.fill()
+    //     private interpolate(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
+
+    //         const indexList = [0, 1];
+    //         const Adist = _Miscellenous.getDist(bvec, cvec, indexList),
+    //             Bdist = _Miscellenous.getDist(avec, cvec, indexList),
+    //             Cdist = _Miscellenous.getDist(avec, bvec, indexList),
+    //             apdist = _Miscellenous.getDist(pvec, avec, indexList),
+    //             bpdist = _Miscellenous.getDist(pvec, bvec, indexList),
+    //             cpdist = _Miscellenous.getDist(pvec, cvec, indexList);
+
+    //         this.TotalArea = _Miscellenous.getTriArea(Adist, Bdist, Cdist);
+    //         this.triA = _Miscellenous.getTriArea(Adist, bpdist, cpdist);
+    //         this.triB = _Miscellenous.getTriArea(Bdist, apdist, cpdist);
+    //         this.triC = _Miscellenous.getTriArea(Cdist, apdist, bpdist);
+
+    //         this.aRatio = this.triA / this.TotalArea;
+    //         this.bRatio = this.triB / this.TotalArea;
+    //         this.cRatio = this.triC / this.TotalArea;
+
+    //         const
+    //             aPa : _3D_VEC_ = _Matrix.scaMult(this.aRatio, avec) as _3D_VEC_,
+    //             bPb : _3D_VEC_ = _Matrix.scaMult(this.bRatio, bvec) as _3D_VEC_,
+    //             cPc : _3D_VEC_ = _Matrix.scaMult(this.cRatio, cvec) as _3D_VEC_;
+
+    //         return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc) as _3D_VEC_;
     //     }
 
-    //     drawLine(start, end, drawpoint = false, fill = "black", stroke = fill) {
-    //         ctx.beginPath()
-    //         ctx.moveTo(start[0][0], start[1][0])
-    //         ctx.lineTo(end[0][0], end[1][0])
-    //         ctx.lineWidth = this.LineW
-    //         ctx.strokeStyle = stroke
-    //         ctx.stroke()
-    //         ctx.fillStyle = fill
-    //         ctx.fill()
-
-    //         if (drawpoint === true) {
-    //             this.drawVertex(start, fill, stroke)
-    //             this.drawVertex(end, fill, stroke)
-    //         }
-    //     }
-    //     drawTriangle(A, B, C, orientOut = true, drawpoint = false, fill = "black", stroke = fill, diff = false, strokeBool = true) {
-    //         ctx.lineWidth = this.LineW;
-
-    //         if (orientOut === false) {
-    //             if (stroke === fill) {
-    //                 stroke = 'gray';
-    //             }
-    //             fill = 'gray';
-    //         }
-
-    //         ctx.beginPath()
-    //         ctx.moveTo(A[0][0], A[1][0]);
-    //         ctx.lineTo(B[0][0], B[1][0]);
-    //         ctx.lineTo(C[0][0], C[1][0]);
-    //         ctx.strokeStyle = stroke;
-    //         ctx.fillStyle = fill;
-    //         ctx.fill();
-
-    //         if (strokeBool === true) {
-    //             ctx.closePath();
-    //             ctx.stroke();
-    //         }
-
-    //         if (drawpoint === true) {
-    //             if (diff === true) {
-    //                 this.drawVertex(A, 'red');
-    //                 this.drawVertex(B, 'green');
-    //                 this.drawVertex(C, 'blue');
-    //             } else {
-    //                 this.drawVertex(A, fill, stroke);
-    //                 this.drawVertex(B, fill, stroke);
-    //                 this.drawVertex(C, fill, stroke);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // class Counter {
-    //     constructor() {
-    //         this.counter = 0;
+    //     private getBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
+    //         return this.getBoundingRectImpl(vertices);
     //     }
 
-    //     change(value) {
-    //         this.counter = value;
-    //         return this
-    //     }
+    //     private getBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
+    //         var n = vertices.length;
+    //         var xArr : _3D_VEC_ = [0,0,0];
+    //         var yArr : _3D_VEC_ = [0,0,0];
+    //         var xmin = Infinity;
+    //         var ymin = Infinity;
+    //         var xmax = 0;
+    //         var ymax = 0;
 
-    //     add() {
-    //         this.counter++;
-    //         return this
-    //     }
+    //         for (let i = 0; i < n; i++) {
+    //             xArr[i] = vertices[i][0];
+    //             yArr[i] = vertices[i][1];
 
-    //     subtract() {
-    //         this.counter--;
-    //         return this
-    //     }
-
-    //     value() {
-    //         return this.counter;
-    //     }
-    // }
-
-    // const counter = new Counter()
-
-    // // console.log(details)
-    // // console.log(details.mobile)
-
-    // //Default value is right
-    // //arrOp.setHandedness('left')
-
-    // implementDrag.start(canvas)
-
-    // var vertexBuffer = [
-    //     [25, 80, 35, 255, 0, 0, 255], //red
-    //     [5, 30, 30, 0, 255, 0, 255], //green
-    //     [10, 20, 45, 0, 0, 255, 255], //blue
-    //     [15, 15, 25, 255, 255, 255, 255], //white
-    // ]
-
-    // var vertexBuffer2 = [
-    //     [45, 80, 60, 255, 0, 0, 255], //red
-    //     [25, 30, 55, 0, 255, 0, 255], //green
-    //     [30, 20, 70, 0, 0, 255, 255], //blue
-    //     [35, 15, 50, 255, 255, 255, 255], //white
-    // ]
-
-    // var
-    //     w = vertexBuffer[0],
-    //     x = vertexBuffer[1],
-    //     y = vertexBuffer[2],
-    //     z = vertexBuffer[3]
-
-
-    // var o = vertexBuffer2[0],
-    //     p = vertexBuffer2[1],
-    //     q = vertexBuffer2[2],
-    //     r = vertexBuffer2[3]
-
-
-    // class TextureMap {
-    //     constructor(texture, object) {}
-    // }
-
-
-    // //drawObj.drawTriangle(al, bl, cl, undefined, undefined, 'red', 'brown', true, true)
-    // // trObj.initParamsFull(v, w, x)
-    // // trObj.vertRend()
-    // // trObj.fragRend()
-
-    // class SetHalfEdges {
-    //     constructor(vertex_indexes) {
-    //         this.HalfEdgeDict = {};
-    //         this.vert_len = vertex_indexes.length;
-    //         this.vert_array = vertex_indexes;
-    //         this.triangle = [];
-    //         this.last = null;
-    //         this.edge_no = 0;
-
-    //         for (let i = 0; i < this.vert_len; i++) {
-    //             this.setHalfEdge(i);
-    //         }
-
-    //         if (Object.entries(this.HalfEdgeDict).length > 0) {
-    //             this.edge_no--;
-    //             delete this.HalfEdgeDict[`${this.last}-null`];
-    //         }
-
-    //     }
-
-    //     halfEdge(start, end) {
-    //         return {
-    //             vertices: [start, end],
-    //             face_vertices: [],
-    //             twin: null,
-    //             prev: null,
-    //             next: null
-    //         };
-    //     }
-
-    //     setHalfEdge(index) {
-
-    //         const vert_1 = this.vert_array[index];
-    //         var end = null;
-    //         var prev_start = null;
-    //         var next_end = null;
-
-    //         if (index - 1 >= 0) {
-    //             prev_start = this.vert_array[index - 1];
-    //         }
-
-    //         if (index + 1 < this.vert_len) {
-    //             end = this.vert_array[index + 1];
-    //         } else {
-    //             end = null;
-    //         }
-
-    //         if (index + 2 < this.vert_len) {
-    //             next_end = this.vert_array[index + 2];
-    //         } else {
-    //             next_end = null;
-    //         }
-
-    //         if (index === this.vert_len - 1) {
-    //             this.last = this.vert_array[index];
-    //         }
-
-    //         const vert_0 = prev_start
-    //         const vert_2 = end;
-    //         const vert_3 = next_end;
-
-    //         const halfEdgeKey = `${vert_1}-${vert_2}`;
-    //         const prevHalfEdgeKey = `${vert_0}-${vert_1}`
-    //         const nextHalfEdgeKey = `${vert_2}-${vert_3}`;
-    //         const twinHalfEdgeKey = `${vert_2}-${vert_1}`;
-
-    //         if (!this.HalfEdgeDict[halfEdgeKey]) {
-    //             this.HalfEdgeDict[halfEdgeKey] = this.halfEdge(vert_1, vert_2);
-    //             this.edge_no++;
-
-    //             this.HalfEdgeDict[halfEdgeKey].prev = prevHalfEdgeKey;
-    //             this.HalfEdgeDict[halfEdgeKey].next = nextHalfEdgeKey;
-
-
-    //             if ((index % 3 === 0) && index > 0) {
-    //                 this.HalfEdgeDict[prevHalfEdgeKey].face_vertices = this.triangle;
-    //                 this.HalfEdgeDict[this.HalfEdgeDict[prevHalfEdgeKey].prev].face_vertices = this.triangle;
-    //                 this.HalfEdgeDict[this.HalfEdgeDict[this.HalfEdgeDict[prevHalfEdgeKey].prev].prev].face_vertices = this.triangle;
-
-    //                 this.triangle = [];
+    //             if (xArr[i] < xmin) {
+    //                 xmin = xArr[i];
     //             }
 
-    //             this.triangle.push(this.vert_array[index]);
+    //             if (yArr[i] < ymin) {
+    //                 ymin = yArr[i];
+    //             }
 
-    //             if (this.HalfEdgeDict[twinHalfEdgeKey]) {
-    //                 this.HalfEdgeDict[halfEdgeKey].twin = twinHalfEdgeKey;
-    //                 this.HalfEdgeDict[twinHalfEdgeKey].twin = halfEdgeKey;
-    //                 this.edge_no--;
+    //             if (xArr[i] > xmax) {
+    //                 xmax = xArr[i];
+    //             }
+
+    //             if (yArr[i] > ymax) {
+    //                 ymax = yArr[i];
     //             }
     //         }
 
+    //         return [xmin, ymin, xmax - xmin, ymax - ymin];
     //     }
-    // }
 
-    // const indexBuffer = [0, 1, 2, 3, 0, 2, 1, 0, 3, 2];
-    // const indexBuffer2 = [0, 1, 2, 0, 3, 1, 0, 2, 4, 0];
-
-    // const objectDict = {};
-
-    // class TriObject extends SetHalfEdges {
-    //     constructor(vertexBuffer, indexBuffer) {
-    //         super(indexBuffer);
-    //         this.vertexBuffer = vertexBuffer;
-    //         this.indexBuffer = indexBuffer;
-    //         this.vertex_set = new Set(indexBuffer);
-    //         this.vertex_no = this.vertex_set.size;
-
-    //         // From Euler's graph theorem that V - E + F = 2 which can be generalized to V - E + F = n + 1 where n is the number of objects   
-    //         this.face_no = this.edge_no - this.vertex_no + 2;
-
-    //         this.vertex_array = this.vertex_set.values();
-
-    //         this.vertex_keys = Object.keys(this.HalfEdgeDict);
-
-    //         this.vertex_keys_len = this.vertex_keys.length;
-
-    //         for (let i = 0; i < this.vertex_no; i++) {
-    //             this.vertexNormal(this.vertex_array[i]);
+    //     isInsideTri() : boolean {
+    //         var sum = this.triA + this.triB + this.triC
+    //         if (Math.round(sum) === Math.round(this.TotalArea)) {
+    //             return true;
     //         }
-
+    //         return false;
     //     }
 
-    //     vertexNormal(vertex_index) {
-    //         const face_normals = [];
+    //     sample() : void { //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
+    //         // Mean is taken as zero
 
-    //         for (let i = 0; i < this.vertex_keys_len; i++) {
-    //             for (let i = 0; i < 2; i++) {
-    //                 if (Number(this.vertex_keys[i]) === 2) {
-    //                     face_normals.push([])
+    //         this.kernel_Size = this.kernel_Size
+    //         const denom_ = ((2 * Math.PI) * (this.sigma_xy ** 2));
+    //         if (this.kernel_Size > 1 && this.kernel_Size % 2 === 1) {
+    //             const modifier = (this.kernel_Size - 1) / 2;
+    //             for (let i = 0; i < this.kernel_Size; i++) {
+    //                 const val_y = i - modifier;
+    //                 for (let j = 0; j < this.kernel_Size; j++) {
+    //                     const val_x = j - modifier;
+    //                     const numer_ = Math.exp(-((val_x ** 2) + (val_y ** 2)) / (4 * (this.sigma_xy ** 2)));
+    //                     this.sampleArr.push([val_x, val_y, numer_ / denom_]);
     //                 }
     //             }
     //         }
     //     }
 
-    //     faceNormal() {}
-    // }
+    //     partSample(x : number, y : number) : any[] {
+    //         const part_sample_arr : any [] = []
 
-    // class TriObjects extends InterPolRend {
-    //     constructor(canvas, ocanvas, menu) {
-    //         super(canvas, ocanvas, menu)
-    //             // Function closure to increment the number of objects added.
-    //         this.count = (function() {
-    //             var count = 0;
-    //             return function() {
-    //                 return count++;
+    //         for (let sample of this.sampleArr) {
+    //             var val_x = sample[0] + x;
+    //             var val_y = sample[1] + y;
+
+    //             if (val_x < 0) {
+    //                 val_x = 0;
+    //             } else if (val_x >= MODIFIED_PARAMS._CANVAS_WIDTH) {
+    //                 val_x = MODIFIED_PARAMS._CANVAS_WIDTH - 1;
     //             }
-    //         })();
+    //             if (val_y < 0) {
+    //                 val_y = 0;
+    //             } else if (val_y >= MODIFIED_PARAMS._CANVAS_HEIGHT) {
+    //                 val_y = MODIFIED_PARAMS._CANVAS_HEIGHT - 1;
+    //             }
 
-    //         this.project(bNz, bFz, bAng);
-    //         this.setCamera(0, 0, 0, 0, 0, 20);
-    //         this.setLight(-10, -10, -10);
-    //         this.setObjTransfMat(1, 1, 1, 0, 0, 0, 0, 0, 0);
+    //             part_sample_arr.push([val_x, val_y, sample[2]]);
+    //         }
 
-    //         this.object_dict = {};
-    //         console.log(this)
-
+    //         return part_sample_arr;
     //     }
 
-    //     // Starts counting the objects from 1
-    //     createTriObject(vertexBuffer, indexBuffer) {
-    //         this.object_dict[`${this.count()}`] = new TriObject(vertexBuffer, indexBuffer);
+    //     private vertexTransform() : _3_4_MAT_ | _ERROR_  { 
+    //         const a_light : _4D_VEC_ | _ERROR_ = _Optical_Objects.render(this.avec,"light");
+    //         if (typeof a_light === "number") return _ERROR_._NO_ERROR_;
+    //         const b_light : _4D_VEC_ | _ERROR_ = _Optical_Objects.render(this.avec,"light");
+    //         if (typeof b_light === "number") return _ERROR_._NO_ERROR_;
+    //         const c_light : _4D_VEC_ | _ERROR_ = _Optical_Objects.render(this.avec,"light");
+    //         if (typeof c_light === "number") return _ERROR_._NO_ERROR_;
+
+    //         return [a_light,b_light,c_light];
     //     }
 
-    // }
+    //     private vertexShader(){}
 
-    // let trObj = new TriObjects(canvas, ocanvas, menu);
-    // trObj.createTriObject(vertexBuffer, indexBuffer);
-    // trObj.createTriObject(vertexBuffer2, indexBuffer2)
+    //     private fragmentTransform() {
+    //             // Get 2d bounding rectangle
+    //             const ret = this.getBoundingRect(this.A, this.B, this.C),
+    //                 // Simple rasterizing function
+    //                 minX = Math.round(Math.max(ret[0], 0)),
+    //                 minY = Math.round(Math.max(ret[1], 0)),
+    //                 maxX = Math.round(Math.min(ret[0] + ret[2], MODIFIED_PARAMS._CANVAS_WIDTH)),
+    //                 maxY = Math.round(Math.min(ret[1] + ret[3], MODIFIED_PARAMS._CANVAS_HEIGHT));
 
-    // console.log(trObj.object_dict);
+    //             // Get Gaussian distribution array for particular pixel
 
-    // function displayTri(a, b, c) {
-    //     trObj.initParams(a, b, c);
-    //     trObj.vertRend();
-    //     trObj.fragRend();
-    // }
+    //             for (let x = minX; x <= maxX; x++) {
+    //                 for (let y = minY; y <= maxY; y++) {
 
-    // function deploy() {
-    //     // octx.clearRect(0, 0, trObj.canvW, trObj.canvH);
-    //     // ctx.clearRect(0, 0, trObj.scrCanvW, trObj.scrCanvH);
+    //                     const point = [
+    //                         [x],
+    //                         [y]
+    //                     ];
 
-    //     displayTri(w, x, y);
-    //     displayTri(x, y, z);
-    //     displayTri(w, x, z);
-    //     displayTri(w, y, z);
+    //                     var interArray = this.interpolate(point, this.A, this.B, this.C);
 
-    //     displayTri(o, p, q);
-    //     displayTri(p, q, r);
-    //     displayTri(o, p, r);
-    //     displayTri(o, q, r);
+    //                     if (this.isInsideTri() === true) {
+    //                         const aCola = _Matrix.scaMult(this.aRatio, this.colA);
+    //                         const bColb = _Matrix.scaMult(this.bRatio, this.colB);
+    //                         const cColc = _Matrix.scaMult(this.cRatio, this.colC);
+    //                         var pColp = _Matrix.matAdd(_Matrix.matAdd(aCola, bColb), cColc);
 
-    //     trObj.show();
-    // }
-
-    // deploy()
-
-    // function look(event) {
-
-    //     if (event.keyCode === 82 || event.altKey === true && event.keyCode === 74) {
-    //         // deploy();
+    //                         if (this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] > interArray[2]) {
+    //                             this.depthBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH) + x] = interArray[2];
+    //                             this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0] = pColp[0];
+    //                             this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1] = pColp[1];
+    //                             this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2] = pColp[2];
+    //                             this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3] = pColp[3];
+    //                         }
+    //                     }
+    //                 }
+    //             }
     //     }
 
-    //     if (event.keyCode === 83 || event.keyCode === 13) {
-    //         generalizeInput()
+    //     private fragmentShader(shade : boolean){}
+
+    //     shader(){
+    //         this.vertexShader();
+    //         this.fragmentShader();
     //     }
-    //     console.log(event.keyCode)
-    //     console.log(event.altKey)
-    // }
 
-    // document.body.addEventListener('keydown', look);
+        // show() {
+        //     // Normalize coordinate system to use CSS pixels
 
+        //     octx.scale(this.scale, this.scale);
+        //     ctx.scale(this.scale, this.scale);
 
-    // window.onresize = function() {
-    //     // deploy();
-    // }
+        //     for (let y = 0; y < MODIFIED_PARAMS._CANVAS_HEIGHT; y++) {
+        //         for (let x = 0; x < MODIFIED_PARAMS._CANVAS_WIDTH; x++) {
+        //             const r = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 0];
+        //             const g = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 1];
+        //             const b = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 2];
+        //             const alpha = this.frameBuffer[(y * MODIFIED_PARAMS._CANVAS_WIDTH * 4) + (x * 4) + 3];
+        //             if (typeof r !== "undefined" && typeof g != "undefined" && typeof b !== "undeefined") {
+        //                 octx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + alpha / 255 + ")";
+        //                 octx.fillRect(x, y, 1, 1);
+        //             }
+        //         }
+        //     }
 
-
-    // function generalizeInput() {
-
-    //     //console.log("lsk")
-    //     setInputValue();
-    //     // deploy();
-
-    //     //console.log('dlk')
-    // }
-
-
-    // brotX.oninput = function() {
-    //     brX = Number(brotX.value);
-    // }
-
-    // brotY.oninput = function() {
-    //     brY = Number(brotY.value);
-    // }
-
-    // brotZ.oninput = function() {
-    //     brZ = Number(brotZ.value);
-    // }
-
-    // btransX.oninput = function() {
-    //     btX = Number(btransX.value);
-    // }
-
-    // btransY.oninput = function() {
-    //     btY = Number(btransY.value);
-    // }
-
-    // btransZ.oninput = function() {
-    //     btZ = Number(btransZ.value);
-    // }
-
-    // bangle.oninput = function() {
-    //     bAng = Number(bangle.value);
-    // }
-
-    // bnearZ.oninput = function() {
-    //     bNz = Number(bnearZ.value);
-    // }
-
-    // bfarZ.oninput = function() {
-    //     bFz = Number(bfarZ.value);
-    // }
-
-    // // console.log(coord.cameraVec)
-    // // console.log(coord.lightVec)
-
-    // // console.log(proj.camProjectionMatrix)
-    // // console.log(proj.lightProjectionMatrix)
-
-
-    // // // [
-    // // //     [-50, 200, 1],
-    // // //     [0, 255, 0, 255]
-    // // // ],
-    // // // [
-    // // //     [10, 20, 1],
-    // // //     [0, 233, 0, 0]
-    // // // ]
-
-    // // let simpTri = new Object(vertexBuffer, indexBuffer)
-
-    // // trObj.vertShader()
-    // // trObj.fragShader()
-    // // trObj.show()
-
-
-    // // window.onresize = function() {
-    // //     sett.runSettings()
-    // //     drawcanvas.runDrawCanvas()
-    // //     coord.setHalf()
-    // // }
-
-    // function lineFromPoints(P, Q) {
-    //     //ax
-    //     //by
-    //     //c
-    //     let a = Q[1] - P[1];
-    //     let b = P[0] - Q[0];
-    //     let c = a * (P[0]) + b * (P[1]);
-    //     return [a, b, c]
-    // }
-
-    // function perpendicularBisectorFromLine(P, Q, a, b, c) {
-    //     let mid_point = [(P[0] + Q[0]) / 2, (P[1] + Q[1]) / 2]
-    //         //c = -bx + ay
-    //     c = -b * (mid_point[0]) + a * (mid_point[1]);
-
-    //     let temp = a;
-    //     a = -b;
-    //     b = temp
-
-    //     return [a, b, c]
-    // }
-
-    // function lineLineIntersection(a1, b1, c1, a2, b2, c2) {
-    //     let determinant = (a1 * b2) - (a2 * b1);
-
-    //     if (determinant === 0) {
-    //         return [null, null]
-    //     } else {
-    //         let x = ((b2 * c1) - (b1 * c2)) / determinant;
-    //         let y = ((a1 * c2) - (a2 * c1)) / determinant;
-    //         return [x, y]
+        //     octx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5);
+        //     ctx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH, MODIFIED_PARAMS._CANVAS_HEIGHT);
+    
+    // class DrawCanvas {
+    //     protected static drawCount = 0;
+    //     constructor()
+    //     {
+    //         window.addEventListener("resize", () => this.drawCanvas());
     //     }
-    // }
-
-    // function getCircumCircle(P, Q, R) {
-    //     var PQ_line = lineFromPoints(P, Q);
-    //     var QR_line = lineFromPoints(Q, R);
-    //     var a = PQ_line[0];
-    //     var b = PQ_line[1];
-    //     var c = PQ_line[2];
-    //     var e = QR_line[0];
-    //     var f = QR_line[1];
-    //     var g = QR_line[2];
-
-    //     var PQ_perpendicular = perpendicularBisectorFromLine(P, Q, a, b, c);
-    //     var QR_perpendicular = perpendicularBisectorFromLine(Q, R, e, f, g);
-    //     a = PQ_perpendicular[0];
-    //     b = PQ_perpendicular[1];
-    //     c = PQ_perpendicular[2];
-    //     e = QR_perpendicular[0];
-    //     f = QR_perpendicular[1];
-    //     g = QR_perpendicular[2];
-
-    //     var circumCenter = lineLineIntersection(a, b, c, e, f, g)
-
-    //     var x = circumCenter[0]
-    //     var y = circumCenter[1]
-
-    //     var center = [
-    //         [x],
-    //         [y]
-    //     ]
-
-    //     var radius = trObj.getDist(P, center, [0, 1])
-
-    //     return { center, radius }
-    // }
-
-    // function getInscr(A, B, C) {
-    //     const param = [0, 1];
-    //     const lenAB = trObj.getDist(A, B, param);
-    //     const lenBC = trObj.getDist(B, C, param);
-    //     const lenCA = trObj.getDist(C, A, param);
-
-    //     const area = trObj.getTriArea(lenAB, lenBC, lenCA);
-    //     const semiPerimeter = (lenAB + lenBC + lenCA) / 2
-    //     const radius = area / semiPerimeter
-
-    //     const center = [
-    //         [(lenAB * A[0][0] + lenBC * B[0][0] + lenCA * C[0][0]) / (lenAB + lenBC + lenCA)],
-    //         [(lenAB * A[1][0] + lenBC * B[1][0] + lenCA * C[1][0]) / (lenAB + lenBC + lenCA)]
-    //     ]
-
-    //     return { center, radius }
-    // }
-
-    // var a = [
-    //     [100],
-    //     [150]
-    // ];
-    // var b = [
-    //     [110],
-    //     [200]
-    // ];
-    // var c = [
-    //     [150],
-    //     [120]
-    // ];
-    // var d = [
-    //     [140],
-    //     [190]
-    // ];
-    // var e = [
-    //     [130],
-    //     [250]
-    // ];
-    // var f = [
-    //     [170],
-    //     [250]
-    // ];
-
-
-    // function findCircTriFSq(rect) {
-    //     var mid = (rect[2] / 2) + rect[0]
-    //     var lSmall = rect[2] / 2
-    //     var hSmall = Math.tan((60 * Math.PI) / 180) * lSmall
-    //     var hBig = hSmall + rect[3]
-    //     var lBig = hBig / (Math.tan((60 * Math.PI) / 180))
-    //     var A = [
-    //         [mid - lBig],
-    //         [rect[1] + rect[3]]
-    //     ]
-    //     var B = [
-    //         [mid],
-    //         [rect[1] - hSmall]
-    //     ]
-    //     var C = [
-    //         [mid + lBig],
-    //         [rect[1] + rect[3]]
-    //     ]
-
-    //     return { A, B, C }
-    // }
-
-
-    // var refx1 = coord.canvasTo(arrOp.homoVec([0, canvas.height / 2, 60])),
-    //     refx2 = coord.canvasTo(arrOp.homoVec([canvas.width, canvas.height / 2, 60])),
-    //     refy1 = coord.canvasTo(arrOp.homoVec([canvas.width / 2, canvas.height, 60])),
-    //     refy2 = coord.canvasTo(arrOp.homoVec([canvas.width / 2, 0, 60])),
-    //     refz1 = coord.canvasTo(arrOp.homoVec([canvas.width / 2, canvas.height / 2, 0])),
-    //     refz2 = coord.canvasTo(arrOp.homoVec([canvas.width / 2, canvas.height / 2, 120]))
-
-    // var rendx1 = rend.render(refx1),
-    //     rendx2 = rend.render(refx2),
-    //     rendy1 = rend.render(refy1),
-    //     rendy2 = rend.render(refy2),
-    //     rendz1 = rend.render(refz1),
-    //     rendz2 = rend.render(refz2)
-
-
-    // drawObj.drawTriangle(aRend, bRend, dRend, true, true, 'red', null, null, false)
-
-
-    // console.log(isInsideTri([
-    //     [289],
-    //     [350],
-    //     [0],
-    //     [0]
-    // ], aRend, bRend, cRend, 2))
-
-    // var check = document.getElementById('check')
-    // check.innerHTML = isInsideTri([
-    //         [x],
-    //         [y]
-    //     ], aRend, bRend, cRend, 2)
-    // getRaster(ret[0], ret[1], ret[2], ret[3])
-
-    // drawObj.drawLine(rendx1, rendx2)
-    // drawObj.drawLine(rendy1, rendy2)
-    // drawObj.drawLine(rendz1, rendz2)
-
-
-    //console.log(arrOp.homoVecEqCol(Avec, Evec, 4))
-
-
-    // var orig = [0, 0, 0],
-    //     origVec = arrOp.homoVec(orig),
-    //     projVec = this.matMult(proj.projectionMatrix, origVec),
-    //     origUnclipVec = clip.unclip(projVec)
-
-    // console.log(origVec)
-
-    // console.log(projVec)
-
-    // console.log(origUnclipVec)
-
-
-    // drawObj.drawVertex(origUnclipVec, "blue", "red")
-
-    // var p1 = arrOp.homoVec([-100, -100, -5]),
-    //     p2 = arrOp.homoVec([-100, -100, 5]),
-    //     p3 = arrOp.homoVec([-100, 100, -5]),
-    //     p4 = arrOp.homoVec([-100, 100, 5]),
-    //     p5 = arrOp.homoVec([100, -100, -5]),
-    //     p6 = arrOp.homoVec([100, -100, 5]),
-    //     p7 = arrOp.homoVec([100, 100, -5]),
-    //     p8 = arrOp.homoVec([100, 100, 5])
-
-    // console.log(p1)
-
-    // console.log(coord.toCanvas(p2))
-    // console.log(coord.toCanvas(p4))
-    // console.log(coord.toCanvas(p6))
-    // console.log(coord.toCanvas(p8))
-
-
-    // var v1 = rend.render(p1),
-    //     v2 = rend.render(p2),
-    //     v3 = rend.render(p3),
-    //     v4 = rend.render(p4),
-    //     v5 = rend.render(p5),
-    //     v6 = rend.render(p6),
-    //     v7 = rend.render(p7),
-    //     v8 = rend.render(p8)
-
-    // drawObj.drawVertex(v1, 'red')
-    // drawObj.drawVertex(v2, 'blue')
-    // drawObj.drawVertex(v3, 'green')
-    // drawObj.drawVertex(v4, 'violet')
-    // drawObj.drawVertex(v5, 'cyan')
-    // drawObj.drawVertex(v6, 'magenta')
-    // drawObj.drawVertex(v7, 'yellow')
-    // drawObj.drawVertex(v8, 'gray')
-
-    // drawObj.drawVertex(rend.render(arrOp.homoVec([0, 0, 0.1])))
-
-    // drawObj.drawLine(v1, v2)
-    // drawObj.drawLine(v1, v3)
-    // drawObj.drawLine(v1, v5)
-    // drawObj.drawLine(v2, v6)
-    // drawObj.drawLine(v2, v4)
-    // drawObj.drawLine(v3, v7)
-    // drawObj.drawLine(v3, v4)
-    // drawObj.drawLine(v4, v8)
-    // drawObj.drawLine(v5, v6)
-    // drawObj.drawLine(v5, v7)
-    // drawObj.drawLine(v6, v8)
-    // drawObj.drawLine(v7, v8)
-
-    // drawObj.drawTriangle(v1, v2, v3, null, null, 'white', 'black')
-    // drawObj.drawTriangle(v2, v3, v4, null, null, 'white', 'black')
-
-
-
-    // var a = arrOp.homoVec([50, 50, 2]),
-    //     b = arrOp.homoVec([200, 25, 2]),
-    //     c = arrOp.homoVec([400, 200, 2]),
-
-    //     rendA = rend.render(a),
-    //     rendB = rend.render(b),
-    //     rendC = rend.render(c)
-
-
-    // drawObj.drawTriangle(rendA, rendB, rendC, null, true, null, null, true)
-
-
-    // console.log(ctx.clearRect(0, 0, canvas.width, canvas.height))
-
-    // fillstyle / concat method fastest
-    // ctx.fillStyle = "rgba(" + r + "," + g + "," + b + "," + (a / 255) + ")";
-    // ctx.fillRect(10, 10, 10, 10);
-
-    // fillstyle / join method slightly slower
-    // ctx.fillStyle = 'rgba(' + [r, g, b, a / 255].join() + ')'
-    // ctx.fillRect(10, 10, 10, 10)
-
-    // var px = ctx.createImageData(10, 10) // Slowest
-    // px[0] = r
-    // px[1] = g
-    // px[2] = b
-
-    // ctx.putImageData(px, 10, 10)
-
-    // Color Picker
-
-    function pick(event, destination) {
-        const bounding = canvas.getBoundingClientRect();
-        const x = event.clientX - bounding.left;
-        const y = event.clientY - bounding.top;
-
-        const pixel = ctx.getImageData(x, y, 1, 1);
-        const data = pixel.data;
-
-        const rgba = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
-        destination.color.innerHTML = rgba
-        destination.pixel.innerHTML = `(${x},${y})`
-
-        return rgba;
-    }
-
-    canvas.addEventListener("mousemove", (event) => pick(event, hovered));
-    canvas.addEventListener("click", (event) => pick(event, selected));
-
-
-    // if (ret !== null) {
-    //     ctx.fillStyle = "#999"
-    //     ctx.fillRect(ret[0], ret[1], ret[2], ret[3])
-    // }
-    // if (ret2 !== null) {
-    //     ctx.fillStyle = "#ddd"
-    //     ctx.fillRect(ret2[0], ret2[1], ret2[2], ret2[3])
-    // }
-
-    //getRaster('blue', aRend, bRend, cRend, ret)
-    // getRaster('black', aRend, bRend, dRend, ret2)
-
-
-    // function loop() {
-    //     const timer = setInterval(func => {
-    //         const val = counter.add().value()
-    //         if (val % 5 === 1) {
-    //             displayTri(w, y, z);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 2) {
-    //             displayTri(w, x, y);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 3) {
-    //             displayTri(w, x, z);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 4) {
-    //             displayTri(x, y, z);
-    //             trObj.show();
-    //         }
-    //         // setTimeout(func => {
-    //         //     trObj.resetFrameBuffer();
-    //         //     trObj.resetDepthBuffer();
-    //         // }, 3000)
-    //         if (val % 5 === 0) {
-    //             clearInterval(timer);
-    //             trObj.resetFrameBuffer();
-    //             trObj.resetDepthBuffer();
-    //             trObj.show();
-    //             loop();
-    //         }
-    //     }, requestAnimationFrame(loop))
-    // }
-
-
-    // function loop2() {
-    //     const timer = setInterval(func => {
-    //         const val = counter.add().value()
-    //         if (val % 5 === 1) {
-    //             displayTri(w, y, z);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 2) {
-    //             displayTri(w, x, y);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 3) {
-    //             displayTri(w, x, z);
-    //             trObj.show();
-    //         }
-    //         if (val % 5 === 4) {
-    //             displayTri(x, y, z);
-    //             trObj.show();
-    //         }
-    //         // setTimeout(func => {
-    //         //     trObj.resetFrameBuffer();
-    //         //     trObj.resetDepthBuffer();
-    //         // }, 3000)
-    //         if (val % 5 === 0) {
-    //             clearInterval(timer);
-    //             trObj.resetFrameBuffer();
-    //             trObj.resetDepthBuffer();
-    //             trObj.show();
-    //             loop();
-    //         }
-    //     }, requestAnimationFrame(loop))
-    // }
-
-
-    //console.log(canvas.toDataURL('image/jpeg', 1))
-
-    // console.log(rend.unrender(rend.render(v)))
-
-    // var link = document.getElementById('link');
-    // link.setAttribute('download', 'MintyPaper.png');
-    // link.setAttribute('href', canvas.toDataURL("image/png").replace("image/png", "image/octet-stream"));
-    // link.click();
-
-    // // Convert canvas to image
-    // document.getElementById('btn-download').addEventListener("click", function(e) {
-    //     var canvas = document.querySelector('#my-canvas');
-
-    //     var dataURL = canvas.toDataURL("image/jpeg", 1.0);
-
-    //     downloadImage(dataURL, 'my-canvas.jpeg');
-    // });
-
-    // // Save | Download image
-    // function downloadImage(data, filename = 'untitled.jpeg') {
-    //     var a = document.createElement('a');
-    //     a.href = data;
-    //     a.download = filename;
-    //     document.body.appendChild(a);
-    //     a.click();
-    // }
+    //     drawCanvas() {
+    //         canvas.style.borderStyle = MODIFIED_PARAMS._BORDER_STYLE;
+    //         canvas.style.borderWidth = MODIFIED_PARAMS._BORDER_WIDTH;
+    //         canvas.style.borderColor = MODIFIED_PARAMS._BORDER_COLOR;
+    //         canvas.style.opacity = MODIFIED_PARAMS._GLOBAL_ALPHA;
+    //         canvas.width = MODIFIED_PARAMS._CANVAS_WIDTH;
+    //         canvas.height = MODIFIED_PARAMS._CANVAS_HEIGHT;
+
+    //         DrawCanvas.drawCount++;
+    //     }
+    // }   
+
+    // const _DrawCanvas = new DrawCanvas()
+
+    // _DrawCanvas.drawCanvas()
 }
-
-
- // class Settings {
-    //     constructor(canvas, ocanvas, menu) {
-    //         this.canvas = canvas;
-    //         this.ocanvas = ocanvas;
-    //         this.menu = menu;
-    //         this.mCol = "gray";
-    //         this.color = 'black';
-    //         this.bordStyle = 'solid';
-    //         this.opacity = 1;
-    //         this.aspectRatio = 1;
-    //         this.deviceRatio = window.devicePixelRatio;
-    //         MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1; // default
-    //         this.scale = window.devicePixelRatio;
-    //         this.runSettings();
-    //     }
-
-    //     setHandedness(value) {
-    //         if (value === 'left') {
-    //             MODIFIED_PARAMS._HANDEDNESS_CONSTANT = -1;
-    //         } else MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1; //default
-    //     }
-
-    //     runSettings() {
-    //         this.width = window.innerWidth;
-    //         this.height = window.innerHeight;
-    //         this.bordW = 1;
-    //         this.menu.style.position = "absolute";
-    //         this.menu.style.backgroundColor = this.mCol;
-
-    //         if (this.width >= 600 && this.width < 768) {
-    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 150;
-    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height - 40;
-    //             this.menu.style.top = `${this.canvas.offsetTop}px`;
-    //             this.menu.style.right = `${this.canvas.offsetLeft}px`;
-    //             this.menu.style.width = `${this.width - MODIFIED_PARAMS._CANVAS_WIDTH - 18}px`;
-    //             this.menu.style.height = `${MODIFIED_PARAMS._CANVAS_HEIGHT+2}px`;
-    //         } else if (this.width >= 768) {
-    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 300;
-    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height - 40;
-    //             this.menu.style.top = `${this.canvas.offsetTop}px`;
-    //             this.menu.style.right = `${this.canvas.offsetLeft}px`;
-    //             this.menu.style.width = `${this.width - MODIFIED_PARAMS._CANVAS_WIDTH - 18}px`;
-    //             this.menu.style.height = `${MODIFIED_PARAMS._CANVAS_HEIGHT+2}px`;
-    //         } else {
-    //             MODIFIED_PARAMS._CANVAS_WIDTH = this.width - 20;
-    //             MODIFIED_PARAMS._CANVAS_HEIGHT = this.height / 2;
-    //             this.menu.style.top = `${this.canvas.offsetTop+2+MODIFIED_PARAMS._CANVAS_HEIGHT}px`;
-    //             this.menu.style.right = `${this.canvas.offsetLeft + 2}px`;
-    //             this.menu.style.width = `${this.width-18}px`;
-    //             this.menu.style.height = `${this.height-MODIFIED_PARAMS._CANVAS_HEIGHT-40}px`;
-    //         }
-
-    //         MODIFIED_PARAMS._CANVAS_WIDTH = Math.floor(this.scale * MODIFIED_PARAMS._CANVAS_WIDTH);
-    //         MODIFIED_PARAMS._CANVAS_HEIGHT = Math.floor(this.scale * MODIFIED_PARAMS._CANVAS_HEIGHT);
-
-    //         this.aspectRatio = MODIFIED_PARAMS._CANVAS_WIDTH / MODIFIED_PARAMS._CANVAS_HEIGHT;
-    //         return this;
-    //     }
-    // }
