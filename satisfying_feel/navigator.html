@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigator</title>
+
+</head>
+
+<body>
+    <canvas></canvas>
+
+<script>
+"use strict";
+{
+    const pListCache = {};
+    const pArgCache = {};
+    // const scrW = screen.width;
+    // const scrH = screen.height;
+    // var prevW = 0;
+    // var prevH = 0;
+    // var speed = 0;
+    // var prev = Date.now()
+    const canvas = document.getElementsByTagName('canvas')[0];
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const hovered = { color: document.getElementById('hoveredColor'), pixel: document.getElementById('hoveredPixel') };
+    const selected = { color: document.getElementById('selectedColor'), pixel: document.getElementById('selectedPixel') };
+    var drop = document.getElementById('drop');
+    let _ERROR_;
+    (function (_ERROR_) {
+        _ERROR_[_ERROR_["_NO_ERROR_"] = 1000000000000] = "_NO_ERROR_";
+        _ERROR_[_ERROR_["_SETTINGS_ERROR_"] = 1000000000001] = "_SETTINGS_ERROR_";
+        _ERROR_[_ERROR_["_MISCELLANOUS_ERROR_"] = 1000000000002] = "_MISCELLANOUS_ERROR_";
+        _ERROR_[_ERROR_["_QUARTERNION_ERROR_"] = 1000000000003] = "_QUARTERNION_ERROR_";
+        _ERROR_[_ERROR_["_MATRIX_ERROR_"] = 1000000000004] = "_MATRIX_ERROR_";
+        _ERROR_[_ERROR_["_VECTOR_ERROR_"] = 1000000000005] = "_VECTOR_ERROR_";
+        _ERROR_[_ERROR_["_PERSPECTIVE_PROJ_ERROR_"] = 1000000000006] = "_PERSPECTIVE_PROJ_ERROR_";
+        _ERROR_[_ERROR_["_CLIP_ERROR_"] = 1000000000007] = "_CLIP_ERROR_";
+        _ERROR_[_ERROR_["_LOCAL_SPACE_ERROR_"] = 1000000000008] = "_LOCAL_SPACE_ERROR_";
+        _ERROR_[_ERROR_["_WORLD_SPACE_ERROR_"] = 1000000000009] = "_WORLD_SPACE_ERROR_";
+        _ERROR_[_ERROR_["_CLIP_SPACE_ERROR_"] = 1000000000010] = "_CLIP_SPACE_ERROR_";
+        _ERROR_[_ERROR_["_SCREEN_SPACE_ERROR_"] = 1000000000011] = "_SCREEN_SPACE_ERROR_";
+        _ERROR_[_ERROR_["_OPTICAL_ELEMENT_OBJECT_ERROR_"] = 1000000000012] = "_OPTICAL_ELEMENT_OBJECT_ERROR_";
+        _ERROR_[_ERROR_["_RENDER_ERROR_"] = 1000000000013] = "_RENDER_ERROR_";
+        _ERROR_[_ERROR_["_DRAW_CANVAS_ERROR_"] = 1000000000014] = "_DRAW_CANVAS_ERROR_";
+    })(_ERROR_ || (_ERROR_ = {}));
+    let _ERROR_MATRIX_;
+    (function (_ERROR_MATRIX_) {
+        _ERROR_MATRIX_[_ERROR_MATRIX_["_DET_"] = 1] = "_DET_";
+        _ERROR_MATRIX_[_ERROR_MATRIX_["_MINOR_"] = 2] = "_MINOR_";
+        _ERROR_MATRIX_[_ERROR_MATRIX_["_COF_"] = 3] = "_COF_";
+        _ERROR_MATRIX_[_ERROR_MATRIX_["_ADJ_"] = 4] = "_ADJ_";
+        _ERROR_MATRIX_[_ERROR_MATRIX_["_INV_"] = 5] = "_INV_";
+    })(_ERROR_MATRIX_ || (_ERROR_MATRIX_ = {}));
+    
+    
+    
+    
+    
+    class CanvasObject 
+    {
+        instance = 
+        {
+            instance_number: 0,
+            center: [0, 0, 0],
+            object_type: "none",
+        }
+        
+        constructor(instance_number_input) 
+        {
+            this.instance.instance_number = instance_number_input;
+        }
+    }
+    
+    class BoxObject extends CanvasObject 
+    {
+        constructor(instance_number_input) 
+        {
+            super(instance_number_input);
+            this.instance.object_type = "box";
+        }
+    }
+    
+    class CanvasObjectManager 
+    {
+        canvas_object_array;
+        instance_number;
+        arrlen;
+        max_canvas_instance_number;
+        selected_object_instances;
+        instance_number_to_list_map;
+        constructor() 
+        {
+            this.arrlen = 0;
+            this.instance_number = 0;
+            this.selected_object_instances = {};
+            this.max_canvas_instance_number = 0;
+            this.instance_number_to_list_map = {};
+            this.canvas_object_array = [];
+        }
+        
+        createNewCanvasObject(object_type_input = "none") 
+        {
+            this.max_canvas_instance_number = this.instance_number;
+            this.canvas_object_array[this.arrlen] = this.getObjClass(object_type_input, this.instance_number);
+            this.instance_number_to_list_map[this.instance_number] = this.arrlen;
+            this.instance_number++;
+            this.arrlen++;
+        }
+        
+        createNewMultipleCanvasObjects = (object_type_input = "none", num = 0) => 
+        {
+            if (num > 0)
+                while (num > 0) 
+                {
+                    this.createNewCanvasObject(object_type_input);
+                    num--;
+                }
+        }
+        
+        deleteCanvasObjectBase(instance_number_input, index) 
+        {
+            if (instance_number_input in this.instance_number_to_list_map) 
+            {
+                this.canvas_object_array.splice(index, 1);
+                delete this.instance_number_to_list_map[instance_number_input];
+                for (const key in this.instance_number_to_list_map) 
+                {
+                    if (Number(key) > instance_number_input) 
+                    {
+                        this.instance_number_to_list_map[key] = this.instance_number_to_list_map[key] - 1;
+                    }
+                }
+                if (instance_number_input in this.selected_object_instances) delete this.selected_object_instances[instance_number_input];
+            }
+        }
+        
+        deleteCanvasObject(instance_number_input) 
+        {
+            if (instance_number_input >= 0 && instance_number_input <= this.max_canvas_instance_number) 
+            {
+                const index = this.instance_number_to_list_map[instance_number_input];
+                this.deleteCanvasObjectBase(instance_number_input, index);
+                this.arrlen = this.canvas_object_array.length;
+            }
+        }
+        
+        deleteSelectedCanvasObjects() 
+        {
+            for (const key in this.selected_object_instances) 
+            {
+                const index = this.selected_object_instances[key];
+                this.deleteCanvasObjectBase(Number(key), index);
+            }
+            this.arrlen = this.canvas_object_array.length;
+        }
+        
+        deleteAllCanvasObjects() 
+        {
+            for (const key in this.instance_number_to_list_map) 
+            {
+                const index = this.instance_number_to_list_map[key];
+                this.deleteCanvasObjectBase(Number(key), index);
+            }
+            this.arrlen = this.canvas_object_array.length;
+        }
+        
+        select_canvas_instance(instance_number_input)
+        {
+            if (instance_number_input >= 0 && instance_number_input <= this.max_canvas_instance_number && instance_number_input in this.instance_number_to_list_map) 
+            {
+                const selection = this.instance_number_to_list_map[instance_number_input];
+                this.selected_object_instances[instance_number_input] = selection;
+            }
+        }
+        
+        deselect_canvas_instance(instance_number_input) 
+        {
+            if (instance_number_input >= 0 && instance_number_input <= this.max_canvas_instance_number) 
+            {
+                if (instance_number_input in this.selected_object_instances) 
+                {
+                    const selection = this.instance_number_to_list_map[instance_number_input];
+                    delete this.selected_object_instances[instance_number_input];
+                }
+            }
+        }
+        
+        clearAllSelectedCanvasInstances() 
+        {
+            for (const key in this.selected_object_instances) 
+            {
+                delete this.selected_object_instances[key];
+            }
+        }
+        
+        getObjClass(object_type_input, instance_number_input) 
+        {
+            switch (object_type_input) 
+            {
+                case 'box':
+                    return new BoxObject(instance_number_input);
+                default:
+                    return new CanvasObject(instance_number_input);
+            }
+        }
+    }
+}
+
+
+
+
+
+<script>
+</body>
+
+</html>

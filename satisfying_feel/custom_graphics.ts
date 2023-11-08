@@ -6,10 +6,6 @@
     const pListCache : {} = {};     
     const pArgCache : {} = {};
 
-    // //CHECK IF DEVICE IS A MOBILE DEVICE OR NOT--3
-
-    const details = navigator.userAgentData;
-
     // const scrW = screen.width;
     // const scrH = screen.height;
 
@@ -175,11 +171,8 @@
         }
 
         function drag(element : any) : void {
-            if (navigator.userAgentData.mobile === true) {
-                return startDragMobile(element);
-            } else {
-                return startDrag(element);
-            }
+              startDragMobile(element);
+              startDrag(element);
         }
 
         function startDrag(element : any) : void {
