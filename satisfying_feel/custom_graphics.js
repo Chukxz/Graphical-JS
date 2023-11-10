@@ -1626,4 +1626,6 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     // }   
     // const _DrawCanvas = new DrawCanvas()
     // _DrawCanvas.drawCanvas()
+    
+    console.log(_Matrix.getDet(5,9,2,7,1,0,3,5,2))
 }
