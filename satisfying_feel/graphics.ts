@@ -258,7 +258,88 @@
         {
            return (this.getFactorialNum(arrlen)/(this.getFactorialNum(arrlen - num)));
         }
+
+        interpolateTriCore1(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_){
+
+            const indexList = [0, 1];
+
+            const Adist = _Linear.getDist(bvec, cvec, indexList);
+            const Bdist = _Linear.getDist(avec, cvec, indexList);
+            const Cdist = _Linear.getDist(avec, bvec, indexList);
+            const apdist = _Linear.getDist(pvec, avec, indexList);
+            const bpdist = _Linear.getDist(pvec, bvec, indexList);
+            const cpdist = _Linear.getDist(pvec, cvec, indexList);
+
+            return [Adist,Bdist,Cdist,apdist,bpdist,cpdist];
+        }
+
+        interpolateTriCore2(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_){
+            const [Adist,Bdist,Cdist,apdist,bpdist,cpdist] = this.interpolateTriCore1(pvec,avec,bvec,cvec);
+
+            const TotalArea = _Linear.getTriArea(Adist, Bdist, Cdist);
+            const triA = _Linear.getTriArea(Adist, bpdist, cpdist);
+            const triB = _Linear.getTriArea(Bdist, apdist, cpdist);
+            const triC = _Linear.getTriArea(Cdist, apdist, bpdist);
+
+            return [TotalArea,triA,triB,triC];
+        }
+
+        interpolateTriCore3(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_{
+
+            const[TotalArea,triA,triB,triC] = this.interpolateTriCore2(pvec,avec,bvec,cvec);
+
+            const aRatio = triA / TotalArea;
+            const bRatio = triB / TotalArea;
+            const cRatio = triC / TotalArea;
+
+            const aPa : _3D_VEC_ = _Matrix.scaMult(aRatio, avec) as _3D_VEC_;
+            const bPb : _3D_VEC_ = _Matrix.scaMult(bRatio, bvec) as _3D_VEC_;
+            const cPc : _3D_VEC_ = _Matrix.scaMult(cRatio, cvec) as _3D_VEC_;
+
+            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc) as _3D_VEC_;
+        }
     
+        interpolateTri(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
+            return this.interpolateTriCore3(pvec,avec,bvec,cvec);
+        }
+
+        getBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
+            return this.getBoundingRectImpl(vertices);
+        }
+
+        getBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
+            var n = vertices.length;
+            var xArr : _3D_VEC_ = [0,0,0];
+            var yArr : _3D_VEC_ = [0,0,0];
+            var xmin = Infinity;
+            var ymin = Infinity;
+            var xmax = 0;
+            var ymax = 0;
+
+            for (let i = 0; i < n; i++) {
+                xArr[i] = vertices[i][0];
+                yArr[i] = vertices[i][1];
+
+                if (xArr[i] < xmin) {
+                    xmin = xArr[i];
+                }
+
+                if (yArr[i] < ymin) {
+                    ymin = yArr[i];
+                }
+
+                if (xArr[i] > xmax) {
+                    xmax = xArr[i];
+                }
+
+                if (yArr[i] > ymax) {
+                    ymax = yArr[i];
+                }
+            }
+
+            return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+
         getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase performance
             if (arguments.length === 2) {
                 const key = `${paramList}-${maxPLen}`;
@@ -370,8 +451,11 @@
             }
             return res;
         }
-
-
+    }
+    
+    class Linear {
+        constructor(){}
+            
         getSlope(A_ : _2D_VEC_, B_ : _2D_VEC_) {
             var numer = B_[0] - A_[0];
             var denum = B_[1] - A_[1];
@@ -412,10 +496,20 @@
             if ((x ** 2 + y ** 2) <= r ** 2) {
                 return true;
             } else return false;
-        }    
+        }       
+
+        isInsideTri(pvec : _3D_VEC_, avec : _3D_VEC_ , bvec : _3D_VEC_, cvec : _3D_VEC_) : boolean {
+            const [TotalArea,triA,triB,triC] = _Miscellenous.interpolateTriCore2(pvec,avec,bvec,cvec);
+            const sum = triA + triB + triC;
+            if (Math.round(sum) === Math.round(TotalArea)) {
+                return true;
+            }
+            return false;
+        }
+
+        
+        
     }
-    
-    const _Miscellenous = new Miscellanous()
     
     class Matrix 
        {
@@ -643,7 +737,6 @@
         }
     }
     
-    const _Matrix = new Matrix();
 
     class Vector 
     {
@@ -825,7 +918,6 @@
         }
     }
 
-    const _Vector = new Vector()
 
     class PerspectiveProjection {
 
@@ -866,6 +958,10 @@
         }
     }
 
-    const _PerspectiveProjection = new PerspectiveProjection()
+    const _Miscellenous = new Miscellanous();
+    const _Linear = new Linear();
+    const _Matrix = new Matrix();
+    const _Vector = new Vector();
+    const _PerspectiveProjection = new PerspectiveProjection();
 }
 

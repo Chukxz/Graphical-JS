@@ -246,8 +246,8 @@
             return res;
         }
         getSlope(A_, B_) {
-            var numer = B_[0] - A_[0];
-            var denum = B_[1] - A_[1];
+            var numer = B_[1] - A_[1];
+            var denum = B_[0] - A_[0];
             return numer / denum;
         }
         getMid(a, b, paramList) {
@@ -281,7 +281,6 @@
                 return false;
         }
     }
-    const _Miscellenous = new Miscellanous();
     class Matrix {
         constructor() {}
         matMult(matA, matB, shapeA, shapeB) {
@@ -438,7 +437,6 @@
             return _Matrix.scaMult(1 / det_result, (adj_result));
         }
     }
-    const _Matrix = new Matrix();
     class Vector {
         constructor() {}
         mag(vec) {
@@ -568,7 +566,6 @@
             return cross_product_unit_vec;
         }
     }
-    const _Vector = new Vector();
     class PerspectiveProjection {
         constructor() {}
         changeNearZ(val) {
@@ -598,7 +595,14 @@
             return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, input_array, [4, 4], [4, 1]);
         }
     }
+    const _Miscellenous = new Miscellanous();
+    const _Matrix = new Matrix();
+    const _Vector = new Vector();
     const _PerspectiveProjection = new PerspectiveProjection();
-}
 
-console.log(_Miscellenous.prototype)
+    console.log(_Miscellenous.getSlope([3, 2], [4, 5]))
+
+    console.log(_Miscellenous.getMid([32, 2, 5], [2, 5, 23], [0, 1, 2]))
+
+    console.log(_Miscellenous.getDist([8, 2, 89], [10, 4, 91], [0, 1, 2]))
+}
