@@ -28,290 +28,196 @@
     type _HANDEDNESS_ = "left" | "right";
 
     type _OPTICAL_ = "light" | "camera" | "none";
+
+    interface _BASIC_PARAMS_ {
+        _GLOBAL_ALPHA : string,
+        _CANVAS_WIDTH : number,
+        _CANVAS_HEIGHT : number,
+        _BORDER_COLOR  : string,
+        _BORDER_WIDTH: string,
+        _BORDER_RADIUS: string,
+        _BORDER_STYLE: string,
+        _THETA : number,
+        _ANGLE_UNIT : _ANGLE_UNIT_
+        _ANGLE_CONSTANT : number,
+        _REVERSE_ANGLE_CONSTANT : number,
+        _HANDEDNESS : _HANDEDNESS_;
+        _HANDEDNESS_CONSTANT : number,
+        _X : _3D_VEC_,
+        _Y :_3D_VEC_,
+        _Z : _3D_VEC_,
+        _Q_VEC : _3D_VEC_,
+        _Q_QUART : _4D_VEC_,
+        _Q_INV_QUART : _4D_VEC_,
+        _NZ : number,
+        _FZ : number,
+        _PROJ_ANGLE : number,
+        _ASPECT_RATIO : number,
+        _DIST : number,
+        _HALF_X : number,
+        _HALF_Y : number,
+        _PROJECTION_MAT : _16D_VEC_,
+        _INV_PROJECTION_MAT : _16D_VEC_,
+        _OPEN_SIDEBAR : boolean,
+    }
+
+    const DEFAULT_PARAMS : _BASIC_PARAMS_ =
+    {
+        _GLOBAL_ALPHA : '1',
+        _CANVAS_WIDTH : 1,
+        _CANVAS_HEIGHT : 1,
+        _BORDER_COLOR  :'red',
+        _BORDER_WIDTH:  '4',
+        _BORDER_RADIUS:  '2',
+        _BORDER_STYLE:  "solid",
+        _THETA : 0,
+        _ANGLE_UNIT : "deg",
+        _ANGLE_CONSTANT : Math.PI/180,
+        _REVERSE_ANGLE_CONSTANT : 180/Math.PI,
+        _HANDEDNESS: "right",
+        _HANDEDNESS_CONSTANT: 1,
+        _X : [1,0,0],
+        _Y : [0,1,0],
+        _Z : [0,0,1],
+        _Q_VEC : [0,0,0],
+        _Q_QUART : [0,0,0,0],
+        _Q_INV_QUART : [0,0,0,0],
+        _NZ : -0.1,
+        _FZ : -100,
+        _PROJ_ANGLE : 60,
+        _ASPECT_RATIO : 1,
+        _DIST : 1,
+        _HALF_X : 1,
+        _HALF_Y : 1,
+        _PROJECTION_MAT : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _INV_PROJECTION_MAT : [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        _OPEN_SIDEBAR : true,
+        }
+
+    const MODIFIED_PARAMS : _BASIC_PARAMS_ = JSON.parse(JSON.stringify(DEFAULT_PARAMS))
     
     enum _ERROR_ 
     {
-        _NO_ERROR_ = 1e12,
-        _SETTINGS_ERROR_,
-        _MISCELLANOUS_ERROR_,
-        _QUARTERNION_ERROR_,
-        _MATRIX_ERROR_,
-        _VECTOR_ERROR_,
-        _PERSPECTIVE_PROJ_ERROR_,
-        _CLIP_ERROR_,
-        _LOCAL_SPACE_ERROR_,
-        _WORLD_SPACE_ERROR_,
-        _CLIP_SPACE_ERROR_,
-        _SCREEN_SPACE_ERROR_,
-        _OPTICAL_ELEMENT_OBJECT_ERROR_,
-        _RENDER_ERROR_,
-        _DRAW_CANVAS_ERROR_,
-    }
-
-    enum _ERROR_MATRIX_
-    {
-        _DET_ = 1,
-        _MINOR_,
-        _COF_,
-        _ADJ_,
-        _INV_
+        _NO_ERROR_ = 1e3,
+        _SETTINGS_ERROR_ = 2e3,
+        _MISCELLANOUS_ERROR_ = 3e3,
+        _QUARTERNION_ERROR_ = 4e3,
+        _MATRIX_ERROR_ = 5e3,
+        _VECTOR_ERROR_ = 6e3,
+        _PERSPECTIVE_PROJ_ERROR_ = 7e3,
+        _CLIP_ERROR_ = 8e3,
+        _LOCAL_SPACE_ERROR_ = 9e3,
+        _WORLD_SPACE_ERROR_ = 10e3,
+        _CLIP_SPACE_ERROR_ = 11e3,
+        _SCREEN_SPACE_ERROR_ = 12e3,
+        _OPTICAL_ELEMENT_OBJECT_ERROR_ = 13e3,
+        _RENDER_ERROR_ = 14e3,
+        _DRAW_CANVAS_ERROR_ = 15e3,
     }
    
-       class Matrix 
+    class BackTrack 
     {
-        constructor()
-        {}
-
-        // // Pitch
-        // rotX(ang : number) : _16D_VEC_ {
-        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
-        //     return [1, 0, 0, 0, 0, Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1];
-        // }
-
-        // // Yaw
-        // rotY(ang : number) : _16D_VEC_ {
-        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
-        //     return [Math.cos(angle), 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, 1, 0, 0, -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, Math.cos(angle), 0, 0, 0, 0, 1];
-        // }
-
-        // //Roll
-        // rotZ(ang : number) : _16D_VEC_ {
-        //     const angle = MODIFIED_PARAMS._ANGLE_CONSTANT*ang;
-        //     return [Math.cos(angle), -Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, 0, 0, Math.sin(angle) * MODIFIED_PARAMS._HANDEDNESS_CONSTANT, Math.cos(angle), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
-        // }
-
-        // rot3d(x : number, y : number, z : number) : _16D_VEC_ {
-        //     return this.matMult(this.rotZ(z), this.matMult(this.rotY(y), this.rotX(x), [4, 4], [4, 4]), [4, 4], [4, 4]) as _16D_VEC_;
-        // };
+        constructor(){}
         
-        // transl3d(x : number, y : number, z : number) : _16D_VEC_ {
-        //     return [1, 0, 0, x, 0, 1, 0, y, 0, 0, 1, z, 0, 0, 0, 1];
-        // }
+        getPermutationsArr(arr : number[], permutationSize : number) : number[] {
+            const permutations : number[] = [];
 
-        // scale3dim(x : number, y : number, z : number) : _16D_VEC_ {
-        //     return [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1];
-        // }
-
-        // setObjTransfMat(Sx, Sy, Sz, Rx, Ry, Rz, Tx, Ty, Tz) {
-        //     // None of the scale parameters should equal zero as that would make the determinant of the matrix
-        //     // equal to zero, thereby making it impossible to get the inverse of the matrix (Zero Division Error)
-        //     if (Sx === 0) {
-        //         Sx += 0.01;
-        //     }
-        //     if (Sy === 0) {
-        //         Sy += 0.01;
-        //     }
-        //     if (Sz === 0) {
-        //         Sz += 0.01;
-        //     }
-        //     this.objTransfMat = this.matMult(this.transl3d(Tx, Ty, Tz), this.matMult(this.rot3d(Rx, Ry, Rz), this.scale3dim(Sx, Sy, Sz), [4, 4], [4, 4]), [4, 4], [4, 4]);
-        // }
-    
-        matMult(matA : number[], matB : number[], shapeA : _2D_VEC_, shapeB : _2D_VEC_) : number[] | _ERROR_ {
-            
-            if (shapeA[1] !== shapeB[0]) return _ERROR_._MATRIX_ERROR_;
-            else
+            function backtrack(currentPerm : number[]) 
             {
-            const matC : number[] = []
-    
-            for (let i = 0; i < shapeA[0]; i++) {
-                for (let j = 0; j < shapeB[1]; j++) {
-                    var sum : number = 0;
-                    for (let k = 0; k < shapeB[0]; k++) {
-                        sum += matA[(i * shapeA[1]) + k] * matB[(k * shapeB[1]) + j];
-                    }
-                    matC.push(sum);
-                }
-            }
-            return matC;
-            }
-        }
-    
-        scaMult(scalarVal : number, matIn : number [], leaveLast : boolean = false) : number[] {
-            const matInlen : number = matIn.length;
-            const matOut : number[] = [];
-            for (let i = 0; i < matInlen; i++) {
-                if (i === matInlen - 1 && leaveLast === true) {
-                    // Do nothing...don't multiply the last matrix value by the scalar value
-                    // useful when perspective division is going on.
-                    matOut.push(matIn[i]);
-                } else {
-                    matOut.push(matIn[i] * scalarVal);
-                }
-            }
-            return matOut;
-        }
-    
-        matAdd(matA : number[], matB : number[], neg : boolean = false) : number[] | _ERROR_ {
-        const matAlen : number = matA.length;
-        const matBlen : number = matB.length;
-            
-        if (matAlen === matBlen) {
-            const matC : number[] = [];
-            const sgn = neg === true ? -1 : 1;
-            for (let i = 0; i < matAlen; i++) {
-                matC.push(matA[i] + sgn * matB[i]);
-            }
-            return matC;
-            }
-            else return _ERROR_._MATRIX_ERROR_;
-        }
-    
-        getTranspMat(matIn : number[], shapeMat: _2D_VEC_): number[] {
-            const shpA = shapeMat[0];
-            const shpB = shapeMat[1];
-            const matOut : number[] = [];
-    
-            for (let i = 0; i < shpB; i++) {
-                for (let j = 0; j < shpA; j++) {
-                    matOut.push(matIn[(j * shpB) + i]);
-                }
-            }
-    
-            return matOut;
-        }
-    
-        getIdentMat(val : number) : number[]{
-            const num : number = val ** 2;
-            const matOut : number[] = [];
-            var c = 0;        
-            for (let i = 0; i < num; i++) {
-                if (i === c) {
-                    matOut.push(1);
-                    c += val+1;    
-                }
-                else{
-                    matOut.push(0);
-                }
-            }
-            return matOut;
-        }
-    
-        getRestMat(matIn : number[], shapeNum : number, row : number, column : number) : number[] {
-            const matOut : number[] = [];
-    
-            for (let i = 0; i < shapeNum; i++) {
-                for (let j = 0; j < shapeNum; j++) {
-                    if (i !== row && j !== column) {
-                        matOut.push(matIn[(i * shapeNum) + j]);
-                    }
-                }
-            }
-    
-            return matOut;
-        }
-    
-        getDet(matIn : number | number [], shapeNum : number) : number | _ERROR_._MATRIX_ERROR_ {
-            if (shapeNum > 0) {
-                // If it is a 1x1 matrix, return the matrix
-                if (shapeNum === 1) {
-                    return matIn as number;
-                }
-                // If it is a 2x2 matrix, return the determinant
-                if (shapeNum === 2) {
-                    return ((matIn[0] * matIn[3]) - (matIn[1] * matIn[2]));
-                }
-                // If it an nxn matrix, where n > 2, recursively compute the determinant,
-                //using the first row of the matrix
-                else {
-                    var res : number = 0;
-                    const tmp : number[] = [];
-    
-                    for (let i = 0; i < shapeNum; i++) {
-                        tmp.push(matIn[i]);
-                    }
-    
-                    const cofMatSgn = this.getCofSgnMat([1, shapeNum]);
-    
-                    var a = 0;
-                    const cofLen : number = cofMatSgn.length;
-    
-                    for (let i = 0; i < cofLen; i++) {
-                        var ret : number[] = this.getRestMat(matIn as number[], shapeNum, a, i);
+                if (currentPerm.length === permutationSize) {
+                    permutations.push(currentPerm.slice() as any);
 
-                        var verify = this.getDet(ret, shapeNum - 1);
-                    
-                        verify = verify > _ERROR_._NO_ERROR_? _ERROR_._NO_ERROR_ : verify;
+                    return;
+                }
 
-                        res += (cofMatSgn[i] * tmp[i] * verify);
-                    }
-    
-                    return res;
+                arr.forEach((item : number) => {
+                    if (currentPerm.includes(item)) return;
+                    currentPerm.push(item);
+                    backtrack(currentPerm);
+                    currentPerm.pop();
+                });
+            }
+
+            backtrack([]);
+
+            return permutations;
+        }
+
+        getCombinationsArr(arr : number[], combinationSize: number): number[] 
+        {
+            const combinations : number[] = [];
+
+            function backtrack(startIndex : number, currentCombination : number[]) {
+                if (currentCombination.length === combinationSize) {
+                    combinations.push(currentCombination.slice() as any);
+                    return;
+                }
+
+                for (let i = startIndex; i < arr.length; i++) {
+                    currentCombination.push(arr[i]);
+                    backtrack(i + 1, currentCombination);
+                    currentCombination.pop();
                 }
             }
 
-            else return _ERROR_._MATRIX_ERROR_ + _ERROR_MATRIX_._DET_*10;
+            backtrack(0, []);
+
+            return combinations;
         }
-    
-        getMinorMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
-            const matOut : number[] = [];
-    
-            for (let i = 0; i < shapeNum; i++) {
-                for (let j = 0; j < shapeNum; j++) {
-                    const result : number | _ERROR_ = this.getDet(this.getRestMat(matIn, shapeNum, i, j), shapeNum - 1)
-                    if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._MINOR_*100;
-                    matOut.push(result)
-                }
+        
+        getFibonacciNum(num : number) : number 
+        {
+            if (num < 0)
+                return 0;
+            else if (num === 0 || num === 1)
+                return 1;
+            else
+                return this.getFibonacciNum(num - 1) + this.getFibonacciNum(num - 2);
+        }
+        
+        getFibonacciSeq(start : number, stop : number) : number[] 
+        {
+            var s = Math.max(start, 0);
+            const hold = [];
+            var n = 0;
+            while (s <= stop) {
+                hold[n] = this.getFibonacciNum(s);
+                n++;
+                s++;
             }
-    
-            return matOut;
+            return hold;
         }
-    
-        getCofSgnMat(shapeMat : _2D_VEC_) : number[] {
-            const shpA : number = shapeMat[0];
-            const shpB : number = shapeMat[1];
-            const matOut : number[] = [];
-    
-            for (let i = 0; i < shpA; i++) {
-                for (let j = 0; j < shpB; j++) {
-                    if ((i + j) % 2 === 0) {
-                        matOut.push(1);
-                    } else matOut.push(-1);
-                }
+        
+        getFactorialNum(num : number) : number 
+        {
+            if (num <= 1)
+                return 1;
+            else
+                return num * this.getFactorialNum(num - 1) 
+        }
+        
+        getFactorialSeq(start : number, stop : number) : number[] 
+        {
+            var s = Math.max(start, 0);
+            const hold = [];
+            var n = 0;
+            while (s <= stop) {
+                hold[n] = this.getFactorialNum(s);
+                n++;
+                s++;
             }
-    
-            return matOut;
+            return hold;
         }
-    
-        getCofMat(matIn : number[], shapeNum : number) : number [] | _ERROR_ {
-            const cofMatSgn : number[] = this.getCofSgnMat([shapeNum, shapeNum]);
-            var _minorMat : number[] | _ERROR_ = this.getMinorMat(matIn, shapeNum);
-
-            if (typeof _minorMat === "number")
-                if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _ERROR_MATRIX_._COF_*1000;
-                
-            const minorMat : number[] = _minorMat as number[]
-            const matOut : number[] = [];
-            const len : number = shapeNum ** 2;
-    
-            for (let i = 0; i < len; i++) {
-                matOut.push(cofMatSgn[i] * minorMat[i]);
-            }
-    
-            return matOut;
+        
+        getCombinationsNum(arrlen : number,num : number)
+        {
+            return (this.getFactorialNum(arrlen)/((this.getFactorialNum(arrlen - num))*(this.getFactorialNum(num))));
         }
-    
-        getAdjMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
-            const result : number[] | _ERROR_ = this.getCofMat(matIn, shapeNum)
-            if (typeof result === "number")
-                if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._ADJ_*10000 ;
-            return this.getTranspMat((result as number[]), [shapeNum, shapeNum]);
-        }
-    
-        getInvMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
-            const det_result : number = this.getDet(matIn, shapeNum);
-
-            if (det_result > _ERROR_._NO_ERROR_) return det_result+_ERROR_MATRIX_._INV_*100000;
-
-            const adj_result : number[] | _ERROR_ = this.getAdjMat(matIn,shapeNum);
-
-            if (typeof adj_result === "number")
-                if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_ERROR_MATRIX_._INV_*100000;
-            
-            return _Matrix.scaMult(1/det_result,(adj_result as number[]));
+        
+        getPermutationsNum(arrlen : number,num : number)
+        {
+           return (this.getFactorialNum(arrlen)/(this.getFactorialNum(arrlen - num)));
         }
     }
     
-    const _Matrix = new Matrix()
-    
-  
+    const _Backtrack = new BackTrack()
