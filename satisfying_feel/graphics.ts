@@ -507,7 +507,19 @@
             return false;
         }
 
-        
+        getCircumCircle_1(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number)
+        {
+            const coeff_Mat = [2*x1,2*y1,1,2*x2,2*y2,1,2*x3,2*y3,1];
+            const inv_coeff_Mat = _Matrix.getInvMat(coeff_Mat,3);
+            if (typeof inv_coeff_Mat !== "string")
+            {
+            const y_Mat = [-(x1**2+y1**2),-(x2**2+y2**2),-(x3**2+y3**2)];
+            const x_Mat = _Matrix.matMult(inv_coeff_Mat as number[],y_Mat,[3,3],[3,1]);
+            const [G,F,C] = x_Mat;
+            const gen_circ_eqn = [1,1,G,F,C];
+            const circ_eqn = [-G,-F,Math.sqrt(((-G)**2)+(-F)**2-C)];
+            }
+        }
         
     }
     
