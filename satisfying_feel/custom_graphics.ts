@@ -1058,7 +1058,7 @@
             return ret_vec;
         }
     
-        dotProduct(vecA_or_magA : number | number[], vecB_or_magB : number | number[], angle = undefined) : number {
+        dotProduct(vecA_or_magA : number | number[], vecB_or_magB : number | number[], angle = undefined) : number | string {
             // Can be:
             //          1. two vectors without an angle (angle is undefined and vectors are 2d vectors or higher).
             //          2. two magnitudes (magnitude of two vectors) with an angle (angle is a number).
@@ -1070,11 +1070,7 @@
                 const toRad = MODIFIED_PARAMS._ANGLE_CONSTANT*angle;
                 return (vecA_or_magA as number) * (vecB_or_magB as number) * Math.cos(toRad);
             }
-    
-            if (typeof angle !== "undefined") { // Vector use.
-                return _ERROR_._VECTOR_ERROR_
-            }
-    
+        
             const vec_a_len = (vecA_or_magA as number[]).length;
             const vec_b_len = (vecB_or_magB as number[]).length;
     
@@ -1088,12 +1084,12 @@
                 return dot_product;
             }
 
-            return _ERROR_._VECTOR_ERROR_
+            return 0;
         }
     
         getDotProductAngle(vecA : number[], vecB : number[]) : number { // get the angle between two vectors.
             const dot_product = this.dotProduct(vecA, vecB);
-            const cosAng = Math.acos(dot_product / (this.mag(vecA) * this.mag(vecB)));
+            const cosAng = Math.acos(dot_product as number / (this.mag(vecA) * this.mag(vecB)));
     
             return MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT*cosAng;
         }

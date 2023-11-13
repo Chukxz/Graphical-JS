@@ -1,4 +1,10 @@
-type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
+{
+    "use strict";
+
+    const pListCache : {} = {};     
+    const pArgCache : {} = {};
+
+    type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
 
     type _2D_VEC_ = [number, number];
 
@@ -112,24 +118,59 @@ type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
         _RENDER_ERROR_ = 14e3,
         _DRAW_CANVAS_ERROR_ = 15e3,
     }
-    
-       
-    class BackTrack 
-    {
-        constructor(){}
         
-        getPermutationsArr(arr : number[], permutationSize : number) : number[] {
+    class Miscellanous
+    {
+        constructor() {}
+    
+        // rad_to_deg();
+        // rad_to_grad();
+        // deg_to_rad();
+        // deg_to_grad();
+        // grad_to_rad();
+        // grad_to_deg();
+
+        initDepthBuffer() : Float64Array 
+        {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            return new Float64Array(elementNum);
+        }
+
+        resetDepthBuffer(depthBuffer : Float64Array) : Float64Array 
+        {
+            return depthBuffer.fill(Infinity);
+        }
+
+        initFrameBuffer() : Uint8Array 
+        {
+            const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
+            return new Uint8Array(elementNum * 4);
+        }
+
+        resetFrameBuffer(frameBuffer : Uint8Array) : Uint8Array 
+        {
+            return frameBuffer.map((value : number, index : number) => 
+            {
+                const mod4 = index % 4;
+                if (mod4 < 3) { return value = 0 } else return value = 255;
+            });
+        }
+
+        getPermutationsArr(arr : number[], permutationSize : number) : number[] 
+        {
             const permutations : number[] = [];
 
             function backtrack(currentPerm : number[]) 
             {
-                if (currentPerm.length === permutationSize) {
+                if (currentPerm.length === permutationSize) 
+                {
                     permutations.push(currentPerm.slice() as any);
 
                     return;
                 }
 
-                arr.forEach((item : number) => {
+                arr.forEach((item : number) => 
+                {
                     if (currentPerm.includes(item)) return;
                     currentPerm.push(item);
                     backtrack(currentPerm);
@@ -177,7 +218,7 @@ type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
         getFibonacciSeq(start : number, stop : number) : number[] 
         {
             var s = Math.max(start, 0);
-            const hold = [];
+            const hold : number[] = [];
             var n = 0;
             while (s <= stop) {
                 hold[n] = this.getFibonacciNum(s);
@@ -198,7 +239,7 @@ type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
         getFactorialSeq(start : number, stop : number) : number[] 
         {
             var s = Math.max(start, 0);
-            const hold = [];
+            const hold : number[] = [];
             var n = 0;
             while (s <= stop) {
                 hold[n] = this.getFactorialNum(s);
@@ -217,9 +258,164 @@ type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
         {
            return (this.getFactorialNum(arrlen)/(this.getFactorialNum(arrlen - num)));
         }
+    
+        getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase performance
+            if (arguments.length === 2) {
+                const key = `${paramList}-${maxPLen}`;
+
+                if (pListCache[key] !== undefined) {
+                    return pListCache[key];
+                }
+
+                var count = 0;
+                var compParamList : any[] = [];
+
+                for (let i of paramList) {
+
+                    if (i < maxPLen) {
+                        compParamList[count] = i;
+                        count++;
+                    }
+                }
+
+                pListCache[key] = compParamList;
+
+                return compParamList;
+            }
+            return _ERROR_._MISCELLANOUS_ERROR_;
+        }
+
+        getParamAsArg(maxPLen = Infinity, ...args : any[]) : any[] | _ERROR_ { //Function is memoized to increase perfomance
+            const key = `${args}-${maxPLen}`;
+
+            if (pArgCache[key] !== undefined) {
+                return pArgCache[key]
+            }
+
+            if (arguments.length > 1 && arguments.length <= 4) {
+                var start = 0;
+                var end = maxPLen;
+                var interval = 1;
+
+                if (arguments.length === 2) {
+                    if (arguments[1] !== undefined) {
+                        end = Math.min(arguments[1], maxPLen);
+                    } else {
+                        end = maxPLen;
+                    }
+                } 
+                
+                else {
+                    start = arguments[1] || 0;
+                    if (arguments[1] !== undefined) {
+                        end = Math.min(arguments[2], maxPLen);
+                    } else {
+                        end = maxPLen;
+                    }
+                    interval = arguments[3] || 1;
+                }
+
+                var count = 0;
+                var index = 0;
+                var compParamList : any[] = [];
+
+                for (let i = start; i < end; i++) {
+                    index = start + (count * interval);
+
+                    if (index < end) {
+                        compParamList[count] = index;
+                        count++;
+                    }
+                }
+
+                pArgCache[key] = compParamList;
+
+                return compParamList;
+            }
+
+            return _ERROR_._MISCELLANOUS_ERROR_;
+        }
+
+        createArrayFromArgs(length : any) {
+            var arr = new Array(length || 0),
+                i = length;
+
+            if (arguments.length > 1) {
+                var args = Array.prototype.slice.call(arguments, 1);
+                while (i--) {
+                    arr[length - 1 - i] = this.createArrayFromArgs.apply(this, args);
+                }
+            }
+            return arr;
+        }
+
+        createArrayFromList(param : number[]) {
+            var arr = new Array(param[0] || 0),
+                i = param[0];
+
+            if (param.length > 1) {
+                var args = Array.prototype.slice.call(param, 1);
+                while (i--) {
+                    arr[param[0] - 1 - i] = this.createArrayFromArgs.apply(this, args);
+                }
+            }
+            return arr;
+        }
+
+
+        deepCopy(val : any) {
+            var res : any = JSON.parse(JSON.stringify(val))
+            if (typeof structuredClone === "function") {
+                res = structuredClone(val);
+            }
+            return res;
+        }
+
+
+        getSlope(A_ : _2D_VEC_, B_ : _2D_VEC_) {
+            var numer = B_[0] - A_[0];
+            var denum = B_[1] - A_[1];
+
+            return numer / denum;
+        }
+
+        getMid(a : number [], b : number[], paramList : any[] ) : any[] {
+            var ret : any [] = [];
+            var count = 0;
+            for (let val of paramList) {
+                ret.push([(a[val] + b[val]) / 2]);
+                count++;
+            }
+
+            return ret;
+        }
+
+        getDist(a : number [], b : number[], paramList : any[]) : number {
+            var ret = 0;
+            const pLen = paramList.length;
+            for (let val = 0; val < pLen; val++) {
+                ret += (a[val] - b[val]) ** 2;
+            }
+            return Math.sqrt(ret);
+        }
+
+        getTriArea(a : number, b : number, c : number) : number {
+            var S = (a + b + c) / 2;
+            return Math.sqrt(S * (S - a) * (S - b) * (S - c));
+        }
+    
+        isInsideCirc(point : _2D_VEC_ , circle : _3D_VEC_) : boolean {
+            const x = Math.abs(point[0] - circle[0]);
+            const y = Math.abs(point[1] - circle[1]);
+            const r = circle[2];
+    
+            if ((x ** 2 + y ** 2) <= r ** 2) {
+                return true;
+            } else return false;
+        }    
     }
     
-    const _Backtrack = new BackTrack()
+    const _Miscellenous = new Miscellanous()
     
     class Matrix 
        {
@@ -447,52 +643,229 @@ type _ANGLE_UNIT_ = "deg" | "rad" | "grad";
         }
     }
     
-    const _Matrix = new Matrix()
-    
-    
-    
-        class BackTrack {
-        getPermutations(arr : number[], permutationSize : number) : number[] {
-            const permutations : number[] = [];
+    const _Matrix = new Matrix();
 
-            function backtrack(currentPerm : number[]) {
-                if (currentPerm.length === permutationSize) {
-                    permutations.push(currentPerm.slice() as any);
-
-                    return;
-                }
-
-                arr.forEach((item : number) => {
-                    if (currentPerm.includes(item)) return;
-                    currentPerm.push(item);
-                    backtrack(currentPerm);
-                    currentPerm.pop();
-                });
+    class Vector 
+    {
+        constructor() {}
+    
+        mag(vec : number []) : number 
+        {
+            const v_len : number = vec.length;
+            var magnitude : number = 0;
+    
+            for (let i = 0; i < v_len; i++) 
+            {
+                magnitude += vec[i] ** 2
             }
-
-            backtrack([]);
-
-            return permutations;
+    
+            return Math.sqrt(magnitude);
         }
-
-        getCombinations(arr : number[], combinationSize: number): number[] {
-            const combinations : number[] = [];
-
-            function backtrack(startIndex : number, currentCombination : number[]) {
-                if (currentCombination.length === combinationSize) {
-                    combinations.push(currentCombination.slice() as any);
-                    return;
+    
+        normalizeVec(vec : number[]) : number[] 
+        {
+            const len : number = Math.round(vec.length);
+            const magnitude : number = this.mag(vec);
+            const ret_vec : number[] = [];
+    
+            for (let i = 0; i < len; i++) {
+                ret_vec[i] = vec[i] / magnitude;
+            }
+    
+            return ret_vec;
+        }
+    
+        dotProduct(vecA_or_magA : number | number[], vecB_or_magB : number | number[], angle = undefined) 
+        : number {
+            // Can be:
+            //          1. two vectors without an angle (angle is undefined and vectors are 2d vectors or higher).
+            //          2. two magnitudes (magnitude of two vectors) with an angle (angle is a number).
+    
+            // Use vectors if you know the components e.g [x,y] values for 2d vectors, [x,y,z] values for 3d vectors and so on.
+            // Use magnitudes and an angle if you know the magnitudes of the vectors and the angle between the two vectors.
+    
+            if (typeof angle === "number") 
+            { // Magnitude use.
+                const toRad = MODIFIED_PARAMS._ANGLE_CONSTANT*angle;
+                return (vecA_or_magA as number) * (vecB_or_magB as number) * Math.cos(toRad);
+            }
+        
+            const vec_a_len = (vecA_or_magA as number[]).length;
+            const vec_b_len = (vecB_or_magB as number[]).length;
+    
+            //verify first that both vectors are of the same size and both are 2d or higher.
+            if (vec_a_len === vec_b_len && vec_b_len >= 2) 
+            {
+                var dot_product = 0;
+    
+                for (let i = 0; i < vec_a_len; i++) 
+                {
+                    dot_product += vecA_or_magA[i] * vecB_or_magB[i];
                 }
-
-                for (let i = startIndex; i < arr.length; i++) {
-                    currentCombination.push(arr[i]);
-                    backtrack(i + 1, currentCombination);
-                    currentCombination.pop();
-                }
+                return dot_product;
             }
 
-            backtrack(0, []);
-
-            return combinations;
+            return 0;
+        }
+    
+        getDotProductAngle(vecA : number[], vecB : number[]) : number 
+        { // get the angle between two vectors.
+            const dot_product = this.dotProduct(vecA, vecB);
+            const cosAng = Math.acos(dot_product as number / (this.mag(vecA) * this.mag(vecB)));
+    
+            return MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT*cosAng;
+        }
+    
+        getCrossProductByMatrix(vecs : number[][], vecs_len : number) 
+        {
+            var cross_product : number[] = [];
+            const proper_vec_len : number = vecs_len + 1; // All the vectors should be the same dimension with n + 1, where n is the number of vectors.
+            var matrix_array_top_row : number[] = [];
+    
+            for (let i = 0; i < proper_vec_len; i++) 
+            {
+                matrix_array_top_row[i] = 0 // Actually the number 0 is just a placeholder as we don't need any numbers here but we put 0 to make it a number array.
+            }
+    
+            var same_shape : number = 0; // If this variable is still equal to zero by the end of subsequent computations,
+            // it means that all the vectors are of dimenstion n + 1
+            var other_rows_array : number[] = [];
+    
+            for (let i = 0; i < vecs_len; i++) 
+            {
+                const vec_len = vecs[i].length;
+                if (vec_len !== proper_vec_len) same_shape++; // If a vector is not the same dimension with n + 1,
+                // increment the same_shape variable to capture this error.
+                else other_rows_array.push(...vecs[i]); // Else if the vector is the same dimension with n + 1, push the vector to a matrix array.
+            }
+    
+            if (same_shape === 0) 
+            { // All the vectors are the same dimension of n + 1.
+                const matrix_array = [...matrix_array_top_row, ...other_rows_array];
+                const storeCofSgn = _Matrix.getCofSgnMat([proper_vec_len, 1]);
+    
+                for (let i = 0; i < proper_vec_len; i++) {
+                    const rest_matrix_array = _Matrix.getRestMat(matrix_array, proper_vec_len, 0, i);
+                    cross_product[i] = storeCofSgn[i] * _Matrix.getDet(rest_matrix_array, vecs_len);
+                }
+            }
+    
+            return cross_product;
+        }
+    
+        crossProduct(vecs_or_mags : number[] | number[][], angle = undefined, unitVec = undefined) : number | number[] 
+        {
+            var cross_product : number | number[] = [];
+            const vecs_or_mags_len = (vecs_or_mags as number[]).length;
+            // Can be:
+            //          1. two vectors without an angle (angle is undefined and vectors are 3d vectors or higher).
+            //          2. two magnitudes (magnitude of two vectors) with an angle (angle is a number).
+    
+            // Use vectors if you know the components e.g [x,y,z] values for 3d vectors, [w,x,y,z] values for 4d vectors and so on.
+            // Use magnitudes and an angle if you know the magnitudes of the vectors and the angle between the two vectors.
+            if (typeof angle === "undefined") 
+            { // Vector use.
+                cross_product = [...this.getCrossProductByMatrix((vecs_or_mags as number[][]), vecs_or_mags_len)];
+            }
+    
+            if (typeof angle === "number") 
+            { // Magnitude use.
+                var magnitude = 1 // initial magnitude place holder
+                const toRad = MODIFIED_PARAMS._ANGLE_CONSTANT*angle;
+    
+                for (let i = 0; i < vecs_or_mags_len; i++) 
+                {
+                    magnitude *= (vecs_or_mags as number[])[i];
+                }
+    
+                if (typeof unitVec === "undefined") cross_product = magnitude * Math.sin(toRad);
+                else if (typeof unitVec === "object") cross_product = _Matrix.scaMult(magnitude * Math.sin(toRad), unitVec);
+            }
+    
+            return cross_product;
+        }
+    
+        getCrossProductAngle(vecs : number[] | number[][]) : number 
+        { // get the angle between the vectors (makes sense in 3d, but feels kinda weird for higher dimensions but sorta feels like it works...???)
+            var cross_product_angle: number | undefined = undefined;
+            const vecs_len = vecs.length;
+            const proper_vec_len = vecs_len + 1; // All the vectors should be the same dimension with n + 1, where n is the number of vectors.
+            var same_shape = 0; // If this variable is still equal to zero by the end of subsequent computations,
+            // it means that all the vectors are of dimenstion n + 1
+            const cross_product_mag = this.mag(this.crossProduct(vecs) as number[]);
+            var vecs_m = 1;
+    
+            for (let i = 0; i < vecs_len; i++) 
+            {
+                const vec_len = (vecs[i] as number[]).length;
+                if (vec_len !== proper_vec_len) same_shape++; // If a vector is not the same dimension with n + 1,
+                // increment the same_shape variable to capture this error.
+                else vecs_m *= this.mag((vecs as number[][])[i]);
+            }
+    
+            if (same_shape === 0) 
+            {
+                const sinAng = Math.asin(cross_product_mag / vecs_m);
+                const fromRad = MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT*sinAng;
+                cross_product_angle = fromRad;
+            }
+    
+            return typeof cross_product_angle === "undefined" ? cross_product_angle = _ERROR_._VECTOR_ERROR_ : cross_product_angle;
+        }
+    
+        getCrossPUnitVec(vecs : number[]) 
+        {
+            var cross_product_unit_vec : number[] = [];
+    
+            const cross_product = this.crossProduct(vecs);
+            const cross_product_mag = this.mag((cross_product as number[]));
+            cross_product_unit_vec = _Matrix.scaMult(1 / cross_product_mag, (cross_product as number[]));
+    
+            return cross_product_unit_vec;
         }
     }
+
+    const _Vector = new Vector()
+
+    class PerspectiveProjection {
+
+        constructor() 
+        {
+        }
+    
+        changeNearZ(val : number) {
+            MODIFIED_PARAMS._NZ = -val; // right to left hand coordinate system
+            this.setPersProjectParam();
+        }
+    
+        changeFarZ(val : number) {
+            MODIFIED_PARAMS._FZ = -val; // right to left hand coordinate system
+            this.setPersProjectParam();
+        }
+    
+        changeProjAngle(val : number) {
+            MODIFIED_PARAMS._PROJ_ANGLE = val
+            this.setPersProjectParam();
+        }
+    
+        setPersProjectParam() {
+            MODIFIED_PARAMS._DIST = 1 / (Math.tan(MODIFIED_PARAMS._PROJ_ANGLE / 2 * MODIFIED_PARAMS._ANGLE_CONSTANT));
+            MODIFIED_PARAMS._PROJECTION_MAT = [MODIFIED_PARAMS._DIST / MODIFIED_PARAMS._ASPECT_RATIO, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
+
+            const inverse_res : number[] | string = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT, 4);
+            if (typeof inverse_res === "string") return;
+            MODIFIED_PARAMS._INV_PROJECTION_MAT = inverse_res as _16D_VEC_;
+        }
+    
+        persProject(input_array : _4D_VEC_) : _4D_VEC_ {
+            return _Matrix.matMult(MODIFIED_PARAMS._PROJECTION_MAT, input_array, [4, 4], [4, 1]) as _4D_VEC_;
+        }
+    
+        invPersProject(input_array : _4D_VEC_) : _4D_VEC_ {
+            return _Matrix.matMult(MODIFIED_PARAMS._INV_PROJECTION_MAT, input_array, [4, 4], [4, 1]) as _4D_VEC_;
+        }
+    }
+
+    const _PerspectiveProjection = new PerspectiveProjection()
+}
+
