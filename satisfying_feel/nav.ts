@@ -66,7 +66,7 @@ class CanvasObject{
         
         max_canvas_instance_number : number;
 
-        selected_object_instances : object;
+        selected_object_instances : number[];
         
         instance_number_to_list_map : object;
 
@@ -74,7 +74,7 @@ class CanvasObject{
         {
             this.arrlen = 0;
             this.instance_number = 0;
-            this.selected_object_instances = {};
+            this.selected_object_instances = [];
             this.max_canvas_instance_number = 0;
             this.instance_number_to_list_map = {};
             this.canvas_object_array = [];
@@ -113,7 +113,7 @@ class CanvasObject{
                     }
                 }
             
-              if (instance_number_input in this.selected_object_instances) delete this.selected_object_instances[instance_number_input];
+              if (instance_number_input in this.selected_object_instances) this.selected_object_instances.splice(this.selected_object_instances.indexOf(instance_number_input),1);
             } 
         }
         
@@ -129,10 +129,10 @@ class CanvasObject{
         
         deleteSelectedCanvasObjects()
         {
-            for (const key in this.selected_object_instances)
+            for (const val in this.selected_object_instances)
             {
-                const index = this.selected_object_instances[key];
-                this.deleteCanvasObjectBase(Number(key),index);
+                const index = this.instance_number_to_list_map[val];
+                this.deleteCanvasObjectBase(Number(val),index);
             }
             this.arrlen = this.canvas_object_array.length;          
         }
@@ -150,10 +150,18 @@ class CanvasObject{
 
         select_canvas_instance(instance_number_input : number)  
         {            
-            if (instance_number_input >= 0 && instance_number_input <= this.max_canvas_instance_number  && instance_number_input in this.instance_number_to_list_map)
-            {            
+            if (instance_number_input >= 0 && instance_number_input <= this.max_canvas_instance_number)
+            {
+                if (instance_number_input in this.instance_number_to_list_map)
+            {   
+                if (instance_number_input in this.selected_object_instances)
+                {
+                    this.deselect_canvas_instance(instance_number_input);
+                    return;
+                }
                 const selection = this.instance_number_to_list_map[instance_number_input]    
-                this.selected_object_instances[instance_number_input] = selection;
+                this.selected_object_instances.push(selection);
+                }
             }
         }
 
@@ -163,17 +171,14 @@ class CanvasObject{
                 if (instance_number_input in this.selected_object_instances)
                 {
                     const selection = this.instance_number_to_list_map[instance_number_input];
-                    delete this.selected_object_instances[instance_number_input];
+                    this.selected_object_instances.splice(this.selected_object_instances.indexOf(instance_number_input),1);
                 }
             }
         }
         
         clearAllSelectedCanvasInstances()
         {
-            for (const key in this.selected_object_instances)
-            {
-                delete this.selected_object_instances[key];
-            }
+           this.selected_object_instances.splice(0);
         }
         
         

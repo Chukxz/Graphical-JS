@@ -148,6 +148,8 @@ class CanvasObjectManager
 }
 const canvas_object_manager = new CanvasObjectManager();
 
+const start = new Date().getTime();
+
 console.log(canvas_object_manager.canvas_object_array)
 
 canvas_object_manager.createNewCanvasObject()
@@ -191,3 +193,6 @@ console.log(canvas_object_manager.instance_number_to_list_map)
 
 console.log(canvas_object_manager.selected_object_instances)
 
+const end = new Date().getTime();
+
+console.log(`${ end - start} milliseconds`);
