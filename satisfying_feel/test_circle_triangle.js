@@ -35,7 +35,7 @@
     };
     const MODIFIED_PARAMS = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
     let _ERROR_;
-    (function (_ERROR_) {
+    (function(_ERROR_) {
         _ERROR_[_ERROR_["_NO_ERROR_"] = 1000] = "_NO_ERROR_";
         _ERROR_[_ERROR_["_SETTINGS_ERROR_"] = 2000] = "_SETTINGS_ERROR_";
         _ERROR_[_ERROR_["_MISCELLANOUS_ERROR_"] = 3000] = "_MISCELLANOUS_ERROR_";
@@ -53,13 +53,13 @@
         _ERROR_[_ERROR_["_DRAW_CANVAS_ERROR_"] = 15000] = "_DRAW_CANVAS_ERROR_";
     })(_ERROR_ || (_ERROR_ = {}));
     class Miscellanous {
-        constructor() { }
-        // rad_to_deg();
-        // rad_to_grad();
-        // deg_to_rad();
-        // deg_to_grad();
-        // grad_to_rad();
-        // grad_to_deg();
+        constructor() {}
+            // rad_to_deg();
+            // rad_to_grad();
+            // deg_to_rad();
+            // deg_to_grad();
+            // grad_to_rad();
+            // grad_to_deg();
         initDepthBuffer() {
             const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
             return new Float64Array(elementNum);
@@ -76,13 +76,13 @@
                 const mod4 = index % 4;
                 if (mod4 < 3) {
                     return value = 0;
-                }
-                else
+                } else
                     return value = 255;
             });
         }
         getPermutationsArr(arr, permutationSize) {
             const permutations = [];
+
             function backtrack(currentPerm) {
                 if (currentPerm.length === permutationSize) {
                     permutations.push(currentPerm.slice());
@@ -101,6 +101,7 @@
         }
         getCombinationsArr(arr, combinationSize) {
             const combinations = [];
+
             function backtrack(startIndex, currentCombination) {
                 if (currentCombination.length === combinationSize) {
                     combinations.push(currentCombination.slice());
@@ -248,17 +249,14 @@
                 if (arguments.length === 2) {
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[1], maxPLen);
-                    }
-                    else {
+                    } else {
                         end = maxPLen;
                     }
-                }
-                else {
+                } else {
                     start = arguments[1] || 0;
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[2], maxPLen);
-                    }
-                    else {
+                    } else {
                         end = maxPLen;
                     }
                     interval = arguments[3] || 1;
@@ -279,7 +277,8 @@
             return _ERROR_._MISCELLANOUS_ERROR_;
         }
         createArrayFromArgs(length) {
-            var arr = new Array(length || 0), i = length;
+            var arr = new Array(length || 0),
+                i = length;
             if (arguments.length > 1) {
                 var args = Array.prototype.slice.call(arguments, 1);
                 while (i--) {
@@ -289,7 +288,8 @@
             return arr;
         }
         createArrayFromList(param) {
-            var arr = new Array(param[0] || 0), i = param[0];
+            var arr = new Array(param[0] || 0),
+                i = param[0];
             if (param.length > 1) {
                 var args = Array.prototype.slice.call(param, 1);
                 while (i--) {
@@ -307,7 +307,7 @@
         }
     }
     class Linear {
-        constructor() { }
+        constructor() {}
         getSlope(A_, B_) {
             var numer = B_[0] - A_[0];
             var denum = B_[1] - A_[1];
@@ -340,8 +340,7 @@
             const r = circle[2];
             if ((x ** 2 + y ** 2) <= r ** 2) {
                 return true;
-            }
-            else
+            } else
                 return false;
         }
         isInsideTri(pvec, avec, bvec, cvec) {
@@ -409,10 +408,6 @@
             return [X, Y, Math.sqrt(r_squared)];
         }
         getInscribedCircle_2(x1, y1, x2, y2, x3, y3) {
-            const param_list = [0, 1];
-            const a = _Linear.getDist([x2, y2], [x3, y3], param_list);
-            const b = _Linear.getDist([x1, y1], [x3, y3], param_list);
-            const c = _Linear.getDist([x1, y1], [x2, y2], param_list);
             const grad_AC = _Linear.getSlope([x1, y1], [x3, y3]);
             const grad_AB = _Linear.getSlope([x1, y1], [x2, y2]);
             const grad_BC = _Linear.getSlope([x2, y2], [x3, y3]);
@@ -440,7 +435,7 @@
         }
     }
     class Matrix {
-        constructor() { }
+        constructor() {}
         matMult(matA, matB, shapeA, shapeB) {
             const matC = [];
             if (shapeA[1] === shapeB[0]) {
@@ -464,8 +459,7 @@
                     // Do nothing...don't multiply the last matrix value by the scalar value
                     // useful when perspective division is going on.
                     matOut.push(matIn[i]);
-                }
-                else {
+                } else {
                     matOut.push(matIn[i] * scalarVal);
                 }
             }
@@ -502,8 +496,7 @@
                 if (i === c) {
                     matOut.push(1);
                     c += val + 1;
-                }
-                else {
+                } else {
                     matOut.push(0);
                 }
             }
@@ -569,8 +562,7 @@
                 for (let j = 0; j < shpB; j++) {
                     if ((i + j) % 2 === 0) {
                         matOut.push(1);
-                    }
-                    else
+                    } else
                         matOut.push(-1);
                 }
             }
@@ -599,7 +591,7 @@
         }
     }
     class Vector {
-        constructor() { }
+        constructor() {}
         mag(vec) {
             const v_len = vec.length;
             var magnitude = 0;
@@ -728,8 +720,7 @@
         }
     }
     class PerspectiveProjection {
-        constructor() {
-        }
+        constructor() {}
         changeNearZ(val) {
             MODIFIED_PARAMS._NZ = -val; // right to left hand coordinate system
             this.setPersProjectParam();
@@ -762,4 +753,93 @@
     const _Matrix = new Matrix();
     const _Vector = new Vector();
     const _PerspectiveProjection = new PerspectiveProjection();
+
+
+    const canvas = document.getElementsByTagName("canvas")[0];
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 1300;
+    canvas.height = 600;
+    canvas.style.borderWidth = 1;
+    canvas.style.borderStyle = "solid";
+    canvas.style.borderColor = "blue";
+    ctx.globalAlpha = 0.4
+
+
+    function drawCircle(a, b, r, fill_style = "red", stroke_style = "black") {
+
+        ctx.beginPath();
+        ctx.arc(a, b, r, 0, 2 * Math.PI);
+        ctx.closePath();
+
+        ctx.fillStyle = fill_style;
+        ctx.fill();
+
+        const area = Math.PI * r * r;
+        const circumference = 2 * Math.PI * r;
+        ctx.lineWidth = Math.round(Math.sqrt(area / circumference));
+
+        ctx.strokeStyle = stroke_style;
+        ctx.stroke();
+    }
+
+    // drawCircle(300, 400, 50);
+
+    function drawTriangle(x1, y1, x2, y2, x3, y3, fill_style = "green", stroke_style = "black") {
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.closePath();
+
+        ctx.fillStyle = fill_style;
+        ctx.fill();
+
+        const a = Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2);
+        const b = Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2);
+        const c = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const perimeter = a + b + c;
+        const semiperimeter = perimeter / 2;
+        const area = Math.sqrt(semiperimeter * (semiperimeter - a) * (semiperimeter - b) * (semiperimeter - c));
+        ctx.lineWidth = Math.round(Math.sqrt(area / perimeter));
+
+        ctx.strokeStyle = stroke_style;
+        ctx.stroke();
+    }
+
+
+    const tri_coords = [200, 400, 300, 100, 500, 450];
+
+    drawTriangle(...tri_coords);
+
+
+    const test1 = _Linear.getCircumCircle_1(...tri_coords);
+
+    const test2 = _Linear.getCircumCircle_2(...tri_coords);
+
+    console.log(test1);
+
+    console.log(test2)
+
+    // drawCircle(...test1);
+
+    // drawCircle(...test2);
+
+    const test3 = _Linear.getInscribedCircle_1(...tri_coords);
+
+    const test4 = _Linear.getInscribedCircle_2(...tri_coords);
+
+    console.log(test3);
+
+    console.log(test4)
+
+    drawCircle(...test3);
+
+    drawCircle(...test4);
+    // const d = Math.PI * r * r;
+    // const e = 2 * Math.PI * r;
+    // ctx.fillText(d, a * 3, b * 3, a + b)
+    // ctx.fillText(e, a * 5, b * 3, a + b)
+    // ctx.fillText(Math.round(Math.sqrt(d / e)), a * 7, b * 3, a + b)
 }

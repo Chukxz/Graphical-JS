@@ -135,6 +135,12 @@
         start : (element : any) => void,
         sensitivity : number
     }
+
+    type d = {
+        change: (value: any) => void;
+        start: (element: any) => void;
+        sensitivity: number;
+    }
   
     // We implement a function closure here by binding the variable 'implementDrag'
     // to a local function and invoking the local function, this ensures that we have

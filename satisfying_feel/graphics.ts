@@ -507,20 +507,123 @@
             return false;
         }
 
-        getCircumCircle_1(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number)
+        getCircumCircle_1(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number) : _3D_VEC_
         {
             const coeff_Mat = [2*x1,2*y1,1,2*x2,2*y2,1,2*x3,2*y3,1];
             const inv_coeff_Mat = _Matrix.getInvMat(coeff_Mat,3);
+
             if (typeof inv_coeff_Mat !== "string")
             {
+
             const y_Mat = [-(x1**2+y1**2),-(x2**2+y2**2),-(x3**2+y3**2)];
             const x_Mat = _Matrix.matMult(inv_coeff_Mat as number[],y_Mat,[3,3],[3,1]);
             const [G,F,C] = x_Mat;
-            const gen_circ_eqn = [1,1,G,F,C];
-            const circ_eqn = [-G,-F,Math.sqrt(((-G)**2)+(-F)**2-C)];
+
+            return [-G,-F,Math.sqrt(((-G)**2)+(-F)**2-C)];
+
             }
+
+            return[1,1,1];
         }
-        
+
+        getCircumCircle_2(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number) : _3D_VEC_
+        {
+            const param_list = [0,1];
+            const mid_AB = _Linear.getMid([x1,y1],[x2,y2],param_list);
+            const mid_AC = _Linear.getMid([x1,y1],[x3,y3],param_list);
+            const grad_AB = _Linear.getSlope([x1,y1],[x2,y2]);
+            const grad_AC = _Linear.getSlope([x1,y1],[x3,y3]);
+            const norm_AB = -1/grad_AB;
+            const norm_AC = -1/grad_AC;
+
+            const intercept_norm_AB = mid_AB[1] - (norm_AB * mid_AB[0]);
+            const intercept_norm_AC = mid_AC[1] - (norm_AC * mid_AC[0]);
+
+            const X = (intercept_norm_AB - intercept_norm_AC) / (norm_AC - norm_AB);
+            const Y = (norm_AC * X) + intercept_norm_AC;
+            const r_squared = (x1 - X)**2 + (y1 - Y)**2;
+
+            return [X, Y, Math.sqrt(r_squared)];
+        }
+
+        getInscribedCircle_1(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number) : _3D_VEC_
+        {
+            const param_list = [0,1];
+
+            const a = _Linear.getDist([x2,y2],[x3,y3],param_list);
+            const b = _Linear.getDist([x1,y1],[x3,y3],param_list);
+            const c = _Linear.getDist([x1,y1],[x2,y2],param_list);
+
+            const A = Math.acos((b**2 + c**2 - a**2) / (2*b*c));
+            const C = Math.acos((a**2 + b**2 - c**2) / (2*a*b));
+
+            const half_A = A * 0.5;
+            const half_C = C * 0.5;
+            const grad_AC = _Linear.getSlope([x1,y1],[x3,y3]);
+            const grad_AB = _Linear.getSlope([x1,y1],[x2,y2]);
+            const grad_BC = _Linear.getSlope([x2,y2],[x3,y3]);
+
+            const test_AO_1 = (grad_AC + Math.tan(half_A)) / (1 + Math.tan(half_A) * grad_AC);
+            const test_AO_2 = (grad_AC + Math.tan(half_A)) / (1 - Math.tan(half_A) * grad_AC);
+            const grad_AO = test_AO_1 * grad_AB >= 0 ? test_AO_1 : test_AO_2;
+
+            const test_OC_1 = (grad_AC + Math.tan(half_C)) / (1 + Math.tan(half_C) * grad_AC);
+            const test_OC_2 = (grad_AC + Math.tan(half_C)) / (1 - Math.tan(half_C) * grad_AC);
+            const grad_OC = test_OC_1 * grad_BC >= 0 ? test_OC_1 : test_OC_2;
+
+            const intercept_grad_AO = y1 - (grad_AO * x1);
+            const intercept_grad_OC = y3 - (grad_OC * x3);
+
+            const X = (intercept_grad_OC - intercept_grad_AO) / (grad_AO - grad_OC);
+            const Y = (grad_AO * X) + intercept_grad_AO;
+
+            const norm_AC = -1/grad_AC;
+            const intercept_grad_AC = y1 - (grad_AC * x1);
+            const intercept_norm_AC = Y - (norm_AC * X);
+
+            const perp_AC_X = (intercept_norm_AC - intercept_grad_AC) / (grad_AC - norm_AC);
+            const perp_AC_Y = (norm_AC * X) + intercept_norm_AC;
+            const r_squared = (X - perp_AC_X)**2 + (Y - perp_AC_Y)**2;
+
+            return [X, Y, Math.sqrt(r_squared)];
+        }
+
+        getInscribedCircle_2(x1 : number,y1 : number,x2 : number,y2 : number,x3 : number,y3 : number) : _3D_VEC_
+        {
+            const grad_AC = _Linear.getSlope([x1,y1],[x3,y3]);
+            const grad_AB = _Linear.getSlope([x1,y1],[x2,y2]);
+            const grad_BC = _Linear.getSlope([x2,y2],[x3,y3]);
+
+            const A = Math.atan(Math.abs((grad_AB - grad_AC) / (1 + grad_AB * grad_AC)));
+            const C = Math.atan(Math.abs((grad_BC - grad_AC) / (1 + grad_BC * grad_AC)));
+
+            const half_A = A * 0.5;
+            const half_C = C * 0.5;
+
+            const test_AO_1 = (grad_AC + Math.tan(half_A)) / (1 + Math.tan(half_A) * grad_AC);
+            const test_AO_2 = (grad_AC + Math.tan(half_A)) / (1 - Math.tan(half_A) * grad_AC);
+            const grad_AO = test_AO_1 * grad_AB >= 0 ? test_AO_1 : test_AO_2;
+
+            const test_OC_1 = (grad_AC + Math.tan(half_C)) / (1 + Math.tan(half_C) * grad_AC);
+            const test_OC_2 = (grad_AC + Math.tan(half_C)) / (1 - Math.tan(half_C) * grad_AC);
+            const grad_OC = test_OC_1 * grad_BC >= 0 ? test_OC_1 : test_OC_2;
+
+            const intercept_grad_AO = y1 - (grad_AO * x1);
+            const intercept_grad_OC = y3 - (grad_OC * x3);
+
+            const X = (intercept_grad_OC - intercept_grad_AO) / (grad_AO - grad_OC);
+            const Y = (grad_AO * X) + intercept_grad_AO;
+
+            const norm_AC = -1/grad_AC;
+            const intercept_grad_AC = y1 - (grad_AC * x1);
+            const intercept_norm_AC = Y - (norm_AC * X);
+
+            const perp_AC_X = (intercept_norm_AC - intercept_grad_AC) / (grad_AC - norm_AC);
+            const perp_AC_Y = (norm_AC * X) + intercept_norm_AC;
+            const r_squared = (X - perp_AC_X)**2 + (Y - perp_AC_Y)**2;
+
+            return [X, Y, Math.sqrt(r_squared)];
+        }
     }
     
     class Matrix 
