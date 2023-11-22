@@ -35,7 +35,7 @@
     };
     const MODIFIED_PARAMS = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
     let _ERROR_;
-    (function (_ERROR_) {
+    (function(_ERROR_) {
         _ERROR_[_ERROR_["_NO_ERROR_"] = 1000] = "_NO_ERROR_";
         _ERROR_[_ERROR_["_SETTINGS_ERROR_"] = 2000] = "_SETTINGS_ERROR_";
         _ERROR_[_ERROR_["_MISCELLANOUS_ERROR_"] = 3000] = "_MISCELLANOUS_ERROR_";
@@ -53,13 +53,13 @@
         _ERROR_[_ERROR_["_DRAW_CANVAS_ERROR_"] = 15000] = "_DRAW_CANVAS_ERROR_";
     })(_ERROR_ || (_ERROR_ = {}));
     class Miscellanous {
-        constructor() { }
-        // rad_to_deg();
-        // rad_to_grad();
-        // deg_to_rad();
-        // deg_to_grad();
-        // grad_to_rad();
-        // grad_to_deg();
+        constructor() {}
+            // rad_to_deg();
+            // rad_to_grad();
+            // deg_to_rad();
+            // deg_to_grad();
+            // grad_to_rad();
+            // grad_to_deg();
         initDepthBuffer() {
             const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
             return new Float64Array(elementNum);
@@ -76,13 +76,13 @@
                 const mod4 = index % 4;
                 if (mod4 < 3) {
                     return value = 0;
-                }
-                else
+                } else
                     return value = 255;
             });
         }
         getPermutationsArr(arr, permutationSize) {
             const permutations = [];
+
             function backtrack(currentPerm) {
                 if (currentPerm.length === permutationSize) {
                     permutations.push(currentPerm.slice());
@@ -101,6 +101,7 @@
         }
         getCombinationsArr(arr, combinationSize) {
             const combinations = [];
+
             function backtrack(startIndex, currentCombination) {
                 if (currentCombination.length === combinationSize) {
                     combinations.push(currentCombination.slice());
@@ -248,17 +249,14 @@
                 if (arguments.length === 2) {
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[1], maxPLen);
-                    }
-                    else {
+                    } else {
                         end = maxPLen;
                     }
-                }
-                else {
+                } else {
                     start = arguments[1] || 0;
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[2], maxPLen);
-                    }
-                    else {
+                    } else {
                         end = maxPLen;
                     }
                     interval = arguments[3] || 1;
@@ -279,7 +277,8 @@
             return _ERROR_._MISCELLANOUS_ERROR_;
         }
         createArrayFromArgs(length) {
-            var arr = new Array(length || 0), i = length;
+            var arr = new Array(length || 0),
+                i = length;
             if (arguments.length > 1) {
                 var args = Array.prototype.slice.call(arguments, 1);
                 while (i--) {
@@ -289,7 +288,8 @@
             return arr;
         }
         createArrayFromList(param) {
-            var arr = new Array(param[0] || 0), i = param[0];
+            var arr = new Array(param[0] || 0),
+                i = param[0];
             if (param.length > 1) {
                 var args = Array.prototype.slice.call(param, 1);
                 while (i--) {
@@ -307,10 +307,10 @@
         }
     }
     class Linear {
-        constructor() { }
+        constructor() {}
         getSlope(A_, B_) {
-            var numer = B_[0] - A_[0];
-            var denum = B_[1] - A_[1];
+            var numer = B_[1] - A_[1];
+            var denum = B_[0] - A_[0];
             return numer / denum;
         }
         getMid(a, b, paramList) {
@@ -340,8 +340,7 @@
             const r = circle[2];
             if ((x ** 2 + y ** 2) <= r ** 2) {
                 return true;
-            }
-            else
+            } else
                 return false;
         }
         isInsideTri(pvec, avec, bvec, cvec) {
@@ -352,23 +351,11 @@
             }
             return false;
         }
-        getCircumCircle_1(x1, y1, x2, y2, x3, y3) {
-            const coeff_Mat = [2 * x1, 2 * y1, 1, 2 * x2, 2 * y2, 1, 2 * x3, 2 * y3, 1];
-            const inv_coeff_Mat = _Matrix.getInvMat(coeff_Mat, 3);
-            if (typeof inv_coeff_Mat !== "string") {
-                const y_Mat = [-(x1 ** 2 + y1 ** 2), -(x2 ** 2 + y2 ** 2), -(x3 ** 2 + y3 ** 2)];
-                const x_Mat = _Matrix.matMult(inv_coeff_Mat, y_Mat, [3, 3], [3, 1]);
-                const [G, F, C] = x_Mat;
-                return [-G, -F, Math.sqrt(((-G) ** 2) + (-F) ** 2 - C)];
-            }
-            return [1, 1, 1];
-        }
-        getCircumCircle_2(x1, y1, x2, y2, x3, y3) {
-            const param_list = [0, 1];
-            const mid_AB = _Linear.getMid([x1, y1], [x2, y2], param_list);
-            const mid_AC = _Linear.getMid([x1, y1], [x3, y3], param_list);
-            const grad_AB = _Linear.getSlope([x1, y1], [x2, y2]);
-            const grad_AC = _Linear.getSlope([x1, y1], [x3, y3]);
+        getCircumCircle(x1, y1, x2, y2, x3, y3) {
+            const mid_AB = [(x1 + x2) / 2, (y1 + y2) / 2]
+            const mid_AC = [(x1 + x3) / 2, (y1 + y3) / 2]
+            const grad_AB = (y2 - y1) / (x2 - x1);
+            const grad_AC = (y3 - y1) / (x3 - x1)
             const norm_AB = -1 / grad_AB;
             const norm_AC = -1 / grad_AC;
             const intercept_norm_AB = mid_AB[1] - (norm_AB * mid_AB[0]);
@@ -378,69 +365,21 @@
             const r_squared = (x1 - X) ** 2 + (y1 - Y) ** 2;
             return [X, Y, Math.sqrt(r_squared)];
         }
-        getInscribedCircle_1(x1, y1, x2, y2, x3, y3) {
+        getInCircle(x1, y1, x2, y2, x3, y3) {
             const param_list = [0, 1];
             const a = _Linear.getDist([x2, y2], [x3, y3], param_list);
             const b = _Linear.getDist([x1, y1], [x3, y3], param_list);
             const c = _Linear.getDist([x1, y1], [x2, y2], param_list);
-            const A = Math.acos((b ** 2 + c ** 2 - a ** 2) / (2 * b * c));
-            const C = Math.acos((a ** 2 + b ** 2 - c ** 2) / (2 * a * b));
-            const half_A = A * 0.5;
-            const half_C = C * 0.5;
-            const grad_AC = _Linear.getSlope([x1, y1], [x3, y3]);
-            const grad_AB = _Linear.getSlope([x1, y1], [x2, y2]);
-            const grad_BC = _Linear.getSlope([x2, y2], [x3, y3]);
-            const test_AO_1 = (grad_AC + Math.tan(half_A)) / (1 + Math.tan(half_A) * grad_AC);
-            const test_AO_2 = (grad_AC + Math.tan(half_A)) / (1 - Math.tan(half_A) * grad_AC);
-            const grad_AO = test_AO_1 * grad_AB >= 0 ? test_AO_1 : test_AO_2;
-            const test_OC_1 = (grad_AC + Math.tan(half_C)) / (1 + Math.tan(half_C) * grad_AC);
-            const test_OC_2 = (grad_AC + Math.tan(half_C)) / (1 - Math.tan(half_C) * grad_AC);
-            const grad_OC = test_OC_1 * grad_BC >= 0 ? test_OC_1 : test_OC_2;
-            const intercept_grad_AO = y1 - (grad_AO * x1);
-            const intercept_grad_OC = y3 - (grad_OC * x3);
-            const X = (intercept_grad_OC - intercept_grad_AO) / (grad_AO - grad_OC);
-            const Y = (grad_AO * X) + intercept_grad_AO;
-            const norm_AC = -1 / grad_AC;
-            const intercept_grad_AC = y1 - (grad_AC * x1);
-            const intercept_norm_AC = Y - (norm_AC * X);
-            const perp_AC_X = (intercept_norm_AC - intercept_grad_AC) / (grad_AC - norm_AC);
-            const perp_AC_Y = (norm_AC * X) + intercept_norm_AC;
-            const r_squared = (X - perp_AC_X) ** 2 + (Y - perp_AC_Y) ** 2;
-            return [X, Y, Math.sqrt(r_squared)];
-        }
-        getInscribedCircle_2(x1, y1, x2, y2, x3, y3) {
-            const param_list = [0, 1];
-            const a = _Linear.getDist([x2, y2], [x3, y3], param_list);
-            const b = _Linear.getDist([x1, y1], [x3, y3], param_list);
-            const c = _Linear.getDist([x1, y1], [x2, y2], param_list);
-            const grad_AC = _Linear.getSlope([x1, y1], [x3, y3]);
-            const grad_AB = _Linear.getSlope([x1, y1], [x2, y2]);
-            const grad_BC = _Linear.getSlope([x2, y2], [x3, y3]);
-            const A = Math.atan(Math.abs((grad_AB - grad_AC) / (1 + grad_AB * grad_AC)));
-            const C = Math.atan(Math.abs((grad_BC - grad_AC) / (1 + grad_BC * grad_AC)));
-            const half_A = A * 0.5;
-            const half_C = C * 0.5;
-            const test_AO_1 = (grad_AC + Math.tan(half_A)) / (1 + Math.tan(half_A) * grad_AC);
-            const test_AO_2 = (grad_AC + Math.tan(half_A)) / (1 - Math.tan(half_A) * grad_AC);
-            const grad_AO = test_AO_1 * grad_AB >= 0 ? test_AO_1 : test_AO_2;
-            const test_OC_1 = (grad_AC + Math.tan(half_C)) / (1 + Math.tan(half_C) * grad_AC);
-            const test_OC_2 = (grad_AC + Math.tan(half_C)) / (1 - Math.tan(half_C) * grad_AC);
-            const grad_OC = test_OC_1 * grad_BC >= 0 ? test_OC_1 : test_OC_2;
-            const intercept_grad_AO = y1 - (grad_AO * x1);
-            const intercept_grad_OC = y3 - (grad_OC * x3);
-            const X = (intercept_grad_OC - intercept_grad_AO) / (grad_AO - grad_OC);
-            const Y = (grad_AO * X) + intercept_grad_AO;
-            const norm_AC = -1 / grad_AC;
-            const intercept_grad_AC = y1 - (grad_AC * x1);
-            const intercept_norm_AC = Y - (norm_AC * X);
-            const perp_AC_X = (intercept_norm_AC - intercept_grad_AC) / (grad_AC - norm_AC);
-            const perp_AC_Y = (norm_AC * X) + intercept_norm_AC;
-            const r_squared = (X - perp_AC_X) ** 2 + (Y - perp_AC_Y) ** 2;
+
+            const X = (a * x1 + b * x2 + c * x3) / (a + b + c);
+            const Y = (a * y1 + b * y2 + c * y3) / (a + b + c);
+            const s = (a + b + c) / 2
+            const r_squared = ((s - a) * (s - b) * (s - c)) / s;
             return [X, Y, Math.sqrt(r_squared)];
         }
     }
     class Matrix {
-        constructor() { }
+        constructor() {}
         matMult(matA, matB, shapeA, shapeB) {
             const matC = [];
             if (shapeA[1] === shapeB[0]) {
@@ -464,8 +403,7 @@
                     // Do nothing...don't multiply the last matrix value by the scalar value
                     // useful when perspective division is going on.
                     matOut.push(matIn[i]);
-                }
-                else {
+                } else {
                     matOut.push(matIn[i] * scalarVal);
                 }
             }
@@ -502,8 +440,7 @@
                 if (i === c) {
                     matOut.push(1);
                     c += val + 1;
-                }
-                else {
+                } else {
                     matOut.push(0);
                 }
             }
@@ -569,8 +506,7 @@
                 for (let j = 0; j < shpB; j++) {
                     if ((i + j) % 2 === 0) {
                         matOut.push(1);
-                    }
-                    else
+                    } else
                         matOut.push(-1);
                 }
             }
@@ -599,7 +535,7 @@
         }
     }
     class Vector {
-        constructor() { }
+        constructor() {}
         mag(vec) {
             const v_len = vec.length;
             var magnitude = 0;
@@ -728,8 +664,7 @@
         }
     }
     class PerspectiveProjection {
-        constructor() {
-        }
+        constructor() {}
         changeNearZ(val) {
             MODIFIED_PARAMS._NZ = -val; // right to left hand coordinate system
             this.setPersProjectParam();
@@ -762,4 +697,27 @@
     const _Matrix = new Matrix();
     const _Vector = new Vector();
     const _PerspectiveProjection = new PerspectiveProjection();
+
+    const tricoords = [200, 400, 300, 100, 500, 450];
+
+    const test_1 = _Linear.getCircumCircle(...tricoords);
+    const test_2 = _Linear.getInCircle(...tricoords);
+
+    console.log(test_1)
+    console.log(test_2)
+
+    console.log(tricoords);
+
+    console.log(_Linear.getSlope([1, 2], [3, 6], [0, 1]))
+
+
+    const runs = 1e7
+
+    const start = new Date().getTime();
+
+    for (let i = 0; i < runs; i++) _Linear.getCircumCircle(...tricoords)
+
+    const end = new Date().getTime();
+
+    console.log(`Time taken : ${end - start} ms`);
 }
