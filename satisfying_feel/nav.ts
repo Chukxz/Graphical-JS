@@ -44,7 +44,7 @@ class CanvasObject{
      }
      
      
-    constructor(instance_number_input)
+    constructor(instance_number_input : number)
         {
             this.instance.instance_number = instance_number_input;
         }
@@ -52,7 +52,7 @@ class CanvasObject{
     
     
     class BoxObject extends CanvasObject {
-        constructor(instance_number_input)
+        constructor(instance_number_input : number)
             {
                 super(instance_number_input);
                 this.instance.object_type = "box";

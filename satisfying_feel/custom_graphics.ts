@@ -1,8 +1,8 @@
 //
 
-"use strict"
+(function(){
+    "use strict"
 
-{
     const pListCache : {} = {};     
     const pArgCache : {} = {};
 
@@ -71,222 +71,17 @@
         _RENDER_ERROR_,
         _DRAW_CANVAS_ERROR_,
     }
-
-    enum _ERROR_MATRIX_
-    {
-        _DET_ = 1,
-        _MINOR_,
-        _COF_,
-        _ADJ_,
-        _INV_
-    }
-   
-
-
-    class BackTrack {
-        getPermutations(arr : number[], permutationSize : number) : number[] {
-            const permutations : number[] = [];
-
-            function backtrack(currentPerm : number[]) {
-                if (currentPerm.length === permutationSize) {
-                    permutations.push(currentPerm.slice() as any);
-
-                    return;
-                }
-
-                arr.forEach((item : number) => {
-                    if (currentPerm.includes(item)) return;
-                    currentPerm.push(item);
-                    backtrack(currentPerm);
-                    currentPerm.pop();
-                });
-            }
-
-            backtrack([]);
-
-            return permutations;
-        }
-
-        getCombinations(arr : number[], combinationSize: number): number[] {
-            const combinations : number[] = [];
-
-            function backtrack(startIndex : number, currentCombination : number[]) {
-                if (currentCombination.length === combinationSize) {
-                    combinations.push(currentCombination.slice() as any);
-                    return;
-                }
-
-                for (let i = startIndex; i < arr.length; i++) {
-                    currentCombination.push(arr[i]);
-                    backtrack(i + 1, currentCombination);
-                    currentCombination.pop();
-                }
-            }
-
-            backtrack(0, []);
-
-            return combinations;
-        }
-    }
-
+    
     interface DRAG
     { 
         change : (value : number) => void,
         start : (element : any) => void,
         sensitivity : number
     }
-
-    type d = {
-        change: (value: any) => void;
-        start: (element: any) => void;
-        sensitivity: number;
-    }
   
-    // We implement a function closure here by binding the variable 'implementDrag'
-    // to a local function and invoking the local function, this ensures that we have
-    // some sort of private variables
-    var implementDrag : DRAG =
-     (function() {
-        var pos1 = 0,
-            pos2 = 0,
-            pos3 = 0,
-            pos4 = 0,
-            prev = 0,
-            now = Date.now(),
-            dt = now - prev + 1,
-            dX = 0,
-            dY = 0,
-            sens = 10,
-
-            // We invoke the local functions (changeSens and startDrag) as methods
-            // of the object 'retObject' and set the return value of the local function
-            // to 'retObject'
-
-            retObject : DRAG = {
-                change: changeSens,
-                start: drag,
-                sensitivity: getSens()
-            };
-
-        function changeSens(value : number) {
-            sens = value;
-        }
-        
-        function getSens() : number{
-            return sens;
-        }
-
-        function drag(element : any) : void {
-              startDragMobile(element);
-              startDrag(element);
-        }
-
-        function startDrag(element : any) : void {
-            element.onmousedown = dragMouseDown;
-        }
-
-        function startDragMobile(element : any) : void {
-            element.addEventListener('touchstart', dragTouchstart, { 'passive': true });
-        }
-
-        function dragMouseDown(e : any) {
-            e = e || window.event;
-            e.preventDefault();
-
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-
-            document.onmouseup = dragMouseup;
-            document.onmousemove = dragMousemove;
-        }
-
-        function dragTouchstart(e : any) {
-            e = e || window.event;
-
-            pos3 = e.touches[0].clientX;
-            pos4 = e.touches[0].clientY;
-
-            document.addEventListener('touchend', dragTouchend, { 'passive': true });
-            document.addEventListener('touchmove', dragTouchmove, { 'passive': true });
-        }
-
-        function dragMousemove(e : any) {
-            e = e || window.event;
-            e.preventDefault();
-
-            pos1 = e.clientX - pos3;
-            pos2 = e.clientY - pos4;
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-
-            dX = pos1 / dt;
-            dY = pos1 / dt;
-
-            prev = now;
-            now = Date.now();
-            dt = now - prev + 1;
-
-            console.log(`X: ${dX*sens}`);
-            console.log(`Y: ${dY*sens}`);
-        }
-
-        function dragTouchmove(e : any) {
-            e = e || window.event;
-
-            pos1 = e.touches[0].clientX - pos3;
-            pos2 = e.touches[0].clientY - pos4;
-            pos3 = e.touches[0].clientX;
-            pos4 = e.touches[0].clientY;
-
-            dX = pos1 / dt;
-            dY = pos1 / dt;
-
-            prev = now;
-            now = Date.now();
-            dt = now - prev + 1;
-
-
-            console.log(`X: ${dX*sens}`);
-            console.log(`Y: ${dY*sens}`);
-        }
-
-        function dragMouseup() {
-            document.onmouseup = null;
-            document.onmousemove = null;
-        }
-
-        function dragTouchend() {
-            document.addEventListener('touchend', () => null, { 'passive': true });
-            document.addEventListener('touchmove', () => null, { 'passive': true });
-        }
-
-        return retObject;
-    })()
-
-
-
-    const _Classes = (bases: any) : object =>
-    {
-    class Bases
-    {
-        constructor()
-        {
-        bases.foreach(base => Object.assign(this,new base()));
-        }
-    }
-
-        bases.forEach(base => 
-        {
-        Object.getOwnPropertyNames(base.prototype)
-            .filter(prop => prop != 'constructor')
-            .forEach(prop => Bases.prototype[prop] = base.prototype[prop]);
-        }
-        )
-    return Bases
-    }
-
     interface _BASIC_PARAMS_ {
-        _GLOBAL_ALPHA : string,
+        _GLOBAL_ALPHA : number,
+        _CANVAS_OPACITY : string,
         _CANVAS_WIDTH : number,
         _CANVAS_HEIGHT : number,
         _BORDER_COLOR  : string,
@@ -319,7 +114,8 @@
 
     const DEFAULT_PARAMS : _BASIC_PARAMS_ =
     {
-        _GLOBAL_ALPHA : '1',
+        _GLOBAL_ALPHA : 1,
+        _CANVAS_OPACITY : '1',
         _CANVAS_WIDTH : 1,
         _CANVAS_HEIGHT : 1,
         _BORDER_COLOR  :'red',
@@ -440,7 +236,16 @@
             this.setCanvas()
             this.resetCanvasToDefault()
 
-            window.addEventListener("resize", () => this.setCanvas());
+            window.addEventListener("resize", () => this.refreshCanvas());
+        }
+
+        setGlobalAlpha (alpha : number)
+        { 
+            MODIFIED_PARAMS._GLOBAL_ALPHA = alpha;
+        }
+
+        setCanvasOpacity(opacity : string){
+            MODIFIED_PARAMS._CANVAS_OPACITY = opacity;
         }
 
         setCanvas(): void
@@ -474,25 +279,30 @@
         //     this.canvas.height = this.canvH;
         // }
 
-        resetCanvasToDefault() : void{
+        resetCanvasToDefault()
+        {
             canvas.style.borderColor = DEFAULT_PARAMS._BORDER_COLOR
             canvas.style.borderWidth = DEFAULT_PARAMS._BORDER_WIDTH
             canvas.style.borderRadius = DEFAULT_PARAMS._BORDER_RADIUS
-            canvas.style.borderStyle = DEFAULT_PARAMS._BORDER_STYLE;    
+            canvas.style.borderStyle = DEFAULT_PARAMS._BORDER_STYLE;
+            ctx.globalAlpha = DEFAULT_PARAMS._GLOBAL_ALPHA;
         }
 
-        refreshCanvas() : void {
+        refreshCanvas()
+        {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             this.setCanvas();
         }
 
-        changeAngleUnit(angleUnit: _ANGLE_UNIT_) : void {
+        changeAngleUnit(angleUnit: _ANGLE_UNIT_)
+        {
             MODIFIED_PARAMS._ANGLE_UNIT = angleUnit;
             MODIFIED_PARAMS._ANGLE_CONSTANT = this.angleUnit(angleUnit);
             MODIFIED_PARAMS._REVERSE_ANGLE_CONSTANT = this.revAngleUnit(angleUnit);
         }
 
-        setHandedness(value : _HANDEDNESS_) : void {
+        setHandedness(value : _HANDEDNESS_)
+        {
             if (value === 'left') MODIFIED_PARAMS._HANDEDNESS_CONSTANT = -1;
             else if (value === 'right') MODIFIED_PARAMS._HANDEDNESS_CONSTANT = 1;
         }
@@ -514,87 +324,207 @@
 
     const _BasicSettings = new BasicSettings();
     
-    class Miscellanous
-    {
-        constructor() 
-        {
-        }
-    
-        // rad_to_deg();
-        // rad_to_grad();
-        // deg_to_rad();
-        // deg_to_grad();
-        // grad_to_rad();
-        // grad_to_deg();
-
-        initDepthBuffer() : Float64Array {
+    class Miscellanous {
+        constructor() {}
+            // rad_to_deg();
+            // rad_to_grad();
+            // deg_to_rad();
+            // deg_to_grad();
+            // grad_to_rad();
+            // grad_to_deg();
+        initDepthBuffer() {
             const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
             return new Float64Array(elementNum);
         }
-
-        resetDepthBuffer(depthBuffer : Float64Array) : Float64Array {
+        resetDepthBuffer(depthBuffer : Float64Array) {
             return depthBuffer.fill(Infinity);
         }
-
-        initFrameBuffer() : Uint8Array {
+        initFrameBuffer() {
             const elementNum = Math.ceil(MODIFIED_PARAMS._CANVAS_HEIGHT * MODIFIED_PARAMS._CANVAS_WIDTH);
             return new Uint8Array(elementNum * 4);
         }
-
-        resetFrameBuffer(frameBuffer : Uint8Array) : Uint8Array {
-            return frameBuffer.map((value : number, index : number) => {
+        resetFrameBuffer(frameBuffer : Uint8Array) {
+            return frameBuffer.map((value, index) => {
                 const mod4 = index % 4;
-                if (mod4 < 3) { return value = 0 } else return value = 255;
+                if (mod4 < 3) {
+                    return value = 0;
+                } else
+                    return value = 255;
             });
         }
-    
-        getParamAsList(maxPLen : number , paramList : any[]) : any[] | _ERROR_ { //Function is memoized to increase performance
+        getPermutationsArr(arr : number[], permutationSize : number) {
+            const permutations : number[] = [];
+
+            function backtrack(currentPerm : any) {
+                if (currentPerm.length === permutationSize) {
+                    permutations.push(currentPerm.slice());
+                    return;
+                }
+                arr.forEach((item) => {
+                    if (currentPerm.includes(item))
+                        return;
+                    currentPerm.push(item);
+                    backtrack(currentPerm);
+                    currentPerm.pop();
+                });
+            }
+            backtrack([]);
+            return permutations;
+        }
+        getCombinationsArr(arr : number[], combinationSize : number) {
+            const combinations : number[] = [];
+
+            function backtrack(startIndex : number, currentCombination : any) {
+                if (currentCombination.length === combinationSize) {
+                    combinations.push(currentCombination.slice());
+                    return;
+                }
+                for (let i = startIndex; i < arr.length; i++) {
+                    currentCombination.push(arr[i]);
+                    backtrack(i + 1, currentCombination);
+                    currentCombination.pop();
+                }
+            }
+            backtrack(0, []);
+            return combinations;
+        }
+        getFibonacciNum(num : number) {
+            if (num < 0)
+                return 0;
+            else if (num === 0 || num === 1)
+                return 1;
+            else
+                return this.getFibonacciNum(num - 1) + this.getFibonacciNum(num - 2);
+        }
+        getFibonacciSeq(start : number, stop : number) {
+            var s = Math.max(start, 0);
+            const hold : number[] = [];
+            var n = 0;
+            while (s <= stop) {
+                hold[n] = this.getFibonacciNum(s);
+                n++;
+                s++;
+            }
+            return hold;
+        }
+        getFactorialNum(num : number) {
+            if (num <= 1)
+                return 1;
+            else
+                return num * this.getFactorialNum(num - 1);
+        }
+        getFactorialSeq(start : number, stop : number) {
+            var s = Math.max(start, 0);
+            const hold : number[] = [];
+            var n = 0;
+            while (s <= stop) {
+                hold[n] = this.getFactorialNum(s);
+                n++;
+                s++;
+            }
+            return hold;
+        }
+        getCombinationsNum(n : number, r : number) {
+            return (this.getFactorialNum(n) / ((this.getFactorialNum(n - r)) * (this.getFactorialNum(r))));
+        }
+        getPermutationsNum(n : number, r : number) {
+            return (this.getFactorialNum(n) / (this.getFactorialNum(n - r)));
+        }
+        interpolateTriCore1(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+            const indexList = [0, 1];
+            const Adist = _Linear.getDist(bvec, cvec, indexList);
+            const Bdist = _Linear.getDist(avec, cvec, indexList);
+            const Cdist = _Linear.getDist(avec, bvec, indexList);
+            const apdist = _Linear.getDist(pvec, avec, indexList);
+            const bpdist = _Linear.getDist(pvec, bvec, indexList);
+            const cpdist = _Linear.getDist(pvec, cvec, indexList);
+            return [Adist, Bdist, Cdist, apdist, bpdist, cpdist];
+        }
+        interpolateTriCore2(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+            const [Adist, Bdist, Cdist, apdist, bpdist, cpdist] = this.interpolateTriCore1(pvec, avec, bvec, cvec);
+            const TotalArea = _Linear.getTriArea(Adist, Bdist, Cdist);
+            const triA = _Linear.getTriArea(Adist, bpdist, cpdist);
+            const triB = _Linear.getTriArea(Bdist, apdist, cpdist);
+            const triC = _Linear.getTriArea(Cdist, apdist, bpdist);
+            return [TotalArea, triA, triB, triC];
+        }
+        interpolateTriCore3(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+            const [TotalArea, triA, triB, triC] = this.interpolateTriCore2(pvec, avec, bvec, cvec);
+            const aRatio = triA / TotalArea;
+            const bRatio = triB / TotalArea;
+            const cRatio = triC / TotalArea;
+            const aPa = _Matrix.scaMult(aRatio, avec);
+            const bPb = _Matrix.scaMult(bRatio, bvec);
+            const cPc = _Matrix.scaMult(cRatio, cvec);
+            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc);
+        }
+        interpolateTri(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+            return this.interpolateTriCore3(pvec, avec, bvec, cvec);
+        }
+        getTriBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
+            return this.getTriBoundingRectImpl(vertices);
+        }
+        getTriBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
+            var n = vertices.length;
+            var xArr = [0, 0, 0];
+            var yArr = [0, 0, 0];
+            var xmin = Infinity;
+            var ymin = Infinity;
+            var xmax = 0;
+            var ymax = 0;
+            for (let i = 0; i < n; i++) {
+                xArr[i] = vertices[i][0];
+                yArr[i] = vertices[i][1];
+                if (xArr[i] < xmin) {
+                    xmin = xArr[i];
+                }
+                if (yArr[i] < ymin) {
+                    ymin = yArr[i];
+                }
+                if (xArr[i] > xmax) {
+                    xmax = xArr[i];
+                }
+                if (yArr[i] > ymax) {
+                    ymax = yArr[i];
+                }
+            }
+            return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+        getParamAsList(maxPLen : number, paramList : number[]) : number[] {
             if (arguments.length === 2) {
                 const key = `${paramList}-${maxPLen}`;
-
                 if (pListCache[key] !== undefined) {
                     return pListCache[key];
                 }
-
                 var count = 0;
-                var compParamList : any[] = [];
-
+                var compParamList : number[] = [];
                 for (let i of paramList) {
-
                     if (i < maxPLen) {
                         compParamList[count] = i;
                         count++;
                     }
                 }
-
                 pListCache[key] = compParamList;
-
                 return compParamList;
             }
-            return _ERROR_._MISCELLANOUS_ERROR_;
+            return [0];
         }
-
-        getParamAsArg(maxPLen = Infinity, ...args : any[]) : any[] | _ERROR_ { //Function is memoized to increase perfomance
+        getParamAsArg(maxPLen = Infinity, ...args : number[]) : number[] {
             const key = `${args}-${maxPLen}`;
-
             if (pArgCache[key] !== undefined) {
-                return pArgCache[key]
+                return pArgCache[key];
             }
-
             if (arguments.length > 1 && arguments.length <= 4) {
                 var start = 0;
                 var end = maxPLen;
                 var interval = 1;
-
                 if (arguments.length === 2) {
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[1], maxPLen);
                     } else {
                         end = maxPLen;
                     }
-                } 
-                
-                else {
+                } else {
                     start = arguments[1] || 0;
                     if (arguments[1] !== undefined) {
                         end = Math.min(arguments[2], maxPLen);
@@ -603,32 +533,24 @@
                     }
                     interval = arguments[3] || 1;
                 }
-
                 var count = 0;
                 var index = 0;
-                var compParamList : any[] = [];
-
+                var compParamList : number[] = [];
                 for (let i = start; i < end; i++) {
                     index = start + (count * interval);
-
                     if (index < end) {
                         compParamList[count] = index;
                         count++;
                     }
                 }
-
                 pArgCache[key] = compParamList;
-
                 return compParamList;
             }
-
-            return _ERROR_._MISCELLANOUS_ERROR_;
+            return [0];
         }
-
-        createArrayFromArgs(length : any) {
+        createArrayFromArgs(length : number) : any[] {
             var arr = new Array(length || 0),
                 i = length;
-
             if (arguments.length > 1) {
                 var args = Array.prototype.slice.call(arguments, 1);
                 while (i--) {
@@ -637,11 +559,9 @@
             }
             return arr;
         }
-
-        createArrayFromList(param : number[]) {
+        createArrayFromList(param : number[]) : any[] {
             var arr = new Array(param[0] || 0),
                 i = param[0];
-
             if (param.length > 1) {
                 var args = Array.prototype.slice.call(param, 1);
                 while (i--) {
@@ -650,36 +570,33 @@
             }
             return arr;
         }
-
-
         deepCopy(val : any) {
-            var res : any = JSON.parse(JSON.stringify(val))
+            var res = JSON.parse(JSON.stringify(val));
             if (typeof structuredClone === "function") {
                 res = structuredClone(val);
             }
             return res;
         }
+    }
 
-
+    const _Miscellenous = new Miscellanous();
+    class Linear {
+        constructor() {}
         getSlope(A_ : _2D_VEC_, B_ : _2D_VEC_) {
-            var numer = B_[0] - A_[0];
-            var denum = B_[1] - A_[1];
-
+            var numer = B_[1] - A_[1];
+            var denum = B_[0] - A_[0];
             return numer / denum;
         }
-
-        getMid(a : number [], b : number[], paramList : any[] ) : any[] {
-            var ret : any [] = [];
+        getMid(a : number[], b : number[], paramList : number[]) {
+            var ret : any[] = [];
             var count = 0;
             for (let val of paramList) {
                 ret.push([(a[val] + b[val]) / 2]);
                 count++;
             }
-
             return ret;
         }
-
-        getDist(a : number [], b : number[], paramList : any[]) : number {
+        getDist(a : number[], b : number[], paramList : number[]) {
             var ret = 0;
             const pLen = paramList.length;
             for (let val = 0; val < pLen; val++) {
@@ -687,24 +604,54 @@
             }
             return Math.sqrt(ret);
         }
-
-        getTriArea(a : number, b : number, c : number) : number {
+        getTriArea(a : number, b : number, c : number) {
             var S = (a + b + c) / 2;
             return Math.sqrt(S * (S - a) * (S - b) * (S - c));
         }
-    
-        isInsideCirc(point : _2D_VEC_ , circle : _3D_VEC_) : boolean {
+        isInsideCirc(point : _2D_VEC_, circle : _3D_VEC_) {
             const x = Math.abs(point[0] - circle[0]);
             const y = Math.abs(point[1] - circle[1]);
             const r = circle[2];
-    
             if ((x ** 2 + y ** 2) <= r ** 2) {
                 return true;
-            } else return false;
-        }    
+            } else
+                return false;
+        }
+        isInsideTri(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+            const [TotalArea, triA, triB, triC] = _Miscellenous.interpolateTriCore2(pvec, avec, bvec, cvec);
+            const sum = triA + triB + triC;
+            if (Math.round(sum) === Math.round(TotalArea)) {
+                return true;
+            }
+            return false;
+        }
+        getCircumCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) {
+            const mid_AB = [(x1 + x2) / 2, (y1 + y2) / 2]
+            const mid_AC = [(x1 + x3) / 2, (y1 + y3) / 2]
+            const grad_AB = (y2 - y1) / (x2 - x1);
+            const grad_AC = (y3 - y1) / (x3 - x1)
+            const norm_AB = -1 / grad_AB;
+            const norm_AC = -1 / grad_AC;
+            const intercept_norm_AB = mid_AB[1] - (norm_AB * mid_AB[0]);
+            const intercept_norm_AC = mid_AC[1] - (norm_AC * mid_AC[0]);
+            const X = (intercept_norm_AB - intercept_norm_AC) / (norm_AC - norm_AB);
+            const Y = (norm_AC * X) + intercept_norm_AC;
+            const r_squared = (x1 - X) ** 2 + (y1 - Y) ** 2;
+            return [X, Y, Math.sqrt(r_squared)];
+        }
+        getInCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) {
+            const a = Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2);
+            const b = Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2);
+            const c = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            const X = (a * x1 + b * x2 + c * x3) / (a + b + c);
+            const Y = (a * y1 + b * y2 + c * y3) / (a + b + c);
+            const s = (a + b + c) / 2
+            const r_squared = ((s - a) * (s - b) * (s - c)) / s;
+            return [X, Y, Math.sqrt(r_squared)];
+        }
     }
-    
-    const _Miscellenous = new Miscellanous()
+
+    const _Linear = new Linear();
 
     class Quarternion
     {
@@ -733,7 +680,8 @@
             }
         }
     
-        quarternion() : void
+        quarternion()
+        
         {
             // quarternion
 
@@ -742,7 +690,8 @@
             this.q_quarternion = [a, v1 * b, v2 * b, v3 * b];
         };
     
-        inv_quartenion() : void
+        inv_quartenion()
+        
         {
             // inverse quarternion           
             const [v1, v2, v3] = this.q_vector;
@@ -925,7 +874,7 @@
             return matOut;
         }
     
-        getDet(matIn : number | number [], shapeNum : number) : number | _ERROR_._MATRIX_ERROR_ {
+        getDet(matIn : number | number [], shapeNum : number) : number {
             if (shapeNum > 0) {
                 // If it is a 1x1 matrix, return the matrix
                 if (shapeNum === 1) {
@@ -964,17 +913,15 @@
                 }
             }
 
-            else return _ERROR_._MATRIX_ERROR_ + _ERROR_MATRIX_._DET_*10;
+            else return 0;
         }
     
-        getMinorMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
+        getMinorMat(matIn : number[], shapeNum : number) : number[] {
             const matOut : number[] = [];
     
             for (let i = 0; i < shapeNum; i++) {
                 for (let j = 0; j < shapeNum; j++) {
-                    const result : number | _ERROR_ = this.getDet(this.getRestMat(matIn, shapeNum, i, j), shapeNum - 1)
-                    if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._MINOR_*100;
-                    matOut.push(result)
+                    const result : number = this.getDet(this.getRestMat(matIn, shapeNum, i, j), shapeNum - 1)
                 }
             }
     
@@ -997,14 +944,10 @@
             return matOut;
         }
     
-        getCofMat(matIn : number[], shapeNum : number) : number [] | _ERROR_ {
+        getCofMat(matIn : number[], shapeNum : number) : number [] {
             const cofMatSgn : number[] = this.getCofSgnMat([shapeNum, shapeNum]);
-            var _minorMat : number[] | _ERROR_ = this.getMinorMat(matIn, shapeNum);
-
-            if (typeof _minorMat === "number")
-                if (_minorMat > _ERROR_._NO_ERROR_) return _minorMat + _ERROR_MATRIX_._COF_*1000;
-                
-            const minorMat : number[] = _minorMat as number[]
+            const minorMat : number[] = this.getMinorMat(matIn, shapeNum);
+      
             const matOut : number[] = [];
             const len : number = shapeNum ** 2;
     
@@ -1015,22 +958,18 @@
             return matOut;
         }
     
-        getAdjMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
-            const result : number[] | _ERROR_ = this.getCofMat(matIn, shapeNum)
-            if (typeof result === "number")
-                if (result > _ERROR_._NO_ERROR_) return result + _ERROR_MATRIX_._ADJ_*10000 ;
+        getAdjMat(matIn : number[], shapeNum : number) : number[] {
+            const result : number[] | _ERROR_ = this.getCofMat(matIn, shapeNum);
+
             return this.getTranspMat((result as number[]), [shapeNum, shapeNum]);
         }
     
-        getInvMat(matIn : number[], shapeNum : number) : number[] | _ERROR_ {
+        getInvMat(matIn : number[], shapeNum : number) : number[] | undefined {
             const det_result : number = this.getDet(matIn, shapeNum);
 
-            if (det_result > _ERROR_._NO_ERROR_) return det_result+_ERROR_MATRIX_._INV_*100000;
+            if (det_result === 0) return undefined;
 
-            const adj_result : number[] | _ERROR_ = this.getAdjMat(matIn,shapeNum);
-
-            if (typeof adj_result === "number")
-                if (adj_result > _ERROR_._NO_ERROR_) return adj_result+_ERROR_MATRIX_._INV_*100000;
+            const adj_result : number[] = this.getAdjMat(matIn,shapeNum);
             
             return _Matrix.scaMult(1/det_result,(adj_result as number[]));
         }
@@ -1064,7 +1003,7 @@
             return ret_vec;
         }
     
-        dotProduct(vecA_or_magA : number | number[], vecB_or_magB : number | number[], angle = undefined) : number | string {
+        dotProduct(vecA_or_magA : number | number[], vecB_or_magB : number | number[], angle = undefined) : number {
             // Can be:
             //          1. two vectors without an angle (angle is undefined and vectors are 2d vectors or higher).
             //          2. two magnitudes (magnitude of two vectors) with an angle (angle is a number).
@@ -1133,7 +1072,8 @@
             return cross_product;
         }
     
-        crossProduct(vecs_or_mags : number[] | number[][], angle = undefined, unitVec = undefined) : number | number[] {
+        crossProduct(vecs_or_mags : number[] | number[][], angle = undefined, unitVec = undefined) : number | number[] 
+        {
             var cross_product : number | number[] = [];
             const vecs_or_mags_len = (vecs_or_mags as number[]).length;
             // Can be:
@@ -1161,7 +1101,7 @@
             return cross_product;
         }
     
-        getCrossProductAngle(vecs : number[] | number[][]) : number { // get the angle between the vectors (makes sense in 3d, but feels kinda weird for higher dimensions but sorta feels like it works...???)
+        getCrossProductAngle(vecs : number[] | number[][]) : number | undefined { // get the angle between the vectors (makes sense in 3d, but feels kinda weird for higher dimensions but sorta feels like it works...???)
             var cross_product_angle: number | undefined = undefined;
             const vecs_len = vecs.length;
             const proper_vec_len = vecs_len + 1; // All the vectors should be the same dimension with n + 1, where n is the number of vectors.
@@ -1183,7 +1123,7 @@
                 cross_product_angle = fromRad;
             }
     
-            return typeof cross_product_angle === "undefined" ? cross_product_angle = _ERROR_._VECTOR_ERROR_ : cross_product_angle;
+            return cross_product_angle;
         }
     
         getCrossPUnitVec(vecs : number[]) {
@@ -1201,9 +1141,7 @@
     
     class PerspectiveProjection {
 
-        constructor() 
-        {
-        }
+        constructor() {}
     
         changeNearZ(val : number) {
             MODIFIED_PARAMS._NZ = -val; // right to left hand coordinate system
@@ -1220,14 +1158,14 @@
             this.setPersProjectParam();
         }
     
-        setPersProjectParam() : void | _ERROR_ {
-            if (MODIFIED_PARAMS._ASPECT_RATIO > _ERROR_._NO_ERROR_) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
+        setPersProjectParam()
+        {
             MODIFIED_PARAMS._DIST = 1 / (Math.tan(MODIFIED_PARAMS._PROJ_ANGLE / 2 * MODIFIED_PARAMS._ANGLE_CONSTANT));
             MODIFIED_PARAMS._PROJECTION_MAT = [MODIFIED_PARAMS._DIST / MODIFIED_PARAMS._ASPECT_RATIO, 0, 0, 0, 0, MODIFIED_PARAMS._DIST, 0, 0, 0, 0, (-MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), (2 * MODIFIED_PARAMS._FZ * MODIFIED_PARAMS._NZ) / (MODIFIED_PARAMS._NZ - MODIFIED_PARAMS._FZ), 0, 0, 1, 0];
 
-            const inverse_res : number[] | _ERROR_ = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT, 4);
-            if (typeof inverse_res === "number") return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
-            if (inverse_res.length !== 16) return _ERROR_._PERSPECTIVE_PROJ_ERROR_;
+            const inverse_res : number[] | undefined = _Matrix.getInvMat(MODIFIED_PARAMS._PROJECTION_MAT, 4);
+            if (typeof inverse_res === "undefined") return;
+            if (inverse_res.length !== 16) return;
             MODIFIED_PARAMS._INV_PROJECTION_MAT = inverse_res as _16D_VEC_;
         }
     
@@ -1319,7 +1257,8 @@
         frameBuffer : Uint8Array,
     }
 
-    class OpticalElement {
+    class OpticalElement 
+    {
         // Default
 
         // _CAM_MATRIX : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
@@ -1349,7 +1288,8 @@
             return this;
         }
 
-        resetBuffers() : void{
+        resetBuffers()
+        {
             _Miscellenous.resetDepthBuffer(this.instance.depthBuffer);
             _Miscellenous.resetFrameBuffer(this.instance.frameBuffer);
         }
@@ -1439,7 +1379,8 @@
         }
     }
 
-    class ClipSpace {
+    class ClipSpace 
+    {
         constructor() {};
     
         opticalObjectToClip(arr :  _4D_VEC_) : _4D_VEC_ {
@@ -1498,13 +1439,20 @@
         {
             this.arrlen = 0;
             this.instance_number = 0;
+            this.max_camera_instance_number = 0;
+            this.max_light_instance_number = 0;
+
+            this.optical_element_array = [];
             this.selected_light_instances = {};
             this.selected_camera_instances = {};
+            this.instance_number_to_list_map = {};
+
             this.createNewCameraObject();
-            this.createNewCameraObject();
+            this.createNewLightObject();
         }
 
-        createNewCameraObject() : void{
+        createNewCameraObject()
+        {
             this.max_camera_instance_number = this.instance_number;
             this.optical_element_array[this.arrlen] = new OpticalElement("camera");
             this.instance_number_to_list_map[this.instance_number] = this.arrlen;
@@ -1512,7 +1460,8 @@
             this.arrlen++;
         }
 
-        createNewLightObject() : void{
+        createNewLightObject()
+        {
             this.max_light_instance_number = this.instance_number;
             this.optical_element_array[this.arrlen] = new OpticalElement("light");
             this.instance_number_to_list_map[this.instance_number] = this.arrlen;
@@ -1520,11 +1469,12 @@
             this.arrlen++;
         }
 
-        createNewMultipleCameraObjects = (num : number) : void => {if(num > 0) while (num > 0) {this.createNewCameraObject(); num--;}}
+        createNewMultipleCameraObjects = (num : number) => {if(num > 0) while (num > 0) {this.createNewCameraObject(); num--;}}
 
-        createNewMultipleLightObjects = (num : number) : void =>  {if(num > 0) while (num > 0) {this.createNewLightObject(); num--;}}
+        createNewMultipleLightObjects = (num : number) =>  {if(num > 0) while (num > 0) {this.createNewLightObject(); num--;}}
 
-        private deleteOpticalObject(instance_number_input : number,index : number) : void {
+        private deleteOpticalObject(instance_number_input : number,index : number)
+         {
             this.optical_element_array.splice(index,1);
             delete this.instance_number_to_list_map[instance_number_input];
 
@@ -1541,7 +1491,8 @@
             if (Object.keys(this.selected_light_instances).length === 0) this.selected_light_instances[1] = 1;
         }
 
-        deleteCameraObject(instance_number_input : number) : void {
+        deleteCameraObject(instance_number_input : number)
+         {
             if (instance_number_input > 1 && instance_number_input <= this.max_camera_instance_number)
             {
                 const index = this.instance_number_to_list_map[instance_number_input];
@@ -1553,7 +1504,8 @@
             }            
         }
 
-        deleteLightObject(instance_number_input : number) : void 
+        deleteLightObject(instance_number_input : number)
+         
         {
             if (instance_number_input > 1 && instance_number_input <= this.max_light_instance_number)
             {
@@ -1567,7 +1519,7 @@
         }
 
         // doesn't delete the first one
-        deleteAllCameraObjects():void
+        deleteAllCameraObjects()
         {
             for (const key in this.instance_number_to_list_map){
                 const index = this.instance_number_to_list_map[key];
@@ -1580,7 +1532,8 @@
         }
 
         // doesn't delete the first one
-        deleteAllLightObjects():void{
+        deleteAllLightObjects()
+        {
             for (const key in this.instance_number_to_list_map){
                 const index = this.instance_number_to_list_map[key];
                 if (index > 1 && this.optical_element_array[index].instance.optical_type === "light")
@@ -1592,7 +1545,8 @@
         }
 
         // doesn't delete the first two
-        deleteAllOpticalObjects():void{
+        deleteAllOpticalObjects()
+        {
             for (const key in this.instance_number_to_list_map){
                 const index = this.instance_number_to_list_map[key];
                 if (index > 1)
@@ -1603,14 +1557,16 @@
             this.arrlen = this.optical_element_array.length;
         }
 
-        select_camera_instance(instance_number_input : number) : void{            
+        select_camera_instance(instance_number_input : number)
+        {            
             if (instance_number_input !== 1 && instance_number_input <= this.max_camera_instance_number){            
                 const selection = this.instance_number_to_list_map[instance_number_input];    
                 if (this.optical_element_array[selection].instance.optical_type === "camera") this.selected_camera_instances[instance_number_input] = selection;
             }
         }
 
-        deselect_camera_instance(instance_number_input : number) : void | _ERROR_{
+        deselect_camera_instance(instance_number_input : number)
+        {
             if (instance_number_input !== 1 && instance_number_input <= this.max_camera_instance_number){
                 if (instance_number_input in this.selected_camera_instances){
                     const selection = this.instance_number_to_list_map[instance_number_input];
@@ -1618,20 +1574,22 @@
 
                     if (Object.keys(this.selected_camera_instances).length === 0){
                         this.selected_camera_instances[0] = 0;
-                        if (instance_number_input === 0) return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;                
+                        if (instance_number_input === 0) return;                
                     }
                 }
             }
         }
 
-        select_light_instance(instance_number_input : number) : void{            
+        select_light_instance(instance_number_input : number)
+        {            
             if (instance_number_input !== 0 && instance_number_input <= this.max_light_instance_number){            
                 const selection = this.instance_number_to_list_map[instance_number_input]    
                 if (this.optical_element_array[selection].instance.optical_type === "light") this.selected_light_instances[instance_number_input] = selection;
             }
         }
 
-        deselect_light_instance(instance_number_input : number) : void | _ERROR_{
+        deselect_light_instance(instance_number_input : number)
+        {
             if (instance_number_input !== 0 && instance_number_input <= this.max_light_instance_number){
                 if (instance_number_input in this.selected_light_instances){
                     const selection = this.instance_number_to_list_map[instance_number_input];
@@ -1639,7 +1597,7 @@
 
                     if (Object.keys(this.selected_light_instances).length === 0){
                         this.selected_light_instances[1] = 1;
-                        if (instance_number_input === 1) return _ERROR_._OPTICAL_ELEMENT_OBJECT_ERROR_;  
+                        if (instance_number_input === 1) return;  
                     }
                 }
             }
@@ -1764,11 +1722,11 @@
     //         return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc) as _3D_VEC_;
     //     }
 
-    //     private getBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
-    //         return this.getBoundingRectImpl(vertices);
+    //     private getTriBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
+    //         return this.getTriBoundingRectImpl(vertices);
     //     }
 
-    //     private getBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
+    //     private getTriBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
     //         var n = vertices.length;
     //         var xArr : _3D_VEC_ = [0,0,0];
     //         var yArr : _3D_VEC_ = [0,0,0];
@@ -1809,7 +1767,9 @@
     //         return false;
     //     }
 
-    //     sample() : void { //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
+    //     sample()
+    // {
+     //Generates an array of normalized Gaussian distribution function values with x and y coefficients 
     //         // Mean is taken as zero
 
     //         this.kernel_Size = this.kernel_Size
@@ -1866,7 +1826,7 @@
 
     //     private fragmentTransform() {
     //             // Get 2d bounding rectangle
-    //             const ret = this.getBoundingRect(this.A, this.B, this.C),
+    //             const ret = this.getTriBoundingRect(this.A, this.B, this.C),
     //                 // Simple rasterizing function
     //                 minX = Math.round(Math.max(ret[0], 0)),
     //                 minY = Math.round(Math.max(ret[1], 0)),
@@ -1932,25 +1892,324 @@
         //     octx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5);
         //     ctx.drawImage(ocanvas, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH * 0.5, MODIFIED_PARAMS._CANVAS_HEIGHT * 0.5, 0, 0, MODIFIED_PARAMS._CANVAS_WIDTH, MODIFIED_PARAMS._CANVAS_HEIGHT);
     
-    // class DrawCanvas {
-    //     protected static drawCount = 0;
-    //     constructor()
-    //     {
-    //         window.addEventListener("resize", () => this.drawCanvas());
-    //     }
-    //     drawCanvas() {
-    //         canvas.style.borderStyle = MODIFIED_PARAMS._BORDER_STYLE;
-    //         canvas.style.borderWidth = MODIFIED_PARAMS._BORDER_WIDTH;
-    //         canvas.style.borderColor = MODIFIED_PARAMS._BORDER_COLOR;
-    //         canvas.style.opacity = MODIFIED_PARAMS._GLOBAL_ALPHA;
-    //         canvas.width = MODIFIED_PARAMS._CANVAS_WIDTH;
-    //         canvas.height = MODIFIED_PARAMS._CANVAS_HEIGHT;
+    // We implement a function closure here by binding the variable 'implementDrag'
+    // to a local function and invoking the local function, this ensures that we have
+    // some sort of private variables
+    var implementDrag : DRAG =
+    (function() {
+       var pos1 = 0,
+           pos2 = 0,
+           pos3 = 0,
+           pos4 = 0,
+           prev = 0,
+           now = Date.now(),
+           dt = now - prev + 1,
+           dX = 0,
+           dY = 0,
+           sens = 10,
 
-    //         DrawCanvas.drawCount++;
-    //     }
-    // }   
+           // We invoke the local functions (changeSens and startDrag) as methods
+           // of the object 'retObject' and set the return value of the local function
+           // to 'retObject'
 
-    // const _DrawCanvas = new DrawCanvas()
+           retObject : DRAG = {
+               change: changeSens,
+               start: drag,
+               sensitivity: getSens()
+           };
 
-    // _DrawCanvas.drawCanvas()
-}
+       function changeSens(value : number) 
+       {
+           sens = value;
+       }
+       
+       function getSens() : number{
+           return sens;
+       }
+
+       function drag(element : any)
+       {
+           startDragMobile(element);
+           startDrag(element);
+       }
+
+       function startDrag(element : any)
+       {
+           element.onmousedown = dragMouseDown;
+       }
+
+       function startDragMobile(element : any)
+       {
+           element.addEventListener('touchstart', dragTouchstart, { 'passive': true });
+       }
+
+       function dragMouseDown(e : any) {
+           e = e || window.event;
+           e.preventDefault();
+
+           pos3 = e.clientX;
+           pos4 = e.clientY;
+
+           document.onmouseup = dragMouseup;
+           document.onmousemove = dragMousemove;
+       }
+
+       function dragTouchstart(e : any) {
+           e = e || window.event;
+
+           pos3 = e.touches[0].clientX;
+           pos4 = e.touches[0].clientY;
+
+           document.addEventListener('touchend', dragTouchend, { 'passive': true });
+           document.addEventListener('touchmove', dragTouchmove, { 'passive': true });
+       }
+
+       function dragMousemove(e : any) {
+           e = e || window.event;
+           e.preventDefault();
+
+           pos1 = e.clientX - pos3;
+           pos2 = e.clientY - pos4;
+           pos3 = e.clientX;
+           pos4 = e.clientY;
+
+           dX = pos1 / dt;
+           dY = pos1 / dt;
+
+           prev = now;
+           now = Date.now();
+           dt = now - prev + 1;
+
+           console.log(`X: ${dX*sens}`);
+           console.log(`Y: ${dY*sens}`);
+       }
+
+       function dragTouchmove(e : any) {
+           e = e || window.event;
+
+           pos1 = e.touches[0].clientX - pos3;
+           pos2 = e.touches[0].clientY - pos4;
+           pos3 = e.touches[0].clientX;
+           pos4 = e.touches[0].clientY;
+
+           dX = pos1 / dt;
+           dY = pos1 / dt;
+
+           prev = now;
+           now = Date.now();
+           dt = now - prev + 1;
+
+
+           console.log(`X: ${dX*sens}`);
+           console.log(`Y: ${dY*sens}`);
+       }
+
+       function dragMouseup() {
+           document.onmouseup = null;
+           document.onmousemove = null;
+       }
+
+       function dragTouchend() {
+           document.addEventListener('touchend', () => null, { 'passive': true });
+           document.addEventListener('touchmove', () => null, { 'passive': true });
+       }
+
+       return retObject;
+   })()
+
+   implementDrag.start(canvas);
+
+   const _Classes = (bases: any) : object =>
+   {
+   class Bases
+   {
+       constructor()
+       {
+       bases.foreach(base => Object.assign(this,new base()));
+       }
+   }
+
+       bases.forEach(base => 
+       {
+       Object.getOwnPropertyNames(base.prototype)
+           .filter(prop => prop != 'constructor')
+           .forEach(prop => Bases.prototype[prop] = base.prototype[prop]);
+       }
+       )
+   return Bases
+   }
+
+   _BasicSettings.setGlobalAlpha(0.8);
+
+    class DrawCanvas {
+        protected static drawCount = 0;
+        constructor()
+        {
+            window.addEventListener("resize", () => this.drawCanvas());
+        }
+        drawCanvas() {
+            ctx.globalAlpha = MODIFIED_PARAMS._GLOBAL_ALPHA;
+            canvas.style.borderStyle = MODIFIED_PARAMS._BORDER_STYLE;
+            canvas.style.borderWidth = MODIFIED_PARAMS._BORDER_WIDTH;
+            canvas.style.borderColor = MODIFIED_PARAMS._BORDER_COLOR;
+            canvas.style.opacity = MODIFIED_PARAMS._CANVAS_OPACITY;
+            canvas.width = MODIFIED_PARAMS._CANVAS_WIDTH;
+            canvas.height = MODIFIED_PARAMS._CANVAS_HEIGHT;
+
+            DrawCanvas.drawCount++;
+        }
+    }   
+
+    const _DrawCanvas = new DrawCanvas()
+
+    _DrawCanvas.drawCanvas()
+
+
+    class Experimental{
+        constructor(){}
+        draw(coords : number[],fill_style = "red", stroke_style = "black"){
+            ctx.globalAlpha = MODIFIED_PARAMS._GLOBAL_ALPHA;
+            if (coords.length === 2){
+                const [x,y] = [...coords];
+                this.drawPoint(x,y,fill_style,stroke_style);
+            }
+
+            if (coords.length === 3){
+                const [x,y,r] = [...coords];
+                this.drawCircle(x,y,r,fill_style,stroke_style);
+            }
+
+            if (coords.length === 6){
+                const [x1,y1,x2,y2,x3,y3] = [...coords];
+                this.drawTriangle(x1,y1,x2,y2,x3,y3,fill_style,stroke_style);
+            }            
+        }
+
+        getCircumCircle_(coords : number[]){
+            const [x1,y1,x2,y2,x3,y3] = [...coords];
+            return _Linear.getInCircle(x1,y1,x2,y2,x3,y3);
+        }
+
+        getInCircle_(coords : number[]){
+            const [x1,y1,x2,y2,x3,y3] = [...coords];
+            return _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
+
+        }
+
+        drawTriangle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number, fill_style = "red", stroke_style = "black") {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.closePath();
+    
+            const a = (Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2));
+            const b = (Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2));
+            const c = (Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2));
+    
+            const perimeter = a + b + c;
+            const semiperimeter = perimeter * 0.5;
+            const area = Math.sqrt(semiperimeter * (semiperimeter - a) * (semiperimeter - b) * (semiperimeter - c));
+    
+            const stroke_width = Math.round(Math.sqrt(area / perimeter));
+    
+            ctx.fillStyle = fill_style;
+            ctx.fill();
+    
+            ctx.strokeStyle = stroke_style;
+            ctx.lineWidth = stroke_width;
+            ctx.stroke();
+        }
+    
+        drawCircle(x : number, y : number, r : number, fill_style = "red", stroke_style = "black") {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.closePath();
+    
+            const circumference = 2 * Math.PI * r;
+            const area = Math.PI * r ** 2;
+    
+            const stroke_width = Math.round(Math.sqrt(area / circumference));
+    
+            ctx.fillStyle = fill_style;
+            ctx.fill();
+    
+            ctx.strokeStyle = stroke_style;
+            ctx.lineWidth = stroke_width;
+    
+            ctx.stroke();
+        }
+    
+    
+        drawPoint(x : number, y : number, fill_style = "black", stroke_style = "black") {
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.closePath();
+    
+            const stroke_width = 1;
+    
+            ctx.fillStyle = fill_style;
+            ctx.fill();
+    
+            ctx.strokeStyle = stroke_style;
+            ctx.lineWidth = stroke_width;
+    
+            ctx.stroke();
+        }
+    
+         drawText(x : number, y : number, text : string, fill_style = "black") {
+            ctx.fillStyle = fill_style;
+            ctx.lineWidth = 5;
+            ctx.fillText(text, x, y);
+        }
+    
+        drawLineFromPointGradient(x : number, y : number, gradient : number, x_scale : number, stroke_style = "black", width = 1) {
+            const intercept = y - gradient * x;
+            const new_x = x + x_scale;
+            const new_y = gradient * new_x + intercept;
+    
+            this.drawLine(x, y, new_x, new_y, stroke_style, width);
+        }
+    
+        drawLine(x1 : number, y1 : number, x2 : number, y2 : number, stroke_style = "black", width = 1) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+    
+            const stroke_width = width;
+    
+            ctx.strokeStyle = stroke_style;
+            ctx.lineWidth = stroke_width;
+            ctx.stroke();
+        }
+    }
+
+    const _Experimental = new Experimental();
+
+    const tricoords = [200, 400, 300, 100, 500, 450];
+
+    _Experimental.draw(tricoords)
+
+    _Experimental.drawPoint(tricoords[0], tricoords[1], 'green');
+    _Experimental.drawText(tricoords[0] - 10, tricoords[1] + 10, "A", "green");
+
+    _Experimental.drawPoint(tricoords[2], tricoords[3], 'blue');
+    _Experimental.drawText(tricoords[2] - 5, tricoords[3] - 10, "B", "blue");
+
+    _Experimental.drawPoint(tricoords[4], tricoords[5], 'red');
+    _Experimental.drawText(tricoords[4] + 10, tricoords[5] + 10, "C", "red");
+
+
+
+    const test_1 = _Experimental.getCircumCircle_(tricoords);
+    const test_2 = _Experimental.getInCircle_(tricoords);
+
+    console.log(test_1)
+    console.log(test_2)
+    
+    _Experimental.draw(test_1);
+    _Experimental.draw(test_2);
+
+    _Experimental.drawPoint(test_1[0],test_2[1], "blue", "white");
+    _Experimental.drawPoint(test_2[0],test_2[1], "pink", "cyan");
+})()

@@ -366,10 +366,9 @@
             return [X, Y, Math.sqrt(r_squared)];
         }
         getInCircle(x1, y1, x2, y2, x3, y3) {
-            const param_list = [0, 1];
-            const a = _Linear.getDist([x2, y2], [x3, y3], param_list);
-            const b = _Linear.getDist([x1, y1], [x3, y3], param_list);
-            const c = _Linear.getDist([x1, y1], [x2, y2], param_list);
+            const a = Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2);
+            const b = Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2);
+            const c = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
             const X = (a * x1 + b * x2 + c * x3) / (a + b + c);
             const Y = (a * y1 + b * y2 + c * y3) / (a + b + c);
@@ -715,7 +714,7 @@
 
     const start = new Date().getTime();
 
-    for (let i = 0; i < runs; i++) _Linear.getCircumCircle(...tricoords)
+    for (let i = 0; i < runs; i++) _Linear.getInCircle(...tricoords)
 
     const end = new Date().getTime();
 
