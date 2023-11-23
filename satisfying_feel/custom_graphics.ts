@@ -2087,12 +2087,12 @@
 
         getCircumCircle_(coords : number[]){
             const [x1,y1,x2,y2,x3,y3] = [...coords];
-            return _Linear.getInCircle(x1,y1,x2,y2,x3,y3);
+            return _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
         }
 
         getInCircle_(coords : number[]){
             const [x1,y1,x2,y2,x3,y3] = [...coords];
-            return _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
+            return _Linear.getInCircle(x1,y1,x2,y2,x3,y3);
 
         }
 

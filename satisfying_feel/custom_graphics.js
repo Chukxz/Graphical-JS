@@ -1700,11 +1700,11 @@
         }
         getCircumCircle_(coords) {
             const [x1, y1, x2, y2, x3, y3] = [...coords];
-            return _Linear.getInCircle(x1, y1, x2, y2, x3, y3);
+            return _Linear.getCircumCircle(x1, y1, x2, y2, x3, y3);
         }
         getInCircle_(coords) {
             const [x1, y1, x2, y2, x3, y3] = [...coords];
-            return _Linear.getCircumCircle(x1, y1, x2, y2, x3, y3);
+            return _Linear.getInCircle(x1, y1, x2, y2, x3, y3);
         }
         drawTriangle(x1, y1, x2, y2, x3, y3, fill_style = "red", stroke_style = "black") {
             ctx.beginPath();
