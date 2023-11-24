@@ -1,0 +1,55 @@
+Basic Bowyer-Watson pseudocode
+
+Time complexity O(n**2)
+
+Ways of improving efficiency:
+
+* The triangle connectivity can be used to locate the triangles which contain the new point in their circumcircle without having to check all the triangles 
+thus decreasing time complexity to O(n log n).
+
+* Pre-computing the circumcircles can save time at the expense of additional memory usage.
+
+* If the points are uniformly distributed, sorting them along a space filling Hilbert curve prior to insertion can also speed point location.
+
+function BowyerWatson(pointList) // pointList is a set of coordinates defining the points to be triangulated
+
+  triangulation := empty triangle mesh data structure
+
+  add super-triangle to triangulation // must be large enough to completely contain all the point in pointList
+
+  for each point in pointList do // add all the points one at a time to the triangulation
+
+    badTriangles := empty set
+
+    for each triangle in triangulation do // first find all the triangles that are no longer valid due to the insertion
+
+      if point is inside circumcircle of triangle add triangle to bad triangles
+
+    polygon := empty set
+
+    for each triangle in badTriangles do // find the boundary of the polygonal hole
+
+      for each edge in triangle do 
+
+        if edge is not shared by any other triangles in bad triangles
+
+        add edge to polygon
+
+    for each triangle in bad triangles do // remove them from the data structure
+      
+      remove triangle from triangulation
+
+    for each edge in polygon do // re-triangulate the polygonal hole
+
+      newTri := form a triangle from edge to point
+
+      add newTri to triangulation      
+      
+  for each triangle in triangulation // done inserting points, now clean up
+
+    if triangle contains a vertex from original super-triangle
+
+      remove triangle from triangulation
+
+  return triangulation
+

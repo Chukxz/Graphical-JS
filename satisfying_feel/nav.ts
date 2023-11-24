@@ -89,7 +89,7 @@ class CanvasObject{
             this.instance_number++;
             this.arrlen++;
         }
-
+l
         createNewMultipleCanvasObjects = (object_type_input = "none",num = 0)  => 
         {
             if(num > 0) while (num > 0) 

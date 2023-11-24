@@ -40,6 +40,8 @@
 
     type _3_3_MAT_ = [_3D_VEC_,_3D_VEC_,_3D_VEC_];
 
+    type _3_2_MAT_ = [_2D_VEC_,_2D_VEC_,_2D_VEC_];
+
     type _3_4_MAT_ = [_4D_VEC_,_4D_VEC_,_4D_VEC_];
 
     type _3_7_MAT_ = [_7D_VEC_,_7D_VEC_,_7D_VEC_];
@@ -430,7 +432,7 @@
         getPermutationsNum(n : number, r : number) {
             return (this.getFactorialNum(n) / (this.getFactorialNum(n - r)));
         }
-        interpolateTriCore1(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+        interpolateTriCore1(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
             const indexList = [0, 1];
             const Adist = _Linear.getDist(bvec, cvec, indexList);
             const Bdist = _Linear.getDist(avec, cvec, indexList);
@@ -440,7 +442,7 @@
             const cpdist = _Linear.getDist(pvec, cvec, indexList);
             return [Adist, Bdist, Cdist, apdist, bpdist, cpdist];
         }
-        interpolateTriCore2(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+        interpolateTriCore2(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
             const [Adist, Bdist, Cdist, apdist, bpdist, cpdist] = this.interpolateTriCore1(pvec, avec, bvec, cvec);
             const TotalArea = _Linear.getTriArea(Adist, Bdist, Cdist);
             const triA = _Linear.getTriArea(Adist, bpdist, cpdist);
@@ -448,7 +450,7 @@
             const triC = _Linear.getTriArea(Cdist, apdist, bpdist);
             return [TotalArea, triA, triB, triC];
         }
-        interpolateTriCore3(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+        interpolateTriCore3(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
             const [TotalArea, triA, triB, triC] = this.interpolateTriCore2(pvec, avec, bvec, cvec);
             const aRatio = triA / TotalArea;
             const bRatio = triB / TotalArea;
@@ -458,13 +460,13 @@
             const cPc = _Matrix.scaMult(cRatio, cvec);
             return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc);
         }
-        interpolateTri(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
+        interpolateTri(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
             return this.interpolateTriCore3(pvec, avec, bvec, cvec);
         }
-        getTriBoundingRect(...vertices : _3_4_MAT_) : _4D_VEC_ {
+        getTriBoundingRect(...vertices : any[]) : _4D_VEC_ {
             return this.getTriBoundingRectImpl(vertices);
         }
-        getTriBoundingRectImpl(vertices : _3_4_MAT_) : _4D_VEC_ {
+        getTriBoundingRectImpl(vertices : any[]) : _4D_VEC_ {
             var n = vertices.length;
             var xArr = [0, 0, 0];
             var yArr = [0, 0, 0];
@@ -489,6 +491,19 @@
                 }
             }
             return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+
+        findCircTriFSq(rect : _4D_VEC_) {
+            var mid = (rect[2] / 2) + rect[0];
+            var lSmall = rect[2] / 2;
+            var hSmall = Math.tan((60 * Math.PI) / 180) * lSmall;
+            var hBig = hSmall + rect[3];
+            var lBig = hBig / (Math.tan((60 * Math.PI) / 180));
+            var A = [mid - lBig, rect[1] + rect[3]];
+            var B = [mid, rect[1] - hSmall];
+            var C = [mid + lBig, rect[1] + rect[3]];
+    
+            return [...A,...B,...C];
         }
         getParamAsList(maxPLen : number, paramList : number[]) : number[] {
             if (arguments.length === 2) {
@@ -1619,6 +1634,103 @@
 
     const _Optical_Objects = new OpticalElement_Objects()
 
+    class TriangularMeshDataStructure2D {
+        HalfEdgeDict : object;
+        triangle : number[];
+        edge_no : number;
+        prev : string | null;
+        next : string | null;
+        temp : string | null;
+        face_vertices : number[];
+
+        constructor() {
+            this.HalfEdgeDict = {};
+            // this.vert_len = vertex_indexes.length;
+            // this.vert_array = vertex_indexes;
+            this.triangle = [];
+            this.edge_no = 0;
+            this.prev = null;
+            this.next = null;
+            this.temp = null;
+            this.face_vertices = [];
+        }
+    
+        addtriangle(v1, v2, v3) {
+            this.face_vertices = [v1, v2, v3];
+    
+            for (let i of arguments) {
+                i as any;
+                const halfEdgeKey = this.setHalfEdge(arguments[i], arguments[(i + 1) % 3]);
+                const [a, b] = halfEdgeKey.split("-");
+    
+                if (this.temp === null) {
+                    this.prev = `${null}-${a}`;
+                } else {
+                    this.prev = this.temp;
+                    this.HalfEdgeDict[this.prev].next = halfEdgeKey
+                }
+    
+                this.next = `${b}-null`;
+    
+                this.HalfEdgeDict[halfEdgeKey].prev = this.prev;
+                this.HalfEdgeDict[halfEdgeKey].next = this.next;
+    
+                this.temp = `${a}-${b}`;
+            }
+        }
+    
+        setHalfEdge(a : number, b : number) {
+            let halfEdgeKey = `${a}-${b}`;
+            let twinHalfEdgeKey = `${b}-${a}`;
+    
+            if (this.HalfEdgeDict[halfEdgeKey]) {
+                const halfEdgeKeyTemp = twinHalfEdgeKey;
+                twinHalfEdgeKey = halfEdgeKey;
+                halfEdgeKey = halfEdgeKeyTemp;
+            }
+    
+            if (!this.HalfEdgeDict[halfEdgeKey]) {
+                this.HalfEdgeDict[halfEdgeKey] = this.halfEdge(a, b);
+                this.edge_no++;
+                this.HalfEdgeDict[halfEdgeKey].face_vertices = this.face_vertices;
+            }
+    
+            if (this.HalfEdgeDict[twinHalfEdgeKey]) {
+                this.HalfEdgeDict[halfEdgeKey].twin = twinHalfEdgeKey;
+                this.HalfEdgeDict[twinHalfEdgeKey].twin = halfEdgeKey;
+                this.edge_no--;
+            }
+    
+            return halfEdgeKey;
+        }
+    
+        halfEdge(start : number, end : number) {
+            return {
+                vertices: [start, end],
+                face_vertices: [],
+                twin: null,
+                prev: null,
+                next: null
+            };
+        }
+    
+    }
+
+    class Delaunay{
+        constructor(){}
+        superTriangle(pointList : any[]){
+           const rect = _Miscellenous.getTriBoundingRectImpl(pointList);
+           const tri = _Miscellenous.findCircTriFSq(rect);
+
+           return tri;
+        }
+
+        bowyer_watson(pointList : number[])
+        {
+            const triangulation = new TriangularMeshDataStructure2D()
+        }
+    }
+
     class ObjectManager{}
 
     class PointLight{}
@@ -2025,11 +2137,11 @@
    {
        constructor()
        {
-       bases.foreach(base => Object.assign(this,new base()));
+       bases.foreach((base: new () => any) => Object.assign(this,new base()));
        }
    }
 
-       bases.forEach(base => 
+       bases.forEach((base : new() => any) => 
        {
        Object.getOwnPropertyNames(base.prototype)
            .filter(prop => prop != 'constructor')
@@ -2039,7 +2151,7 @@
    return Bases
    }
 
-   _BasicSettings.setGlobalAlpha(0.8);
+   _BasicSettings.setGlobalAlpha(0.6);
 
     class DrawCanvas {
         protected static drawCount = 0;
@@ -2186,30 +2298,65 @@
 
     const _Experimental = new Experimental();
 
-    const tricoords = [200, 400, 300, 100, 500, 450];
+    // const tricoords = [200, 400, 300, 100, 500, 450];
 
-    _Experimental.draw(tricoords)
-
-    _Experimental.drawPoint(tricoords[0], tricoords[1], 'green');
-    _Experimental.drawText(tricoords[0] - 10, tricoords[1] + 10, "A", "green");
-
-    _Experimental.drawPoint(tricoords[2], tricoords[3], 'blue');
-    _Experimental.drawText(tricoords[2] - 5, tricoords[3] - 10, "B", "blue");
-
-    _Experimental.drawPoint(tricoords[4], tricoords[5], 'red');
-    _Experimental.drawText(tricoords[4] + 10, tricoords[5] + 10, "C", "red");
-
-
-
-    const test_1 = _Experimental.getCircumCircle_(tricoords);
-    const test_2 = _Experimental.getInCircle_(tricoords);
-
-    console.log(test_1)
-    console.log(test_2)
     
-    _Experimental.draw(test_1);
-    _Experimental.draw(test_2);
+    const delaunay = new Delaunay()
+    const points_Set = [
+        // [23, 29],
+        // [328, 87],
+        // [98, 234],
+        // [892, 382],
+        // [745, 342],
+        // [442, 298],
+        // [232, 450],
+        // [900, 23],
+        // [500, 500],
+        // [573, 18],
 
-    _Experimental.drawPoint(test_1[0],test_2[1], "blue", "white");
-    _Experimental.drawPoint(test_2[0],test_2[1], "pink", "cyan");
+        [294, 289],
+        [423, 200],
+        [234, 234],
+        [300, 213],
+        [278, 258],
+        [352, 331]
+    ]
+
+    for (let point of points_Set){
+        _Experimental.draw(point,"blue");
+    }
+
+    const res = _Miscellenous.getTriBoundingRectImpl(points_Set);
+
+    ctx.fillStyle = "green"
+    ctx.fillRect(res[0], res[1], res[2], res[3]);
+
+    const tr = delaunay.superTriangle(points_Set);
+
+    _Experimental.draw(tr)
+
+    // _Experimental.draw(tricoords)
+
+    // _Experimental.drawPoint(tricoords[0], tricoords[1], 'green');
+    // _Experimental.drawText(tricoords[0] - 10, tricoords[1] + 10, "A", "green");
+
+    // _Experimental.drawPoint(tricoords[2], tricoords[3], 'blue');
+    // _Experimental.drawText(tricoords[2] - 5, tricoords[3] - 10, "B", "blue");
+
+    // _Experimental.drawPoint(tricoords[4], tricoords[5], 'red');
+    // _Experimental.drawText(tricoords[4] + 10, tricoords[5] + 10, "C", "red");
+
+
+
+    // const test_1 = _Experimental.getCircumCircle_(tricoords);
+    // const test_2 = _Experimental.getInCircle_(tricoords);
+
+    // console.log(test_1)
+    // console.log(test_2)
+    
+    // _Experimental.draw(test_1);
+    // _Experimental.draw(test_2);
+
+    // _Experimental.drawPoint(test_1[0],test_2[1], "blue", "white");
+    // _Experimental.drawPoint(test_2[0],test_2[1], "pink", "cyan");
 })()

@@ -385,6 +385,17 @@
             }
             return [xmin, ymin, xmax - xmin, ymax - ymin];
         }
+        findCircTriFSq(rect) {
+            var mid = (rect[2] / 2) + rect[0];
+            var lSmall = rect[2] / 2;
+            var hSmall = Math.tan((60 * Math.PI) / 180) * lSmall;
+            var hBig = hSmall + rect[3];
+            var lBig = hBig / (Math.tan((60 * Math.PI) / 180));
+            var A = [mid - lBig, rect[1] + rect[3]];
+            var B = [mid, rect[1] - hSmall];
+            var C = [mid + lBig, rect[1] + rect[3]];
+            return [...A, ...B, ...C];
+        }
         getParamAsList(maxPLen, paramList) {
             if (arguments.length === 2) {
                 const key = `${paramList}-${maxPLen}`;
@@ -1334,6 +1345,85 @@
         }
     }
     const _Optical_Objects = new OpticalElement_Objects();
+    class TriangularMeshDataStructure2D {
+        HalfEdgeDict;
+        triangle;
+        edge_no;
+        prev;
+        next;
+        temp;
+        face_vertices;
+        constructor() {
+            this.HalfEdgeDict = {};
+            // this.vert_len = vertex_indexes.length;
+            // this.vert_array = vertex_indexes;
+            this.triangle = [];
+            this.edge_no = 0;
+            this.prev = null;
+            this.next = null;
+            this.temp = null;
+            this.face_vertices = [];
+        }
+        addtriangle(v1, v2, v3) {
+            this.face_vertices = [v1, v2, v3];
+            for (let i of arguments) {
+                i;
+                const halfEdgeKey = this.setHalfEdge(arguments[i], arguments[(i + 1) % 3]);
+                const [a, b] = halfEdgeKey.split("-");
+                if (this.temp === null) {
+                    this.prev = `${null}-${a}`;
+                }
+                else {
+                    this.prev = this.temp;
+                    this.HalfEdgeDict[this.prev].next = halfEdgeKey;
+                }
+                this.next = `${b}-null`;
+                this.HalfEdgeDict[halfEdgeKey].prev = this.prev;
+                this.HalfEdgeDict[halfEdgeKey].next = this.next;
+                this.temp = `${a}-${b}`;
+            }
+        }
+        setHalfEdge(a, b) {
+            let halfEdgeKey = `${a}-${b}`;
+            let twinHalfEdgeKey = `${b}-${a}`;
+            if (this.HalfEdgeDict[halfEdgeKey]) {
+                const halfEdgeKeyTemp = twinHalfEdgeKey;
+                twinHalfEdgeKey = halfEdgeKey;
+                halfEdgeKey = halfEdgeKeyTemp;
+            }
+            if (!this.HalfEdgeDict[halfEdgeKey]) {
+                this.HalfEdgeDict[halfEdgeKey] = this.halfEdge(a, b);
+                this.edge_no++;
+                this.HalfEdgeDict[halfEdgeKey].face_vertices = this.face_vertices;
+            }
+            if (this.HalfEdgeDict[twinHalfEdgeKey]) {
+                this.HalfEdgeDict[halfEdgeKey].twin = twinHalfEdgeKey;
+                this.HalfEdgeDict[twinHalfEdgeKey].twin = halfEdgeKey;
+                this.edge_no--;
+            }
+            return halfEdgeKey;
+        }
+        halfEdge(start, end) {
+            return {
+                vertices: [start, end],
+                face_vertices: [],
+                twin: null,
+                prev: null,
+                next: null
+            };
+        }
+    }
+    class Delaunay {
+        constructor() { }
+        superTriangle(pointList) {
+            const rect = _Miscellenous.getTriBoundingRectImpl(pointList);
+            const tri = _Miscellenous.findCircTriFSq(rect);
+            return tri;
+        }
+        bowyer_watson(pointList) {
+            const triangulation = new TriangularMeshDataStructure2D();
+        }
+    }
     class ObjectManager {
     }
     class PointLight {
@@ -1652,17 +1742,17 @@
     const _Classes = (bases) => {
         class Bases {
             constructor() {
-                bases.foreach(base => Object.assign(this, new base()));
+                bases.foreach((base) => Object.assign(this, new base()));
             }
         }
-        bases.forEach(base => {
+        bases.forEach((base) => {
             Object.getOwnPropertyNames(base.prototype)
                 .filter(prop => prop != 'constructor')
                 .forEach(prop => Bases.prototype[prop] = base.prototype[prop]);
         });
         return Bases;
     };
-    _BasicSettings.setGlobalAlpha(0.8);
+    _BasicSettings.setGlobalAlpha(0.6);
     class DrawCanvas {
         static drawCount = 0;
         constructor() {
@@ -1771,20 +1861,47 @@
         }
     }
     const _Experimental = new Experimental();
-    const tricoords = [200, 400, 300, 100, 500, 450];
-    _Experimental.draw(tricoords);
-    _Experimental.drawPoint(tricoords[0], tricoords[1], 'green');
-    _Experimental.drawText(tricoords[0] - 10, tricoords[1] + 10, "A", "green");
-    _Experimental.drawPoint(tricoords[2], tricoords[3], 'blue');
-    _Experimental.drawText(tricoords[2] - 5, tricoords[3] - 10, "B", "blue");
-    _Experimental.drawPoint(tricoords[4], tricoords[5], 'red');
-    _Experimental.drawText(tricoords[4] + 10, tricoords[5] + 10, "C", "red");
-    const test_1 = _Experimental.getCircumCircle_(tricoords);
-    const test_2 = _Experimental.getInCircle_(tricoords);
-    console.log(test_1);
-    console.log(test_2);
-    _Experimental.draw(test_1);
-    _Experimental.draw(test_2);
-    _Experimental.drawPoint(test_1[0], test_2[1], "blue", "white");
-    _Experimental.drawPoint(test_2[0], test_2[1], "pink", "cyan");
+    // const tricoords = [200, 400, 300, 100, 500, 450];
+    const delaunay = new Delaunay();
+    const points_Set = [
+        // [23, 29],
+        // [328, 87],
+        // [98, 234],
+        // [892, 382],
+        // [745, 342],
+        // [442, 298],
+        // [232, 450],
+        // [900, 23],
+        // [500, 500],
+        // [573, 18],
+        [294, 289],
+        [423, 200],
+        [234, 234],
+        [300, 213],
+        [278, 258],
+        [352, 331]
+    ];
+    for (let point of points_Set) {
+        _Experimental.draw(point, "blue");
+    }
+    const res = _Miscellenous.getTriBoundingRectImpl(points_Set);
+    ctx.fillStyle = "green";
+    ctx.fillRect(res[0], res[1], res[2], res[3]);
+    const tr = delaunay.superTriangle(points_Set);
+    _Experimental.draw(tr);
+    // _Experimental.draw(tricoords)
+    // _Experimental.drawPoint(tricoords[0], tricoords[1], 'green');
+    // _Experimental.drawText(tricoords[0] - 10, tricoords[1] + 10, "A", "green");
+    // _Experimental.drawPoint(tricoords[2], tricoords[3], 'blue');
+    // _Experimental.drawText(tricoords[2] - 5, tricoords[3] - 10, "B", "blue");
+    // _Experimental.drawPoint(tricoords[4], tricoords[5], 'red');
+    // _Experimental.drawText(tricoords[4] + 10, tricoords[5] + 10, "C", "red");
+    // const test_1 = _Experimental.getCircumCircle_(tricoords);
+    // const test_2 = _Experimental.getInCircle_(tricoords);
+    // console.log(test_1)
+    // console.log(test_2)
+    // _Experimental.draw(test_1);
+    // _Experimental.draw(test_2);
+    // _Experimental.drawPoint(test_1[0],test_2[1], "blue", "white");
+    // _Experimental.drawPoint(test_2[0],test_2[1], "pink", "cyan");
 })();
