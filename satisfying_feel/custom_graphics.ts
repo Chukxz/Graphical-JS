@@ -493,12 +493,12 @@
             return [xmin, ymin, xmax - xmin, ymax - ymin];
         }
 
-        findCircTriFSq(rect : _4D_VEC_) {
+        findCircTriFSq(rect : _4D_VEC_,angle = 45) {
             var mid = (rect[2] / 2) + rect[0];
             var lSmall = rect[2] / 2;
-            var hSmall = Math.tan((60 * Math.PI) / 180) * lSmall;
+            var hSmall = Math.tan((angle * Math.PI) / 180) * lSmall;
             var hBig = hSmall + rect[3];
-            var lBig = hBig / (Math.tan((60 * Math.PI) / 180));
+            var lBig = hBig / (Math.tan((angle * Math.PI) / 180));
             var A = [mid - lBig, rect[1] + rect[3]];
             var B = [mid, rect[1] - hSmall];
             var C = [mid + lBig, rect[1] + rect[3]];
@@ -640,21 +640,43 @@
             }
             return false;
         }
-        getCircumCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) {
-            const mid_AB = [(x1 + x2) / 2, (y1 + y2) / 2]
-            const mid_AC = [(x1 + x3) / 2, (y1 + y3) / 2]
+        getCircumCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) : _3D_VEC_ {
+            const mid_AB = [(x1 + x2) / 2, (y1 + y2) / 2];
+            const mid_AC = [(x1 + x3) / 2, (y1 + y3) / 2];
             const grad_AB = (y2 - y1) / (x2 - x1);
-            const grad_AC = (y3 - y1) / (x3 - x1)
+            const grad_AC = (y3 - y1) / (x3 - x1);
             const norm_AB = -1 / grad_AB;
             const norm_AC = -1 / grad_AC;
             const intercept_norm_AB = mid_AB[1] - (norm_AB * mid_AB[0]);
             const intercept_norm_AC = mid_AC[1] - (norm_AC * mid_AC[0]);
-            const X = (intercept_norm_AB - intercept_norm_AC) / (norm_AC - norm_AB);
-            const Y = (norm_AC * X) + intercept_norm_AC;
+
+            var X = 0;
+            var Y = 0;
+
+            var compute_X = true;
+            var compute_Y = true;
+            if (Math.abs(grad_AB) === 0) {
+                X = mid_AB[0];
+                compute_X = false;
+            } else if (Math.abs(grad_AB) === Infinity) {
+                Y = mid_AB[1];
+                compute_Y = false;
+            }
+
+            if (Math.abs(grad_AC) === 0) {
+                X = mid_AC[0];
+                compute_X = false;
+            } else if (Math.abs(grad_AC) === Infinity) {
+                Y = mid_AC[1];
+                compute_Y = false;
+            }
+
+            if (compute_X === true) X = (intercept_norm_AB - intercept_norm_AC) / (norm_AC - norm_AB);
+            if (compute_Y === true) Y = (norm_AB * X) + intercept_norm_AB;
             const r_squared = (x1 - X) ** 2 + (y1 - Y) ** 2;
             return [X, Y, Math.sqrt(r_squared)];
         }
-        getInCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) {
+        getInCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) : _3D_VEC_ {
             const a = Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2);
             const b = Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2);
             const c = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -1637,6 +1659,7 @@
     class TriangularMeshDataStructure2D {
         HalfEdgeDict : object;
         triangle : number[];
+        triangleList : string[];
         edge_no : number;
         prev : string | null;
         next : string | null;
@@ -1648,6 +1671,7 @@
             // this.vert_len = vertex_indexes.length;
             // this.vert_array = vertex_indexes;
             this.triangle = [];
+            this.triangleList = [];
             this.edge_no = 0;
             this.prev = null;
             this.next = null;
@@ -1655,30 +1679,16 @@
             this.face_vertices = [];
         }
     
-        addtriangle(v1, v2, v3) {
-            this.face_vertices = [v1, v2, v3];
-    
-            for (let i of arguments) {
-                i as any;
-                const halfEdgeKey = this.setHalfEdge(arguments[i], arguments[(i + 1) % 3]);
-                const [a, b] = halfEdgeKey.split("-");
-    
-                if (this.temp === null) {
-                    this.prev = `${null}-${a}`;
-                } else {
-                    this.prev = this.temp;
-                    this.HalfEdgeDict[this.prev].next = halfEdgeKey
-                }
-    
-                this.next = `${b}-null`;
-    
-                this.HalfEdgeDict[halfEdgeKey].prev = this.prev;
-                this.HalfEdgeDict[halfEdgeKey].next = this.next;
-    
-                this.temp = `${a}-${b}`;
-            }
+        halfEdge(start : number, end : number) {
+            return {
+                vertices: [start, end],
+                face_vertices: [],
+                twin: null,
+                prev: null,
+                next: null
+            };
         }
-    
+
         setHalfEdge(a : number, b : number) {
             let halfEdgeKey = `${a}-${b}`;
             let twinHalfEdgeKey = `${b}-${a}`;
@@ -1704,16 +1714,121 @@
             return halfEdgeKey;
         }
     
-        halfEdge(start : number, end : number) {
-            return {
-                vertices: [start, end],
-                face_vertices: [],
-                twin: null,
-                prev: null,
-                next: null
-            };
+        addtriangle(v1 : number, v2 : number, v3 : number) {
+            this.face_vertices = [v1, v2, v3];
+            const min = Math.min(v1, v2, v3);
+            const max = Math.max(v1, v2, v3);
+            var mid = 0;
+    
+            for (let i of this.face_vertices) {
+                if (i !== min && i !== max) {
+                    mid = i;
+                    break;
+                }
+            }
+    
+            this.face_vertices = [min, mid, max];
+    
+            if (!this.triangleList.includes(`${min}-${mid}-${max}`)) {
+                this.triangleList.push(`${min}-${mid}-${max}`);
+    
+                for (let i in arguments) {
+                    const halfEdgeKey = this.setHalfEdge(arguments[i], arguments[((i as any) + 1) % 3]);
+                    const [a, b] = halfEdgeKey.split("-");
+    
+                    if (this.temp === null) {
+                        this.prev = `${null}-${a}`;
+                    } else {
+                        this.prev = this.temp;
+    
+                        if (this.HalfEdgeDict[this.prev] !== undefined) {
+                            this.HalfEdgeDict[this.prev].next = halfEdgeKey;
+                        }
+                    }
+    
+    
+                    this.next = `${b}-null`;
+    
+                    this.HalfEdgeDict[halfEdgeKey].prev = this.prev;
+                    this.HalfEdgeDict[halfEdgeKey].next = this.next;
+    
+                    this.temp = `${a}-${b}`;
+                }
+            }
+        }
+
+        removeTriangle(v1 : number, v2 : number, v3 : number) {
+            var face_vertices = [v1, v2, v3];
+            const min = Math.min(v1, v2, v3);
+            const max = Math.max(v1, v2, v3);
+            var mid = 0;
+    
+            for (let i of face_vertices) {
+                if (i !== min && i !== max) {
+                    mid = i;
+                    break;
+                }
+            }
+    
+            face_vertices = [min, mid, max];
+            const triangle = `${min}-${mid}-${max}`;
+            const triangle_index = this.triangleList.indexOf(triangle);
+    
+            if (triangle_index >= 0) {
+                for (let edge in this.HalfEdgeDict) {
+                    var tallies = 0;
+                    const half_edge_face_vertices = this.HalfEdgeDict[edge].face_vertices;
+    
+                    for (let i = 0; i < 3; i++) {
+                        if (half_edge_face_vertices[i] === face_vertices[i]) tallies++;
+                    }
+    
+                    if (tallies === 3) {
+                        const twinHalfEdgeKey = this.HalfEdgeDict[edge].twin;
+                        if (!this.HalfEdgeDict[twinHalfEdgeKey]) {
+                            this.edge_no--;
+                        }
+                        delete this.HalfEdgeDict[edge];
+                    }
+                }
+    
+                this.triangleList.splice(triangle_index, 1);
+            }
         }
     
+        getTriangleEdges(v1 : number, v2 : number, v3 : number) {
+            var face_vertices  = [v1, v2, v3];
+            const min = Math.min(v1, v2, v3);
+            const max = Math.max(v1, v2, v3);
+            var mid = 0;
+            const edge_list : string[] = [];
+    
+            for (let i of face_vertices) {
+                if (i !== min && i !== max) {
+                    mid = i;
+                    break;
+                }
+            }
+    
+            face_vertices = [min, mid, max];
+    
+            for (let edge in this.HalfEdgeDict) {
+                var tallies = 0;
+                const half_edge_face_vertices = this.HalfEdgeDict[edge].face_vertices;
+    
+                for (let i = 0; i < 3; i++) {
+                    if (half_edge_face_vertices[i] === face_vertices[i]) tallies++;
+                }
+    
+                if (tallies === 3) edge_list.push(edge);
+            }
+    
+            return edge_list;
+        }    
+    }
+
+
+    class ConvexHull{      
     }
 
     class Delaunay{
@@ -1725,9 +1840,107 @@
            return tri;
         }
 
-        bowyer_watson(pointList : number[])
+        bowyer_watson(pointList : any[])
         {
             const triangulation = new TriangularMeshDataStructure2D()
+            const pointList_len = pointList.length;
+            const [x1,y1,x2,y2,x3,y3] = this.superTriangle(pointList);
+            triangulation.addtriangle(pointList_len,pointList_len+1,pointList_len+2);
+
+            const fullPointList = [...pointList,[x1,y1],[x2,y2],[x3,y3]];
+
+            for (let p in pointList){
+                const point = pointList[p];
+                const point_num = Number(p);
+
+                const badTriangles : string[] = [];
+
+                for (let triangle of triangulation.triangleList){
+                    const [a,b,c] = triangle.split("-");
+
+                    const[x1,y1] = fullPointList[Number(a)];
+                    const[x2,y2] = fullPointList[Number(b)];
+                    const[x3,y3] = fullPointList[Number(c)];
+
+                    const tri_circum = _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
+
+                    if (_Linear.isInsideCirc(point,tri_circum)){
+                        badTriangles.push(triangle);
+                    }
+                }
+
+                const polygon : string[] = [];
+
+                const bad_edges_dict = {};
+
+                for (let bad_triangle of badTriangles){
+                    const[v1,v2,v3] = bad_triangle.split("-");
+                    const bad_edges = triangulation.getTriangleEdges(Number(v1),Number(v2),Number(v3)); 
+
+                    for (let bad_edge of bad_edges){
+                        const [string_a,string_b] = bad_edge.split("-");
+                        const [a,b] = [Math.min(string_a as any, string_b as any),Math.max(string_a as any, string_b as any)];
+
+                        if(!bad_edges_dict[`${a}-${b}`]){
+                            bad_edges_dict[`${a}-${b}`] = 1;
+                        }
+                        else{
+                            bad_edges_dict[`${a}-${b}`]++;
+                        }
+                    }
+
+                    triangulation.removeTriangle(Number(v1), Number(v2), Number(v3));
+                }
+
+                for (let bad_edge in bad_edges_dict){
+                    if (bad_edges_dict[bad_edge] === 1){
+                        polygon.push(bad_edge);
+                    }
+                }
+
+                for (let polygonal_edge of polygon){
+                    const [string_a,string_b] = polygonal_edge.split("-");
+                    const [a,b] = [Number(string_a),Number(string_b)];
+                    
+                    triangulation.addtriangle(a,b,point_num);
+                }
+            }
+
+            const prune_list : any[] = [];
+            
+            for (let triangle of triangulation.triangleList) {
+                const [string_a, string_b, string_c] = triangle.split("-");
+                const num_triangle = [Number(string_a), Number(string_b), Number(string_c)];
+                for (let num of num_triangle) {
+                    if (num === pointList_len || num === pointList_len+1 || num === pointList_len+2) {
+                        prune_list.push(num_triangle);
+                        break;
+                    }
+                }
+            }
+            
+            for (let triangle of prune_list) {
+                triangulation.removeTriangle(triangle[0], triangle[1], triangle[2]);
+            }
+
+            const ret_list : string[] = [];
+
+            const results = Object.keys(triangulation.HalfEdgeDict);
+
+            console.log(results)
+
+            for (let result of results){
+                const [string_a,string_b] = result.split("-");
+                const rev_result = `${string_b}-${string_a}`;
+                
+                if (!(ret_list.includes(result) || ret_list.includes(rev_result))){
+                    const [a,b] = [Math.min(string_a as any, string_b as any),Math.max(string_a as any, string_b as any)];
+
+                    ret_list.push(`${a}-${b}`);
+                }
+            }
+
+            return ret_list;
         }
     }
 
@@ -2294,6 +2507,15 @@
             ctx.lineWidth = stroke_width;
             ctx.stroke();
         }
+
+        drawDelaunay(delaunayLines : any, pointList : any, stroke_style = "black", width = 1) {
+            for (let line of delaunayLines) {
+                const [a, b] = line.split("-");
+                const [x1, y1] = pointList[Number(a)];
+                const [x2, y2] = pointList[Number(b)];
+                this.drawLine(x1, y1, x2, y2, stroke_style, width);
+            }
+        }
     }
 
     const _Experimental = new Experimental();
@@ -2322,18 +2544,38 @@
         [352, 331]
     ]
 
-    for (let point of points_Set){
-        _Experimental.draw(point,"blue");
-    }
-
     const res = _Miscellenous.getTriBoundingRectImpl(points_Set);
+    
+    const pr = delaunay.superTriangle(points_Set);
+    const pc = _Experimental.getCircumCircle_(pr);
+    const ps =_Experimental.getInCircle_(pr);
 
-    ctx.fillStyle = "green"
+    _Experimental.draw(pr);
+    _Experimental.draw(ps);
+    _Experimental.draw(pc);
+    ctx.fillStyle = "green";
     ctx.fillRect(res[0], res[1], res[2], res[3]);
 
-    const tr = delaunay.superTriangle(points_Set);
+    const color_list = ["blue","cyan","red","orange","green","yellow"];
 
-    _Experimental.draw(tr)
+    for (let point in points_Set){
+        _Experimental.draw(points_Set[point], color_list[point as any % 6]);
+    }
+
+    const result = delaunay.bowyer_watson(points_Set);
+
+    console.log(result)
+
+    _Experimental.drawDelaunay(result, points_Set);
+    // const tr = [100, 400, 150, 313.4, 200, 400]
+    // _Experimental.draw(tr);
+    // const cr = _Experimental.getCircumCircle_(tr);
+    // const cf = _Experimental.getInCircle_(tr);
+    // console.log(tr)
+    // console.log(cr)
+    // console.log(cf)
+    // _Experimental.draw(cr);
+    // _Experimental.draw(cf)
 
     // _Experimental.draw(tricoords)
 
