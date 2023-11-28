@@ -426,84 +426,13 @@
             }
             return hold;
         }
+
         getCombinationsNum(n : number, r : number) {
             return (this.getFactorialNum(n) / ((this.getFactorialNum(n - r)) * (this.getFactorialNum(r))));
         }
+
         getPermutationsNum(n : number, r : number) {
             return (this.getFactorialNum(n) / (this.getFactorialNum(n - r)));
-        }
-        interpolateTriCore1(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
-            const indexList = [0, 1];
-            const Adist = _Linear.getDist(bvec, cvec, indexList);
-            const Bdist = _Linear.getDist(avec, cvec, indexList);
-            const Cdist = _Linear.getDist(avec, bvec, indexList);
-            const apdist = _Linear.getDist(pvec, avec, indexList);
-            const bpdist = _Linear.getDist(pvec, bvec, indexList);
-            const cpdist = _Linear.getDist(pvec, cvec, indexList);
-            return [Adist, Bdist, Cdist, apdist, bpdist, cpdist];
-        }
-        interpolateTriCore2(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
-            const [Adist, Bdist, Cdist, apdist, bpdist, cpdist] = this.interpolateTriCore1(pvec, avec, bvec, cvec);
-            const TotalArea = _Linear.getTriArea(Adist, Bdist, Cdist);
-            const triA = _Linear.getTriArea(Adist, bpdist, cpdist);
-            const triB = _Linear.getTriArea(Bdist, apdist, cpdist);
-            const triC = _Linear.getTriArea(Cdist, apdist, bpdist);
-            return [TotalArea, triA, triB, triC];
-        }
-        interpolateTriCore3(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
-            const [TotalArea, triA, triB, triC] = this.interpolateTriCore2(pvec, avec, bvec, cvec);
-            const aRatio = triA / TotalArea;
-            const bRatio = triB / TotalArea;
-            const cRatio = triC / TotalArea;
-            const aPa = _Matrix.scaMult(aRatio, avec);
-            const bPb = _Matrix.scaMult(bRatio, bvec);
-            const cPc = _Matrix.scaMult(cRatio, cvec);
-            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc);
-        }
-        interpolateTri(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
-            return this.interpolateTriCore3(pvec, avec, bvec, cvec);
-        }
-        getTriBoundingRect(...vertices : any[]) : _4D_VEC_ {
-            return this.getTriBoundingRectImpl(vertices);
-        }
-        getTriBoundingRectImpl(vertices : any[]) : _4D_VEC_ {
-            var n = vertices.length;
-            var xArr = [0, 0, 0];
-            var yArr = [0, 0, 0];
-            var xmin = Infinity;
-            var ymin = Infinity;
-            var xmax = 0;
-            var ymax = 0;
-            for (let i = 0; i < n; i++) {
-                xArr[i] = vertices[i][0];
-                yArr[i] = vertices[i][1];
-                if (xArr[i] < xmin) {
-                    xmin = xArr[i];
-                }
-                if (yArr[i] < ymin) {
-                    ymin = yArr[i];
-                }
-                if (xArr[i] > xmax) {
-                    xmax = xArr[i];
-                }
-                if (yArr[i] > ymax) {
-                    ymax = yArr[i];
-                }
-            }
-            return [xmin, ymin, xmax - xmin, ymax - ymin];
-        }
-
-        findCircTriFSq(rect : _4D_VEC_,angle = 45) {
-            var mid = (rect[2] / 2) + rect[0];
-            var lSmall = rect[2] / 2;
-            var hSmall = Math.tan((angle * Math.PI) / 180) * lSmall;
-            var hBig = hSmall + rect[3];
-            var lBig = hBig / (Math.tan((angle * Math.PI) / 180));
-            var A = [mid - lBig, rect[1] + rect[3]];
-            var B = [mid, rect[1] - hSmall];
-            var C = [mid + lBig, rect[1] + rect[3]];
-    
-            return [...A,...B,...C];
         }
         getParamAsList(maxPLen : number, paramList : number[]) : number[] {
             if (arguments.length === 2) {
@@ -592,6 +521,27 @@
             }
             return res;
         }
+        toPoints(pointList : any[]) {
+            const retList : Point[] = [];
+            for (let point in pointList) {
+                retList[point] = new Point(pointList[point][0], pointList[point][1]);
+            }
+            return retList;
+        }
+
+        genEdgefromArray(array : number[]) {
+            var prev = array[array.length - 1]; // set previous to last element in the array
+
+            const result : string[] = [];
+
+            for (let index in array) {
+                const [a, b] = [Math.min(prev, array[index]), Math.max(prev, array[index])];
+                result[index] = `${a}-${b}`;
+                prev = array[index];
+            }
+
+            return result;
+        }
     }
 
     const _Miscellenous = new Miscellanous();
@@ -623,9 +573,9 @@
             var S = (a + b + c) / 2;
             return Math.sqrt(S * (S - a) * (S - b) * (S - c));
         }
-        isInsideCirc(point : _2D_VEC_, circle : _3D_VEC_) {
-            const x = Math.abs(point[0] - circle[0]);
-            const y = Math.abs(point[1] - circle[1]);
+        isInsideCirc(point : Point, circle : _3D_VEC_) {
+            const x = Math.abs(point.x - circle[0]);
+            const y = Math.abs(point.y - circle[1]);
             const r = circle[2];
             if ((x ** 2 + y ** 2) <= r ** 2) {
                 return true;
@@ -633,18 +583,18 @@
                 return false;
         }
         isInsideTri(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) {
-            const [TotalArea, triA, triB, triC] = _Miscellenous.interpolateTriCore2(pvec, avec, bvec, cvec);
+            const [TotalArea, triA, triB, triC] = this.interpolateTriCore2(pvec, avec, bvec, cvec);
             const sum = triA + triB + triC;
             if (Math.round(sum) === Math.round(TotalArea)) {
                 return true;
             }
             return false;
         }
-        getCircumCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) : _3D_VEC_ {
-            const mid_AB = [(x1 + x2) / 2, (y1 + y2) / 2];
-            const mid_AC = [(x1 + x3) / 2, (y1 + y3) / 2];
-            const grad_AB = (y2 - y1) / (x2 - x1);
-            const grad_AC = (y3 - y1) / (x3 - x1);
+        getCircumCircle(a : Point ,b : Point, c : Point) : Point[] {
+            const mid_AB = [(a.x + b.x) / 2, (a.y + b.y) / 2];
+            const mid_AC = [(a.x + c.x) / 2, (a.y +c.y) / 2];
+            const grad_AB = (b.y - a.y) / (b.x - a.x);
+            const grad_AC = (c.y - a.y) / (c.x - a.x);
             const norm_AB = -1 / grad_AB;
             const norm_AC = -1 / grad_AC;
             const intercept_norm_AB = mid_AB[1] - (norm_AB * mid_AB[0]);
@@ -673,18 +623,147 @@
 
             if (compute_X === true) X = (intercept_norm_AB - intercept_norm_AC) / (norm_AC - norm_AB);
             if (compute_Y === true) Y = (norm_AB * X) + intercept_norm_AB;
-            const r_squared = (x1 - X) ** 2 + (y1 - Y) ** 2;
-            return [X, Y, Math.sqrt(r_squared)];
+            const r_squared = (a.x - X) ** 2 + (a.y - Y) ** 2;
+            return [new Point(X, Y, (Math.sqrt(r_squared)))];
         }
-        getInCircle(x1 : number, y1 : number, x2 : number, y2 : number, x3 : number, y3 : number) : _3D_VEC_ {
-            const a = Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2);
-            const b = Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2);
-            const c = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-            const X = (a * x1 + b * x2 + c * x3) / (a + b + c);
-            const Y = (a * y1 + b * y2 + c * y3) / (a + b + c);
-            const s = (a + b + c) / 2
-            const r_squared = ((s - a) * (s - b) * (s - c)) / s;
-            return [X, Y, Math.sqrt(r_squared)];
+
+        getInCircle(a : Point, b : Point, c : Point) : Point[] {
+            const BC = Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2);
+            const AC = Math.sqrt((c.x - a.x) ** 2 + (c.y - a.y) ** 2);
+            const AB = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+            const X = (BC * a.x + AC * b.x + AB * c.x) / (AB + AC + BC);
+            const Y = (BC * a.y + AC * b.y + AB * c.y) / (AB + AC + BC)
+            const s = (AB + AC + BC) / 2
+            const r_squared = ((s - AB) * (s - AC) * (s - BC)) / s;
+            return [new Point(X, Y, (Math.sqrt(r_squared)))];
+        }
+
+        findCircTriFSq(rect : _4D_VEC_,angle = 45) : Point[] {
+            var mid = (rect[2] / 2) + rect[0];
+            var lSmall = rect[2] / 2;
+            var hSmall = Math.tan((angle * Math.PI) / 180) * lSmall;
+            var hBig = hSmall + rect[3];
+            var lBig = hBig / (Math.tan((angle * Math.PI) / 180));
+            var A = new Point(mid - lBig, rect[1] + rect[3]);
+            var B = new Point(mid, rect[1] - hSmall);
+            var C = new Point(mid + lBig, rect[1] + rect[3]);
+    
+            return [A,B,C];
+        }
+
+        getTriBoundingRect(vertices : Point[]) : _4D_VEC_ {
+            var n = vertices.length;
+            var xArr = [0, 0, 0];
+            var yArr = [0, 0, 0];
+            var xmin = Infinity;
+            var ymin = Infinity;
+            var xmax = 0;
+            var ymax = 0;
+            for (let i = 0; i < n; i++) {
+                xArr[i] = vertices[i].x;
+                yArr[i] = vertices[i].y;
+                if (xArr[i] < xmin) {
+                    xmin = xArr[i];
+                }
+                if (yArr[i] < ymin) {
+                    ymin = yArr[i];
+                }
+                if (xArr[i] > xmax) {
+                    xmax = xArr[i];
+                }
+                if (yArr[i] > ymax) {
+                    ymax = yArr[i];
+                }
+            }
+
+            return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+
+        interpolateTriCore1(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
+            const indexList = [0, 1];
+            const Adist = _Linear.getDist(bvec, cvec, indexList);
+            const Bdist = _Linear.getDist(avec, cvec, indexList);
+            const Cdist = _Linear.getDist(avec, bvec, indexList);
+            const apdist = _Linear.getDist(pvec, avec, indexList);
+            const bpdist = _Linear.getDist(pvec, bvec, indexList);
+            const cpdist = _Linear.getDist(pvec, cvec, indexList);
+            return [Adist, Bdist, Cdist, apdist, bpdist, cpdist];
+        }
+        interpolateTriCore2(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
+            const [Adist, Bdist, Cdist, apdist, bpdist, cpdist] = this.interpolateTriCore1(pvec, avec, bvec, cvec);
+            const TotalArea = _Linear.getTriArea(Adist, Bdist, Cdist);
+            const triA = _Linear.getTriArea(Adist, bpdist, cpdist);
+            const triB = _Linear.getTriArea(Bdist, apdist, cpdist);
+            const triC = _Linear.getTriArea(Cdist, apdist, bpdist);
+            return [TotalArea, triA, triB, triC];
+        }
+        interpolateTriCore3(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
+            const [TotalArea, triA, triB, triC] = this.interpolateTriCore2(pvec, avec, bvec, cvec);
+            const aRatio = triA / TotalArea;
+            const bRatio = triB / TotalArea;
+            const cRatio = triC / TotalArea;
+            const aPa = _Matrix.scaMult(aRatio, avec);
+            const bPb = _Matrix.scaMult(bRatio, bvec);
+            const cPc = _Matrix.scaMult(cRatio, cvec);
+            return _Matrix.matAdd(_Matrix.matAdd(aPa, bPb), cPc);
+        }
+        interpolateTri(pvec : _2D_VEC_|_3D_VEC_, avec : _2D_VEC_|_3D_VEC_, bvec : _2D_VEC_|_3D_VEC_, cvec : _2D_VEC_|_3D_VEC_) {
+            return this.interpolateTriCore3(pvec, avec, bvec, cvec);
+        }
+        
+        // Given three collinear points p,q,r, the function checks if
+        // point q lies on line segment "pr"
+        onSegment(p : Point, q: Point, r : Point) {
+            if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) &&
+                q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
+                return true;
+
+            return false;
+
+        }
+
+        //To find orientation of ordered triplet (p,q,r),
+        //The function returns the following values
+        // 0 --> p,q and r are collinear
+        // 1 --> Clockwise
+        // 2 --> Counterclockwise
+        findOrientation(p : Point, q: Point, r : Point) {
+            const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+
+            if (val === 0) return 0; // collinear
+
+            return (val > 0) ? 1 : 2 // clock or counterclock wise
+        }
+
+        // The main function that returns true if line segment 'p1q1'
+        // and 'p2q2' intersect
+        doIntersect(p1 : Point, q1 : Point, p2 : Point, q2 : Point) {
+
+            // Find the four orientations needed for general and 
+            //special cases
+            const o1 = this.findOrientation(p1, q1, p2);
+            const o2 = this.findOrientation(p1, q1, q2);
+            const o3 = this.findOrientation(p2, q2, p1);
+            const o4 = this.findOrientation(p2, q2, q1);
+
+            // General Case
+
+            if (o1 !== o2 && o3 !== o4) return true;
+
+            // Special Cases
+            // p1,q1 and p2 are collinear and p2 lies on segment p1q1
+            if (o1 === 0 && this.onSegment(p1, p2, q1)) return true;
+
+            // p1,q1 and q2 are collinear and q2 lies on segment p1q1
+            if (o2 === 0 && this.onSegment(p1, q2, q1)) return true;
+
+            // p2,q2 and p1 are collinear and p1 lies on segment p2q2
+            if (o3 === 0 && this.onSegment(p2, p1, q2)) return true;
+
+            // p2,q2 and q1 are collinear and q1 lies on segment p2q2
+            if (o4 === 0 && this.onSegment(p2, q1, q2)) return true;
+
+            return false; // Doesnt't fall in any of the above cases
         }
     }
 
@@ -1699,12 +1778,14 @@
                 halfEdgeKey = halfEdgeKeyTemp;
             }
     
+            // If halfedge does not exist, create halfedge
             if (!this.HalfEdgeDict[halfEdgeKey]) {
                 this.HalfEdgeDict[halfEdgeKey] = this.halfEdge(a, b);
                 this.edge_no++;
                 this.HalfEdgeDict[halfEdgeKey].face_vertices = this.face_vertices;
             }
     
+            // If halfedge does exist create twin halfedge
             if (this.HalfEdgeDict[twinHalfEdgeKey]) {
                 this.HalfEdgeDict[halfEdgeKey].twin = twinHalfEdgeKey;
                 this.HalfEdgeDict[twinHalfEdgeKey].twin = halfEdgeKey;
@@ -1727,8 +1808,9 @@
                 }
             }
     
-            this.face_vertices = [min, mid, max];
+            this.face_vertices = [min, mid, max]; // ensure triangle numbers are ordered in ascending order
     
+            // If triangle is not found in triangle list add triangle to triangle list and set its halfedges
             if (!this.triangleList.includes(`${min}-${mid}-${max}`)) {
                 this.triangleList.push(`${min}-${mid}-${max}`);
     
@@ -1770,7 +1852,7 @@
                 }
             }
     
-            face_vertices = [min, mid, max];
+            face_vertices = [min, mid, max]; // ensure triangle numbers are ordered in ascending order
             const triangle = `${min}-${mid}-${max}`;
             const triangle_index = this.triangleList.indexOf(triangle);
     
@@ -1810,7 +1892,7 @@
                 }
             }
     
-            face_vertices = [min, mid, max];
+            face_vertices = [min, mid, max]; // ensure triangle numbers are ordered in ascending order
     
             for (let edge in this.HalfEdgeDict) {
                 var tallies = 0;
@@ -1820,51 +1902,127 @@
                     if (half_edge_face_vertices[i] === face_vertices[i]) tallies++;
                 }
     
-                if (tallies === 3) edge_list.push(edge);
+                if (tallies === 3) edge_list.push(edge); // if all the three consecutive edges share the same vertices then they make up the desired triangle
             }
     
             return edge_list;
         }    
     }
 
-
-    class ConvexHull{      
+    class Point{
+        x: number;
+        y: number;
+        r : number;
+        constructor(x : number,y: number,r = 0){
+            this.x = x;
+            this.y = y;
+            this.r = r;
+        }
     }
 
-    class Delaunay{
+
+    class ConvexHull2D{
+        jarvisConvexHull(points : Point[]) {
+            const n = points.length;
+
+            const points_on_hull : number[] = [];
+
+            if (n < 3) {
+                for(let i = 0; i < n; i++) points_on_hull[i] = i;
+                return {"hull" : points, "points" : points_on_hull}
+            }; // there must be at least three points
+
+            const hull : Point[] = [];
+
+            // Find the leftmost point and bottom-most point
+            let l = 0;
+            for (let i = 1; i < n; i++) {
+                if (points[i].x < points[l].x)
+                    l = i;
+
+                // For handling leftmost colinear points
+                else if (points[i].x === points[l].x && points[i].y < points[l].y) {
+                    l = i;
+                }
+            }
+
+            // Start form leftmost point and keep moving counterclockwise unitll we reach the start point
+            // again. This loop runs O(h) tiems where h is the number of points in the result or output.
+
+            let p = l,
+                q = 0;
+
+            do {
+                // Add current point to result
+                hull.push(points[p]);
+                points_on_hull.push(p);
+
+                // Search for a point 'q' such that orientation (p,q,x) is counterclockwise
+                // for all points 'x'. The idea is to keep track of last visited most counterclock-wise point in q
+                // If any point 'i' is more counterclock-wise than q, then update q.animate-bg
+
+                q = (p + 1) % n;
+
+                for (let i = 0; i < n; i++) {
+                    // If i is more counterclockwise than current q, then update p
+
+                    if (_Linear.findOrientation(points[p], points[i], points[q]) === 2) q = i;
+
+                    // HANDLING  COLLINEAR POINTS
+                    // If point q lies in the middle, then also update q
+
+                    if (p !== i && _Linear.findOrientation(points[p], points[i], points[q]) === 0 &&
+                        _Linear.onSegment(points[p], points[q], points[i])) q = i;
+                }
+
+                // Now q is the most counterclockwise with respect to p. Set p as q for next iteration.
+                // so that q is added tor result 'hull'
+                p = q;
+            } while (p != l); // While we don't come to first point
+
+            return {"hull" : hull, "points" : points_on_hull}
+        }
+    }
+
+    const _ConvexHull = new ConvexHull2D();
+    class Delaunay2D{
         constructor(){}
-        superTriangle(pointList : any[]){
-           const rect = _Miscellenous.getTriBoundingRectImpl(pointList);
-           const tri = _Miscellenous.findCircTriFSq(rect);
+        superTriangle(pointList : Point[]) : Point[]{
+           const rect = _Linear.getTriBoundingRect(pointList);
+           const tri = _Linear.findCircTriFSq(rect);
 
            return tri;
         }
 
-        bowyer_watson(pointList : any[])
+        bowyer_watson(pointList : Point[]) // pointList is a set of coordinates defining the points to be triangulated
         {
-            const triangulation = new TriangularMeshDataStructure2D()
-            const pointList_len = pointList.length;
-            const [x1,y1,x2,y2,x3,y3] = this.superTriangle(pointList);
-            triangulation.addtriangle(pointList_len,pointList_len+1,pointList_len+2);
+            const triangulation = new TriangularMeshDataStructure2D() // triangle data structure
+            const pointList_len = pointList.length; 
+            const [a,b,c] = this.superTriangle(pointList); // must be large enough to completely contain all the points in pointList
+            // mark the super triangle points with values starting from length of pointlist to length of pointlist + 3 and add it to the triangle data structure
+            triangulation.addtriangle(pointList_len, pointList_len + 1, pointList_len + 2);
+            // joint the points list and super triangle points together into one common list
+            const fullPointList = [...pointList, a, b, c];
 
-            const fullPointList = [...pointList,[x1,y1],[x2,y2],[x3,y3]];
-
-            for (let p in pointList){
+            // add all the points one at a time to the triangulation
+            for (let p in pointList){ 
                 const point = pointList[p];
                 const point_num = Number(p);
 
                 const badTriangles : string[] = [];
 
+                // first find all the triangles that are no longer valid due to the insertion
                 for (let triangle of triangulation.triangleList){
                     const [a,b,c] = triangle.split("-");
 
-                    const[x1,y1] = fullPointList[Number(a)];
-                    const[x2,y2] = fullPointList[Number(b)];
-                    const[x3,y3] = fullPointList[Number(c)];
+                    const p = fullPointList[Number(a)];
+                    const q = fullPointList[Number(b)];
+                    const r = fullPointList[Number(c)];
 
-                    const tri_circum = _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
+                    const [coords] = _Linear.getCircumCircle(p,q,r);
 
-                    if (_Linear.isInsideCirc(point,tri_circum)){
+                    // if point is inside circumcircle of triangle add triangle to bad triangles
+                    if (_Linear.isInsideCirc(point,[coords.x,coords.y,coords.r])){
                         badTriangles.push(triangle);
                     }
                 }
@@ -1873,6 +2031,7 @@
 
                 const bad_edges_dict = {};
 
+                // find the boundary of the polygonal hole
                 for (let bad_triangle of badTriangles){
                     const[v1,v2,v3] = bad_triangle.split("-");
                     const bad_edges = triangulation.getTriangleEdges(Number(v1),Number(v2),Number(v3)); 
@@ -1881,6 +2040,7 @@
                         const [string_a,string_b] = bad_edge.split("-");
                         const [a,b] = [Math.min(string_a as any, string_b as any),Math.max(string_a as any, string_b as any)];
 
+                        // Find how many time the bad edge occurs and increment the value denoting its frequency accordingly
                         if(!bad_edges_dict[`${a}-${b}`]){
                             bad_edges_dict[`${a}-${b}`] = 1;
                         }
@@ -1889,15 +2049,18 @@
                         }
                     }
 
+                    // remove each bad triangle from the triangle data structure
                     triangulation.removeTriangle(Number(v1), Number(v2), Number(v3));
                 }
 
+                // if edge is not shared by any other triangles (occurence or frequency is one) in bad triangles add edge to polygon
                 for (let bad_edge in bad_edges_dict){
                     if (bad_edges_dict[bad_edge] === 1){
                         polygon.push(bad_edge);
                     }
                 }
 
+                // re-triangulate the polygonal hole using the point and add the triangles to the triangle data structure
                 for (let polygonal_edge of polygon){
                     const [string_a,string_b] = polygonal_edge.split("-");
                     const [a,b] = [Number(string_a),Number(string_b)];
@@ -1905,6 +2068,8 @@
                     triangulation.addtriangle(a,b,point_num);
                 }
             }
+
+            // If triangle contains a vertex from original super-triangle remove triangle from triangulation
 
             const prune_list : any[] = [];
             
@@ -1924,10 +2089,11 @@
             }
 
             const ret_list : string[] = [];
-
             const results = Object.keys(triangulation.HalfEdgeDict);
 
-            console.log(results)
+
+            // reduce duplicate edges in the halfedge dictionary of the triangle data structure to one edge
+            // when converting to an edge array
 
             for (let result of results){
                 const [string_a,string_b] = result.split("-");
@@ -1940,9 +2106,25 @@
                 }
             }
 
+
+            // get the vertices of the convex hull of the points list
+            const convex_hull_vertices = _ConvexHull.jarvisConvexHull(pointList).points;
+
+            // get the edges of the convex hull from the previously gotten convex hull vertices
+            const convex_hull_edges = _Miscellenous.genEdgefromArray(convex_hull_vertices);
+
+            // for each edge of the convex hull, check if it exists in the delaunay edge array and add it if it doesn't
+            for(let edge of convex_hull_edges){
+                if(!ret_list.includes(edge)){
+                    ret_list.push(edge);
+                }
+            }
+
             return ret_list;
         }
     }
+
+    const _Delaunay = new Delaunay2D();
 
     class ObjectManager{}
 
@@ -2392,32 +2574,35 @@
 
     class Experimental{
         constructor(){}
-        draw(coords : number[],fill_style = "red", stroke_style = "black"){
+        draw(coords : Point[], fill_style = "red", stroke_style = "black", stroke_width = 1, fill_bool = false) {
             ctx.globalAlpha = MODIFIED_PARAMS._GLOBAL_ALPHA;
+            if (coords.length === 1){
+                const a = coords[0];
+                if (a.r === 0) this.drawPoint(a.x,a.y,fill_style,stroke_style);
+                else this.drawCircle(a.x,a.y,a.r,fill_style,stroke_style);
+
+            }
             if (coords.length === 2){
-                const [x,y] = [...coords];
-                this.drawPoint(x,y,fill_style,stroke_style);
+                const [a,b] = [...coords];
+                this.drawLine(a.x,a.y,b.x,b.y,stroke_style,stroke_width);
             }
 
             if (coords.length === 3){
-                const [x,y,r] = [...coords];
-                this.drawCircle(x,y,r,fill_style,stroke_style);
-            }
-
-            if (coords.length === 6){
-                const [x1,y1,x2,y2,x3,y3] = [...coords];
-                this.drawTriangle(x1,y1,x2,y2,x3,y3,fill_style,stroke_style);
-            }            
+                const [p,q,r] = [...coords];
+                this.drawTriangle(p.x,p.y,q.x,q.y,r.x,r.y,fill_style,stroke_style);
+            }  else if (coords.length > 3) {
+                this.drawPolygon(coords, fill_style, stroke_style, stroke_width, fill_bool);
+            }          
         }
 
-        getCircumCircle_(coords : number[]){
-            const [x1,y1,x2,y2,x3,y3] = [...coords];
-            return _Linear.getCircumCircle(x1,y1,x2,y2,x3,y3);
+        getCircumCircle_(coords : Point[]){
+            const [a,b,c] = [...coords];
+            return _Linear.getCircumCircle(a,b,c);
         }
 
-        getInCircle_(coords : number[]){
-            const [x1,y1,x2,y2,x3,y3] = [...coords];
-            return _Linear.getInCircle(x1,y1,x2,y2,x3,y3);
+        getInCircle_(coords : Point[]){
+            const [a,b,c] = [...coords];
+            return _Linear.getInCircle(a,b,c);
 
         }
 
@@ -2445,6 +2630,25 @@
             ctx.lineWidth = stroke_width;
             ctx.stroke();
         }
+
+        drawPolygon(coords : Point[], fill_style = "red", stroke_style = "black", stroke_width = 1, fill_bool = false) {
+            ctx.beginPath();
+            ctx.moveTo(coords[0].x, coords[0].y);
+
+            for (let coord of coords) {
+                ctx.lineTo(coord.x, coord.y);
+            }
+
+            ctx.closePath();
+            if (fill_bool) {
+                ctx.fillStyle = fill_style;
+                ctx.fill();
+            }
+            
+            ctx.strokeStyle = stroke_style;
+            ctx.lineWidth = stroke_width;
+            ctx.stroke();
+        }
     
         drawCircle(x : number, y : number, r : number, fill_style = "red", stroke_style = "black") {
             ctx.beginPath();
@@ -2466,13 +2670,11 @@
         }
     
     
-        drawPoint(x : number, y : number, fill_style = "black", stroke_style = "black") {
+        drawPoint(x : number, y : number, fill_style = "black", stroke_style = "black", stroke_width = 1) {
             ctx.beginPath();
             ctx.arc(x, y, 5, 0, 2 * Math.PI);
             ctx.closePath();
-    
-            const stroke_width = 1;
-    
+        
             ctx.fillStyle = fill_style;
             ctx.fill();
     
@@ -2496,24 +2698,22 @@
             this.drawLine(x, y, new_x, new_y, stroke_style, width);
         }
     
-        drawLine(x1 : number, y1 : number, x2 : number, y2 : number, stroke_style = "black", width = 1) {
+        drawLine(x1 : number, y1 : number, x2 : number, y2 : number, stroke_style = "black", stroke_width = 1) {
             ctx.beginPath();
             ctx.moveTo(x1, y1);
             ctx.lineTo(x2, y2);
-    
-            const stroke_width = width;
-    
+        
             ctx.strokeStyle = stroke_style;
             ctx.lineWidth = stroke_width;
             ctx.stroke();
         }
 
-        drawDelaunay(delaunayLines : any, pointList : any, stroke_style = "black", width = 1) {
+        drawDelaunay(delaunayLines : any, pointList : any, stroke_style = "black", stroke_width = 1) {
             for (let line of delaunayLines) {
                 const [a, b] = line.split("-");
                 const [x1, y1] = pointList[Number(a)];
                 const [x2, y2] = pointList[Number(b)];
-                this.drawLine(x1, y1, x2, y2, stroke_style, width);
+                this.drawLine(x1, y1, x2, y2, stroke_style, stroke_width);
             }
         }
     }
@@ -2522,9 +2722,7 @@
 
     // const tricoords = [200, 400, 300, 100, 500, 450];
 
-    
-    const delaunay = new Delaunay()
-    const points_Set = [
+        const points_Set = [
         // [23, 29],
         // [328, 87],
         // [98, 234],
@@ -2544,9 +2742,11 @@
         [352, 331]
     ]
 
-    const res = _Miscellenous.getTriBoundingRectImpl(points_Set);
+    const mod_points_Set = _Miscellenous.toPoints(points_Set);
+
+    const res = _Linear.getTriBoundingRect(mod_points_Set);
     
-    const pr = delaunay.superTriangle(points_Set);
+    const pr = _Delaunay.superTriangle(mod_points_Set);
     const pc = _Experimental.getCircumCircle_(pr);
     const ps =_Experimental.getInCircle_(pr);
 
@@ -2558,15 +2758,23 @@
 
     const color_list = ["blue","cyan","red","orange","green","yellow"];
 
-    for (let point in points_Set){
-        _Experimental.draw(points_Set[point], color_list[point as any % 6]);
+    for (let point in mod_points_Set){
+        _Experimental.draw([mod_points_Set[point]], color_list[point as any % 6]);
     }
 
-    const result = delaunay.bowyer_watson(points_Set);
+    const result = _Delaunay.bowyer_watson(mod_points_Set);
 
     console.log(result)
 
-    _Experimental.drawDelaunay(result, points_Set);
+    _Experimental.drawDelaunay(result, points_Set,"black",5);
+
+    const convexhull = _ConvexHull.jarvisConvexHull(mod_points_Set)
+
+    console.log(convexhull);
+
+    _Experimental.draw(convexhull.hull,"white","white",2,false);
+    
+    console.log(_Miscellenous.genEdgefromArray(convexhull.points));
     // const tr = [100, 400, 150, 313.4, 200, 400]
     // _Experimental.draw(tr);
     // const cr = _Experimental.getCircumCircle_(tr);
