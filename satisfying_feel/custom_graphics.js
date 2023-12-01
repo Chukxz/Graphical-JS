@@ -11,6 +11,7 @@
     // var prev = Date.now()
     const canvas = document.getElementsByTagName('canvas')[0];
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const status = document.getElementById("status");
     const hovered = { color: document.getElementById('hoveredColor'), pixel: document.getElementById('hoveredPixel') };
     const selected = { color: document.getElementById('selectedColor'), pixel: document.getElementById('selectedPixel') };
     var drop = document.getElementById('drop');
@@ -62,7 +63,7 @@
         _HALF_Y: 1,
         _PROJECTION_MAT: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         _INV_PROJECTION_MAT: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        _OPEN_SIDEBAR: true,
+        _OPEN_SIDEBAR: false,
     };
     const MODIFIED_PARAMS = JSON.parse(JSON.stringify(DEFAULT_PARAMS));
     class BackwardsCompatibilitySettings {
@@ -416,7 +417,7 @@
         toPoints(pointList) {
             const retList = [];
             for (let point in pointList) {
-                retList[point] = new Point(pointList[point][0], pointList[point][1]);
+                retList[point] = new Point2D(pointList[point][0], pointList[point][1]);
             }
             return retList;
         }
@@ -430,8 +431,35 @@
             }
             return result;
         }
+        genArray(min, n, diff, decimal) {
+            const list = [];
+            for (let i = 0; i < n; i++) {
+                if (decimal === true)
+                    list[i] = min + Math.random() * diff;
+                else if (decimal === false)
+                    list[i] = Math.round(min + Math.random() * diff);
+            }
+            return list;
+        }
+        generatePointsArray(minX = 0, maxX = 100, minY = 0, maxY = 100, n = 10, decimal = false) {
+            const _minX = Math.min(minX, maxX);
+            const _maxX = Math.max(minX, maxX);
+            const _minY = Math.min(minY, maxY);
+            const _maxY = Math.max(minY, maxY);
+            const diffX = _maxX - _minX;
+            const diffY = _maxY - _minY;
+            const xlist = this.genArray(_minX, n, diffX, decimal);
+            const ylist = this.genArray(_minX, n, diffY, decimal);
+            const xylist = [];
+            for (let i = 0; i < n; i++) {
+                xylist[i] = [xlist[i], ylist[i]];
+            }
+            return xylist;
+        }
+        getRanHex = (size = 1) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
+        ranHexCol = (num = 100, size = 6) => [...Array(num)].map((elem, index) => index === 0 ? elem = "#000000" : elem = "#" + this.getRanHex(size));
     }
-    const _Miscellenous = new Miscellanous();
+    const _Miscellanous = new Miscellanous();
     class Linear {
         constructor() { }
         getSlope(A_, B_) {
@@ -512,7 +540,7 @@
             if (compute_Y === true)
                 Y = (norm_AB * X) + intercept_norm_AB;
             const r_squared = (a.x - X) ** 2 + (a.y - Y) ** 2;
-            return [new Point(X, Y, (Math.sqrt(r_squared)))];
+            return [new Point2D(X, Y, (Math.sqrt(r_squared)))];
         }
         getInCircle(a, b, c) {
             const BC = Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2);
@@ -522,7 +550,7 @@
             const Y = (BC * a.y + AC * b.y + AB * c.y) / (AB + AC + BC);
             const s = (AB + AC + BC) / 2;
             const r_squared = ((s - AB) * (s - AC) * (s - BC)) / s;
-            return [new Point(X, Y, (Math.sqrt(r_squared)))];
+            return [new Point2D(X, Y, (Math.sqrt(r_squared)))];
         }
         findCircTriFSq(rect, angle = 45) {
             var mid = (rect[2] / 2) + rect[0];
@@ -530,9 +558,9 @@
             var hSmall = Math.tan((angle * Math.PI) / 180) * lSmall;
             var hBig = hSmall + rect[3];
             var lBig = hBig / (Math.tan((angle * Math.PI) / 180));
-            var A = new Point(mid - lBig, rect[1] + rect[3]);
-            var B = new Point(mid, rect[1] - hSmall);
-            var C = new Point(mid + lBig, rect[1] + rect[3]);
+            var A = new Point2D(mid - lBig, rect[1] + rect[3]);
+            var B = new Point2D(mid, rect[1] - hSmall);
+            var C = new Point2D(mid + lBig, rect[1] + rect[3]);
             return [A, B, C];
         }
         getTriBoundingRect(vertices) {
@@ -560,6 +588,11 @@
                 }
             }
             return [xmin, ymin, xmax - xmin, ymax - ymin];
+        }
+        superTriangle(pointList) {
+            const rect = this.getTriBoundingRect(pointList);
+            const tri = this.findCircTriFSq(rect);
+            return tri;
         }
         interpolateTriCore1(pvec, avec, bvec, cvec) {
             const indexList = [0, 1];
@@ -1133,16 +1166,16 @@
             _C: [0, 0, 0],
             _MATRIX: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
             _INV_MATRIX: _Matrix.getInvMat([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 4),
-            depthBuffer: _Miscellenous.initDepthBuffer(),
-            frameBuffer: _Miscellenous.initFrameBuffer(),
+            depthBuffer: _Miscellanous.initDepthBuffer(),
+            frameBuffer: _Miscellanous.initFrameBuffer(),
         };
         constructor(optical_type_input) {
             this.instance.optical_type = optical_type_input;
             return this;
         }
         resetBuffers() {
-            _Miscellenous.resetDepthBuffer(this.instance.depthBuffer);
-            _Miscellenous.resetFrameBuffer(this.instance.frameBuffer);
+            _Miscellanous.resetDepthBuffer(this.instance.depthBuffer);
+            _Miscellanous.resetFrameBuffer(this.instance.frameBuffer);
         }
         setPos(input_array) {
             this.instance._ACTUAL_POS = input_array;
@@ -1572,7 +1605,7 @@
             return edge_list;
         }
     }
-    class Point {
+    class Point2D {
         x;
         y;
         r;
@@ -1582,6 +1615,9 @@
             this.r = r;
         }
     }
+    class LinearAlgebraSupport {
+    }
+    const _LinearAlgebraSupport = new LinearAlgebraSupport();
     class ConvexHull2D {
         jarvisConvexHull(points) {
             const n = points.length;
@@ -1612,7 +1648,7 @@
                 points_on_hull.push(p);
                 // Search for a point 'q' such that orientation (p,q,x) is counterclockwise
                 // for all points 'x'. The idea is to keep track of last visited most counterclock-wise point in q
-                // If any point 'i' is more counterclock-wise than q, then update q.animate-bg
+                // If any point 'i' is more counterclock-wise than q, then update q
                 q = (p + 1) % n;
                 for (let i = 0; i < n; i++) {
                     // If i is more counterclockwise than current q, then update p
@@ -1632,6 +1668,60 @@
         }
     }
     const _ConvexHull = new ConvexHull2D();
+    class BinarySearch {
+        recursive(elem, arr, min, max) {
+            if (min > max)
+                return -1;
+            else {
+                let mid = Math.floor((min + max) / 2);
+                if (this.satisfies() === 0)
+                    return mid;
+                else if (this.satisfies() === -1)
+                    return this.recursive(elem, arr, min, mid - 1);
+                else
+                    return this.recursive(elem, arr, mid + 1, max);
+            }
+        }
+        iterative(elem, arr) {
+            let min = 0;
+            let max = arr.length - 1;
+            while (min <= max) {
+                let mid = Math.floor((min + max) / 2);
+                if (this.satisfies() === 0)
+                    return mid;
+                else if (this.satisfies() === -1)
+                    max = mid - 1;
+                else
+                    min = mid + 1;
+            }
+            return -1;
+        }
+    }
+    class Ret {
+        static count = 0;
+        _ret;
+        _id;
+        color_code;
+        exists;
+        constructor(ret, color_code = "black") {
+            const [a, b] = ret.split("-");
+            this._ret = `${Math.min(Number(a), Number(b))}-${Math.max(Number(a), Number(b))}`;
+            this._id = Ret.count;
+            this.color_code = color_code;
+            this.exists = true;
+            Ret.count++;
+        }
+        get_id = () => { return this._id; };
+        get_ret = () => { return this._ret; };
+        equals(input) {
+            const [i_a, i_b] = input.split("-");
+            const [r_a, r_b] = this._ret.split("-");
+            if ((Number(i_a) === Number(r_a)) && (Number(i_b) === Number(r_b)))
+                return true;
+            else
+                return false;
+        }
+    }
     class Delaunay2D {
         constructor() { }
         superTriangle(pointList) {
@@ -1639,29 +1729,78 @@
             const tri = _Linear.findCircTriFSq(rect);
             return tri;
         }
+        get_edges(triangulation) {
+            const ret_list = [];
+            const _list = [];
+            const results = Object.keys(triangulation.HalfEdgeDict);
+            // reduce duplicate edges in the halfedge dictionary of the triangle data structure to one edge
+            // when converting to an edge array
+            for (let result of results) {
+                const [string_a, string_b] = result.split("-");
+                const rev_result = `${string_b}-${string_a}`;
+                if (!(_list.includes(result) || _list.includes(rev_result))) {
+                    const [a, b] = [Math.min(string_a, string_b), Math.max(string_a, string_b)];
+                    _list.push(`${a}-${b}`);
+                }
+            }
+            for (let val of _list) {
+                ret_list.push(new Ret(val));
+            }
+            return { "ret_list": ret_list, "list": _list };
+        }
+        get_ret(input, ret_list) {
+            const null_ret = new Ret("-");
+            null_ret.exists = false;
+            for (let ret of ret_list) {
+                if (ret.equals(input))
+                    return ret;
+                else
+                    return null_ret;
+            }
+            return null_ret;
+        }
         bowyer_watson(pointList) {
+            const delaunay_history = []; // Initialize the history
             const triangulation = new TriangularMeshDataStructure2D(); // triangle data structure
+            const ref_ret = new Ret("-"); // reference ret to get default color code
+            ref_ret.exists = false;
+            Ret.count--; // Decrement ret count to zero;
+            delaunay_history.push({ "ret_list": this.get_edges(triangulation).ret_list, "full_point_list": pointList }); // push it to the history so we can see the change
             const pointList_len = pointList.length;
             const [a, b, c] = this.superTriangle(pointList); // must be large enough to completely contain all the points in pointList
             // mark the super triangle points with values starting from length of pointlist to length of pointlist + 3 and add it to the triangle data structure
             triangulation.addtriangle(pointList_len, pointList_len + 1, pointList_len + 2);
             // joint the points list and super triangle points together into one common list
             const fullPointList = [...pointList, a, b, c];
+            delaunay_history.push({ "ret_list": this.get_edges(triangulation).ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
             // add all the points one at a time to the triangulation
             for (let p in pointList) {
                 const point = pointList[p];
                 const point_num = Number(p);
                 const badTriangles = [];
+                const cur_edges = this.get_edges(triangulation).ret_list;
                 // first find all the triangles that are no longer valid due to the insertion
                 for (let triangle of triangulation.triangleList) {
                     const [a, b, c] = triangle.split("-");
                     const p = fullPointList[Number(a)];
                     const q = fullPointList[Number(b)];
                     const r = fullPointList[Number(c)];
+                    cur_edges.push(new Ret(`${a}-${point_num}`));
+                    cur_edges.push(new Ret(`${b}-${point_num}`));
+                    cur_edges.push(new Ret(`${c}-${point_num}`));
+                    delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
                     const [coords] = _Linear.getCircumCircle(p, q, r);
                     // if point is inside circumcircle of triangle add triangle to bad triangles
                     if (_Linear.isInsideCirc(point, [coords.x, coords.y, coords.r])) {
                         badTriangles.push(triangle);
+                        const ret_a = this.get_ret(`${a}-${point_num}`, cur_edges);
+                        const ret_b = this.get_ret(`${b}-${point_num}`, cur_edges);
+                        const ret_c = this.get_ret(`${c}-${point_num}`, cur_edges);
+                        // set ret's color to red to denote subsequent deletion
+                        ret_a.color_code = "red";
+                        ret_b.color_code = "red";
+                        ret_c.color_code = "red";
+                        delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
                     }
                 }
                 const polygon = [];
@@ -1673,7 +1812,7 @@
                     for (let bad_edge of bad_edges) {
                         const [string_a, string_b] = bad_edge.split("-");
                         const [a, b] = [Math.min(string_a, string_b), Math.max(string_a, string_b)];
-                        // Find how many time the bad edge occurs and increment the value denoting its frequency accordingly
+                        // Find how many times the bad edge occurs and increment the value denoting its frequency accordingly
                         if (!bad_edges_dict[`${a}-${b}`]) {
                             bad_edges_dict[`${a}-${b}`] = 1;
                         }
@@ -1689,14 +1828,29 @@
                     if (bad_edges_dict[bad_edge] === 1) {
                         polygon.push(bad_edge);
                     }
+                    else {
+                        const ret_bad_edge = this.get_ret(bad_edge, cur_edges);
+                        ret_bad_edge.exists = false; // mark ret as not existing
+                        delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                    }
                 }
                 // re-triangulate the polygonal hole using the point and add the triangles to the triangle data structure
                 for (let polygonal_edge of polygon) {
                     const [string_a, string_b] = polygonal_edge.split("-");
                     const [a, b] = [Number(string_a), Number(string_b)];
+                    // add a new triangle with the vertices of polygonal_edge's vertice and the point number
                     triangulation.addtriangle(a, b, point_num);
+                    const ret_poly_edge = this.get_ret(polygonal_edge, cur_edges); // get ret of the polygonal edge
+                    ret_poly_edge.color_code = ref_ret.color_code; // set it to the default color code
+                    // add the other edges of the new triangle to ret list
+                    cur_edges.push(new Ret(`${a}-${point_num}`));
+                    cur_edges.push(new Ret(`${b}-${point_num}`));
+                    delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
                 }
             }
+            // get the edges
+            const get_ret = this.get_edges(triangulation);
+            delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
             // If triangle contains a vertex from original super-triangle remove triangle from triangulation
             const prune_list = [];
             for (let triangle of triangulation.triangleList) {
@@ -1710,34 +1864,133 @@
                 }
             }
             for (let triangle of prune_list) {
-                triangulation.removeTriangle(triangle[0], triangle[1], triangle[2]);
-            }
-            const ret_list = [];
-            const results = Object.keys(triangulation.HalfEdgeDict);
-            // reduce duplicate edges in the halfedge dictionary of the triangle data structure to one edge
-            // when converting to an edge array
-            for (let result of results) {
-                const [string_a, string_b] = result.split("-");
-                const rev_result = `${string_b}-${string_a}`;
-                if (!(ret_list.includes(result) || ret_list.includes(rev_result))) {
-                    const [a, b] = [Math.min(string_a, string_b), Math.max(string_a, string_b)];
-                    ret_list.push(`${a}-${b}`);
-                }
+                triangulation.removeTriangle(triangle[0], triangle[1], triangle[2]); // remove triangle containing vertices of super triangle
+                // get the ret's of the removed triangles and change their colors
+                const a = this.get_ret(`${triangle[1]}-${triangle[2]}`, get_ret.ret_list);
+                const b = this.get_ret(`${triangle[0]}-${triangle[2]}`, get_ret.ret_list);
+                const c = this.get_ret(`${triangle[0]}-${triangle[1]}`, get_ret.ret_list);
+                a.color_code = "red";
+                b.color_code = "red";
+                c.color_code = "red";
+                delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                // now remove all three rets (edges)
+                a.exists = false;
+                b.exists = false;
+                c.exists = false;
+                delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
             }
             // get the vertices of the convex hull of the points list
             const convex_hull_vertices = _ConvexHull.jarvisConvexHull(pointList).points;
             // get the edges of the convex hull from the previously gotten convex hull vertices
-            const convex_hull_edges = _Miscellenous.genEdgefromArray(convex_hull_vertices);
+            const convex_hull_edges = _Miscellanous.genEdgefromArray(convex_hull_vertices);
+            const get_ret_final = this.get_edges(triangulation);
+            const _ret_list = get_ret_final.ret_list;
+            const _list = get_ret_final.list;
             // for each edge of the convex hull, check if it exists in the delaunay edge array and add it if it doesn't
             for (let edge of convex_hull_edges) {
-                if (!ret_list.includes(edge)) {
-                    ret_list.push(edge);
+                if (!_list.includes(edge)) {
+                    _list.push(edge);
+                    _ret_list.push(new Ret(edge));
+                    delaunay_history.push({ "ret_list": _ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
                 }
             }
-            return ret_list;
+            return [{ "list": _list, "full_point_list": fullPointList }, delaunay_history, convex_hull_vertices];
         }
     }
     const _Delaunay = new Delaunay2D();
+    class Delaunay2D_Animate {
+        cur_index;
+        // animate_convex_hull(){
+        //     const pt_list : Point2D[] = this.pt_list;
+        //     const[a,b] = this.convex_hull_edges[this.cur_index].split("-");
+        //     console.log(a,b);
+        //     const [start, end] = [pt_list[Number(a)], pt_list[Number(b)]];
+        //     _Experimental.drawLine(start, end, this.convex_hull_color, 15);
+        //     console.log(this.cur_index);
+        //     this.cur_index++;
+        //     const time_out = setTimeout(this.animate_convex_hull, 500);
+        //     if(this.cur_index >= this.convex_hull_edges.length) {
+        //         this.cur_index = 0;
+        //         clearTimeout(time_out);
+        //     }
+        //     status.addEventListener("click", ()=>{clearTimeout(time_out); console.log(this.cur_index)})
+        // }
+        delaunay_input;
+        convex_hull_color;
+        convex_hull_edges;
+        pt_list;
+        delay(time) {
+            var iter = 0;
+            while (iter < 100) {
+                iter++;
+                console.log(iter);
+            }
+        }
+        constructor(delaunay_input, convex_hull_color, color_list, animate_convex_hull_bool) {
+            this.delaunay_input = delaunay_input;
+            this.pt_list = delaunay_input[0].full_point_list;
+            this.cur_index = 0;
+            const delaunay = delaunay_input[0];
+            const delaunay_history = delaunay_input[1];
+            const convex_hull_vertices = delaunay_input[2];
+            this.convex_hull_edges = _Miscellanous.genEdgefromArray(convex_hull_vertices);
+            console.log("first");
+            this.delay(10000);
+            return;
+            const interval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                status.innerHTML = "Running";
+                if (animate_convex_hull === true) {
+                    // get the edges of the convex hull from the previously gotten convex hull vertices
+                    for (let convex_hull_edge in convex_hull_edges) {
+                        const [a, b] = convex_hull_edge.split("-");
+                        const [start, end] = [delaunay.full_point_list[Number(a)], delaunay.full_point_list[Number(b)]];
+                        _Experimental.drawLine(start, end, convex_hull_color, 15);
+                    }
+                }
+                this.animate(delaunay_history[this.cur_index]);
+                this.cur_index++;
+                if (this.cur_index >= delaunay_history.length) {
+                    status.innerHTML = "Done";
+                    console.log(interval);
+                    const time_out = setTimeout(() => {
+                        status.innerHTML = "Null";
+                        cl_t = true;
+                        if (cl_t === true) {
+                            console.log(time_out);
+                            clearTimeout(time_out);
+                        }
+                        ;
+                    }, 1000);
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+        animate(history_group) {
+            const history = history_group.ret_list;
+            const point_list = history_group.full_point_list;
+            var p_index = 0;
+            var h_index = 0;
+            const tm_1 = setTimeout(() => {
+                const point = point_list[p_index];
+                _Experimental.drawPoint(point, color_list[color_list.length % p_index]);
+                p_index++;
+                if (p_index >= point_list.length)
+                    clearTimeout(tm_1);
+            }, 100);
+            const tm_2 = setTimeout(() => {
+                const history_item = history[h_index];
+                if (typeof history_item !== undefined) {
+                    const [a, b] = history_item.get_ret().split("-");
+                    const [start, end] = [point_list[Number(a)], point_list[Number(b)]];
+                    _Experimental.drawLine(start, end, history_item.color_code, 5);
+                }
+                h_index++;
+                if (h_index >= history.length)
+                    clearTimeout(tm_2);
+            }, 250);
+        }
+    }
     class ObjectManager {
     }
     class PointLight {
@@ -1812,16 +2065,16 @@
     //     }
     //     private interpolate(pvec : _3D_VEC_, avec : _3D_VEC_, bvec : _3D_VEC_, cvec : _3D_VEC_) : _3D_VEC_ {
     //         const indexList = [0, 1];
-    //         const Adist = _Miscellenous.getDist(bvec, cvec, indexList),
-    //             Bdist = _Miscellenous.getDist(avec, cvec, indexList),
-    //             Cdist = _Miscellenous.getDist(avec, bvec, indexList),
-    //             apdist = _Miscellenous.getDist(pvec, avec, indexList),
-    //             bpdist = _Miscellenous.getDist(pvec, bvec, indexList),
-    //             cpdist = _Miscellenous.getDist(pvec, cvec, indexList);
-    //         this.TotalArea = _Miscellenous.getTriArea(Adist, Bdist, Cdist);
-    //         this.triA = _Miscellenous.getTriArea(Adist, bpdist, cpdist);
-    //         this.triB = _Miscellenous.getTriArea(Bdist, apdist, cpdist);
-    //         this.triC = _Miscellenous.getTriArea(Cdist, apdist, bpdist);
+    //         const Adist = _Miscellanous.getDist(bvec, cvec, indexList),
+    //             Bdist = _Miscellanous.getDist(avec, cvec, indexList),
+    //             Cdist = _Miscellanous.getDist(avec, bvec, indexList),
+    //             apdist = _Miscellanous.getDist(pvec, avec, indexList),
+    //             bpdist = _Miscellanous.getDist(pvec, bvec, indexList),
+    //             cpdist = _Miscellanous.getDist(pvec, cvec, indexList);
+    //         this.TotalArea = _Miscellanous.getTriArea(Adist, Bdist, Cdist);
+    //         this.triA = _Miscellanous.getTriArea(Adist, bpdist, cpdist);
+    //         this.triB = _Miscellanous.getTriArea(Bdist, apdist, cpdist);
+    //         this.triC = _Miscellanous.getTriArea(Cdist, apdist, bpdist);
     //         this.aRatio = this.triA / this.TotalArea;
     //         this.bRatio = this.triB / this.TotalArea;
     //         this.cRatio = this.triC / this.TotalArea;
@@ -2053,6 +2306,19 @@
         return retObject;
     })();
     implementDrag.start(canvas);
+    function pick(event, destination) {
+        const bounding = canvas.getBoundingClientRect();
+        const x = event.clientX - bounding.left;
+        const y = event.clientY - bounding.top;
+        const pixel = ctx.getImageData(x, y, 1, 1);
+        const data = pixel.data;
+        const rgba = `rgba(${data[0]}, ${data[1]}, ${data[2]}, ${data[3] / 255})`;
+        destination.color.innerHTML = rgba;
+        destination.pixel.innerHTML = `(${x},${y})`;
+        return rgba;
+    }
+    canvas.addEventListener("mousemove", (event) => pick(event, hovered));
+    canvas.addEventListener("click", (event) => pick(event, selected));
     const _Classes = (bases) => {
         class Bases {
             constructor() {
@@ -2092,17 +2358,17 @@
             if (coords.length === 1) {
                 const a = coords[0];
                 if (a.r === 0)
-                    this.drawPoint(a.x, a.y, fill_style, stroke_style);
+                    this.drawPoint(a, fill_style, stroke_style);
                 else
                     this.drawCircle(a.x, a.y, a.r, fill_style, stroke_style);
             }
             if (coords.length === 2) {
                 const [a, b] = [...coords];
-                this.drawLine(a.x, a.y, b.x, b.y, stroke_style, stroke_width);
+                this.drawLine(a, b, stroke_style, stroke_width);
             }
             if (coords.length === 3) {
                 const [p, q, r] = [...coords];
-                this.drawTriangle(p.x, p.y, q.x, q.y, r.x, r.y, fill_style, stroke_style);
+                this.drawTriangle(p, q, r, fill_style, stroke_style);
             }
             else if (coords.length > 3) {
                 this.drawPolygon(coords, fill_style, stroke_style, stroke_width, fill_bool);
@@ -2116,24 +2382,26 @@
             const [a, b, c] = [...coords];
             return _Linear.getInCircle(a, b, c);
         }
-        drawTriangle(x1, y1, x2, y2, x3, y3, fill_style = "red", stroke_style = "black") {
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.lineTo(x3, y3);
-            ctx.closePath();
-            const a = (Math.sqrt((x3 - x2) ** 2 + (y3 - y2) ** 2));
-            const b = (Math.sqrt((x3 - x1) ** 2 + (y3 - y1) ** 2));
-            const c = (Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2));
-            const perimeter = a + b + c;
-            const semiperimeter = perimeter * 0.5;
-            const area = Math.sqrt(semiperimeter * (semiperimeter - a) * (semiperimeter - b) * (semiperimeter - c));
-            const stroke_width = Math.round(Math.sqrt(area / perimeter));
-            ctx.fillStyle = fill_style;
-            ctx.fill();
-            ctx.strokeStyle = stroke_style;
-            ctx.lineWidth = stroke_width;
-            ctx.stroke();
+        drawTriangle(a, b, c, fill_style = "red", stroke_style = "black") {
+            if (typeof a !== "undefined" && typeof b !== "undefined" && typeof c !== "undefined") {
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.lineTo(c.x, c.y);
+                ctx.closePath();
+                const _a = (Math.sqrt((c.x - b.x) ** 2 + (c.y - b.y) ** 2));
+                const _b = (Math.sqrt((c.x - a.x) ** 2 + (c.y - a.y) ** 2));
+                const _c = (Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2));
+                const perimeter = _a + _b + _c;
+                const semiperimeter = perimeter * 0.5;
+                const area = Math.sqrt(semiperimeter * (semiperimeter - _a) * (semiperimeter - _b) * (semiperimeter - _c));
+                const stroke_width = Math.round(Math.sqrt(area / perimeter));
+                ctx.fillStyle = fill_style;
+                ctx.fill();
+                ctx.strokeStyle = stroke_style;
+                ctx.lineWidth = stroke_width;
+                ctx.stroke();
+            }
         }
         drawPolygon(coords, fill_style = "red", stroke_style = "black", stroke_width = 1, fill_bool = false) {
             ctx.beginPath();
@@ -2163,15 +2431,17 @@
             ctx.lineWidth = stroke_width;
             ctx.stroke();
         }
-        drawPoint(x, y, fill_style = "black", stroke_style = "black", stroke_width = 1) {
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, 2 * Math.PI);
-            ctx.closePath();
-            ctx.fillStyle = fill_style;
-            ctx.fill();
-            ctx.strokeStyle = stroke_style;
-            ctx.lineWidth = stroke_width;
-            ctx.stroke();
+        drawPoint(o, fill_style = "black", stroke_style = "black", stroke_width = 1) {
+            if (typeof o !== "undefined") {
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, 5, 0, 2 * Math.PI);
+                ctx.closePath();
+                ctx.fillStyle = fill_style;
+                ctx.fill();
+                ctx.strokeStyle = stroke_style;
+                ctx.lineWidth = stroke_width;
+                ctx.stroke();
+            }
         }
         drawText(x, y, text, fill_style = "black") {
             ctx.fillStyle = fill_style;
@@ -2182,22 +2452,26 @@
             const intercept = y - gradient * x;
             const new_x = x + x_scale;
             const new_y = gradient * new_x + intercept;
-            this.drawLine(x, y, new_x, new_y, stroke_style, width);
+            this.drawLine(new Point2D(x, y), new Point2D(new_x, new_y), stroke_style, width);
         }
-        drawLine(x1, y1, x2, y2, stroke_style = "black", stroke_width = 1) {
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.strokeStyle = stroke_style;
-            ctx.lineWidth = stroke_width;
-            ctx.stroke();
+        drawLine(a, b, stroke_style = "black", stroke_width = 1) {
+            if (typeof a !== "undefined" && typeof b !== "undefined") {
+                ctx.beginPath();
+                ctx.moveTo(a.x, a.y);
+                ctx.lineTo(b.x, b.y);
+                ctx.strokeStyle = stroke_style;
+                ctx.lineWidth = stroke_width;
+                ctx.stroke();
+            }
         }
-        drawDelaunay(delaunayLines, pointList, stroke_style = "black", stroke_width = 1) {
-            for (let line of delaunayLines) {
-                const [a, b] = line.split("-");
-                const [x1, y1] = pointList[Number(a)];
-                const [x2, y2] = pointList[Number(b)];
-                this.drawLine(x1, y1, x2, y2, stroke_style, stroke_width);
+        drawDelaunay(delaunay, stroke_style = "black", stroke_width = 1) {
+            const edges = delaunay.list;
+            const point_list = delaunay.full_point_list;
+            for (let edge of edges) {
+                const [a, b] = edge.split("-");
+                const start = point_list[Number(a)];
+                const end = point_list[Number(b)];
+                this.drawLine(start, end, stroke_style, stroke_width);
             }
         }
     }
@@ -2221,27 +2495,47 @@
         [278, 258],
         [352, 331]
     ];
-    const mod_points_Set = _Miscellenous.toPoints(points_Set);
-    const res = _Linear.getTriBoundingRect(mod_points_Set);
-    const pr = _Delaunay.superTriangle(mod_points_Set);
-    const pc = _Experimental.getCircumCircle_(pr);
-    const ps = _Experimental.getInCircle_(pr);
-    _Experimental.draw(pr);
-    _Experimental.draw(ps);
-    _Experimental.draw(pc);
-    ctx.fillStyle = "green";
-    ctx.fillRect(res[0], res[1], res[2], res[3]);
-    const color_list = ["blue", "cyan", "red", "orange", "green", "yellow"];
-    for (let point in mod_points_Set) {
-        _Experimental.draw([mod_points_Set[point]], color_list[point % 6]);
-    }
-    const result = _Delaunay.bowyer_watson(mod_points_Set);
-    console.log(result);
-    _Experimental.drawDelaunay(result, points_Set, "black", 5);
-    const convexhull = _ConvexHull.jarvisConvexHull(mod_points_Set);
-    console.log(convexhull);
-    _Experimental.draw(convexhull.hull, "white", "white", 2, false);
-    console.log(_Miscellenous.genEdgefromArray(convexhull.points));
+    const gen_points = _Miscellanous.generatePointsArray(0, 700, 0, 560, 10, false);
+    const mod_points_Set = _Miscellanous.toPoints(gen_points);
+    const d_result = _Delaunay.bowyer_watson(mod_points_Set);
+    const color_list = _Miscellanous.ranHexCol(20);
+    const animate_delaunay = new Delaunay2D_Animate(d_result, "cyan", color_list, true);
+    // const convexhull = _ConvexHull.jarvisConvexHull(mod_points_Set)
+    // _Experimental.draw(convexhull.hull,"white","cyan",15,false);
+    // for (let point in mod_points_Set){
+    //     _Experimental.draw([mod_points_Set[point]], color_list[color_list.length % Number(point)]);
+    // }
+    // console.log(d_result)
+    // _Experimental.drawDelaunay(d_result[0],"black",5);
+    // const point_num = 1e3;
+    // const n = 1;
+    // const minX = -100;
+    // const minY = -100;
+    // const maxX = 100;
+    // const maxY = 100;
+    // const arr = _Miscellanous.generatePointsArray(minX, maxX, minY, maxX, point_num, false);
+    // const mod_arr = _Miscellanous.toPoints(arr);
+    // const start = new Date().getTime();
+    // for (let i = 0; i < n; i++)
+    //     _Delaunay.divide_n_conquer(mod_arr);
+    // const end = new Date().getTime();
+    // console.log(`Minimum value of X: ${minX}\nMaximum value of X: ${maxX}\nMinimum value of Y: ${minY}\nMaximum value of Y: ${maxY}`);
+    // console.log(`Time taken To run Delaunay Triangulation Divide and Conquer Algorithm with ${point_num} points at ${n} iterations: ${end - start} ms`);
+    // const point_num = 1e3;
+    // const n = 1e4;
+    // const minX = 0;
+    // const minY = 0;
+    // const maxX = 100;
+    // const maxY = 100;
+    //const points_ = _Miscellanous.generatePointsArray(minX, maxX, minY, maxY, point_num, false);
+    // console.log(points_)
+    // const first = new Date().getTime();
+    // for (let i = 0; i < n; i++) {
+    //     _ConvexHull.jarvisConvexHull(points_);
+    // }
+    // const second = new Date().getTime();
+    // console.log(`Minimum value of X: ${minX}\nMaximum value of X: ${maxX}\nMinimum value of Y: ${minY}\nMaximum value of Y: ${maxY}`);
+    // console.log(`Time taken To run Jarvis Algorithm with ${point_num} points at ${n} iterations: ${second - first} ms`);
     // const tr = [100, 400, 150, 313.4, 200, 400]
     // _Experimental.draw(tr);
     // const cr = _Experimental.getCircumCircle_(tr);
