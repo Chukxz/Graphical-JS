@@ -12,6 +12,12 @@
     const canvas = document.getElementsByTagName('canvas')[0];
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const status = document.getElementById("status");
+    const anim_number = document.getElementById("anim1_value");
+    const anim_number_input = document.getElementById("animation_number");
+    const anim_speed = document.getElementById("anim2_value");
+    const anim_speed_input = document.getElementById("animation_speed");
+    const anim_info_btn = document.getElementById("anim_info");
+    const after_anim1 = document.getElementById("after_anim1");
     const hovered = { color: document.getElementById('hoveredColor'), pixel: document.getElementById('hoveredPixel') };
     const selected = { color: document.getElementById('selectedColor'), pixel: document.getElementById('selectedPixel') };
     var drop = document.getElementById('drop');
@@ -155,7 +161,7 @@
         }
         setCanvas() {
             // Canvas
-            var width = window.innerWidth - 40;
+            var width = window.innerWidth - 80;
             if (MODIFIED_PARAMS._OPEN_SIDEBAR === true)
                 width = window.innerWidth - 300;
             const height = window.innerHeight - 100;
@@ -449,15 +455,15 @@
             const diffX = _maxX - _minX;
             const diffY = _maxY - _minY;
             const xlist = this.genArray(_minX, n, diffX, decimal);
-            const ylist = this.genArray(_minX, n, diffY, decimal);
+            const ylist = this.genArray(_minY, n, diffY, decimal);
             const xylist = [];
             for (let i = 0; i < n; i++) {
                 xylist[i] = [xlist[i], ylist[i]];
             }
             return xylist;
         }
-        getRanHex = (size = 1) => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join("");
-        ranHexCol = (num = 100, size = 6) => [...Array(num)].map((elem, index) => index === 0 ? elem = "#000000" : elem = "#" + this.getRanHex(size));
+        getRanHex = (size = 1) => [...Array(size)].map((elem) => elem = Math.floor(Math.random() * 16).toString(16)).join("");
+        ranHexCol = (num = 100, size = 6, exclude_col = "black") => [...Array(num)].map((elem, index) => elem = index === 0 ? exclude_col : "#" + this.getRanHex(size));
     }
     const _Miscellanous = new Miscellanous();
     class Linear {
@@ -1703,21 +1709,28 @@
         _id;
         color_code;
         exists;
-        constructor(ret, color_code = "black") {
-            const [a, b] = ret.split("-");
-            this._ret = `${Math.min(Number(a), Number(b))}-${Math.max(Number(a), Number(b))}`;
+        _line;
+        _s_width;
+        constructor(ret, color_code = "black", line = true, _s_width = 1) {
+            this._line = line;
+            this._ret = ret;
             this._id = Ret.count;
             this.color_code = color_code;
             this.exists = true;
+            this._s_width = _s_width;
             Ret.count++;
         }
         get_id = () => { return this._id; };
         get_ret = () => { return this._ret; };
         equals(input) {
-            const [i_a, i_b] = input.split("-");
-            const [r_a, r_b] = this._ret.split("-");
-            if ((Number(i_a) === Number(r_a)) && (Number(i_b) === Number(r_b)))
-                return true;
+            if (this._line === true) {
+                const [i_a, i_b] = input.split("-");
+                const [r_a, r_b] = this._ret.split("-");
+                if ((Number(i_a) === Number(r_a)) && (Number(i_b) === Number(r_b)))
+                    return true;
+                else
+                    return false;
+            }
             else
                 return false;
         }
@@ -1744,12 +1757,13 @@
                 }
             }
             for (let val of _list) {
-                ret_list.push(new Ret(val));
+                ret_list.push(new Ret(val, "black", true, 5));
             }
             return { "ret_list": ret_list, "list": _list };
         }
         get_ret(input, ret_list) {
             const null_ret = new Ret("-");
+            Ret.count--; // Decrement ret count to zero;
             null_ret.exists = false;
             for (let ret of ret_list) {
                 if (ret.equals(input))
@@ -1765,42 +1779,42 @@
             const ref_ret = new Ret("-"); // reference ret to get default color code
             ref_ret.exists = false;
             Ret.count--; // Decrement ret count to zero;
-            delaunay_history.push({ "ret_list": this.get_edges(triangulation).ret_list, "full_point_list": pointList }); // push it to the history so we can see the change
+            delaunay_history.push(this.get_edges(triangulation).ret_list); // push it to the history so we can see the change
             const pointList_len = pointList.length;
             const [a, b, c] = this.superTriangle(pointList); // must be large enough to completely contain all the points in pointList
             // mark the super triangle points with values starting from length of pointlist to length of pointlist + 3 and add it to the triangle data structure
             triangulation.addtriangle(pointList_len, pointList_len + 1, pointList_len + 2);
             // joint the points list and super triangle points together into one common list
             const fullPointList = [...pointList, a, b, c];
-            delaunay_history.push({ "ret_list": this.get_edges(triangulation).ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
+            delaunay_history.push(this.get_edges(triangulation).ret_list); // push it to the history so we can see the change
             // add all the points one at a time to the triangulation
             for (let p in pointList) {
                 const point = pointList[p];
                 const point_num = Number(p);
                 const badTriangles = [];
-                const cur_edges = this.get_edges(triangulation).ret_list;
+                const gray_edges = [];
                 // first find all the triangles that are no longer valid due to the insertion
                 for (let triangle of triangulation.triangleList) {
                     const [a, b, c] = triangle.split("-");
                     const p = fullPointList[Number(a)];
                     const q = fullPointList[Number(b)];
                     const r = fullPointList[Number(c)];
-                    cur_edges.push(new Ret(`${a}-${point_num}`));
-                    cur_edges.push(new Ret(`${b}-${point_num}`));
-                    cur_edges.push(new Ret(`${c}-${point_num}`));
-                    delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
                     const [coords] = _Linear.getCircumCircle(p, q, r);
+                    const _a = new Ret(`${a}-${point_num}`, "yellow", true, 5);
+                    const _b = new Ret(`${b}-${point_num}`, "yellow", true, 5);
+                    const _c = new Ret(`${c}-${point_num}`, "yellow", true, 5);
+                    delaunay_history.push([...this.get_edges(triangulation).ret_list, ...gray_edges, _a, _b, _c]); // push it to the history so we can see the change
+                    const invalid_tri_list = [];
                     // if point is inside circumcircle of triangle add triangle to bad triangles
                     if (_Linear.isInsideCirc(point, [coords.x, coords.y, coords.r])) {
                         badTriangles.push(triangle);
-                        const ret_a = this.get_ret(`${a}-${point_num}`, cur_edges);
-                        const ret_b = this.get_ret(`${b}-${point_num}`, cur_edges);
-                        const ret_c = this.get_ret(`${c}-${point_num}`, cur_edges);
-                        // set ret's color to red to denote subsequent deletion
-                        ret_a.color_code = "red";
-                        ret_b.color_code = "red";
-                        ret_c.color_code = "red";
-                        delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                        const ret_a = new Ret(`${a}-${point_num}`, "red", true, 5);
+                        const ret_b = new Ret(`${b}-${point_num}`, "red", true, 5);
+                        const ret_c = new Ret(`${c}-${point_num}`, "red", true, 5);
+                        invalid_tri_list.push(...[new Ret(`${a}-${b}`, "red", true, 5), new Ret(`${b}-${c}`, "red", true, 5), new Ret(`${a}-${c}`, "red", true, 5)]);
+                        gray_edges.push(...[new Ret(`${a}-${b}`, "gray", true, 5), new Ret(`${b}-${c}`, "gray", true, 5), new Ret(`${a}-${c}`, "gray", true, 5)]);
+                        delaunay_history.push([...this.get_edges(triangulation).ret_list, ...gray_edges, ret_a, ret_b, ret_c]); // push it to the history so we can see the change
+                        delaunay_history.push([...this.get_edges(triangulation).ret_list, ...gray_edges, ...invalid_tri_list]); // push it to the history so we can see the change
                     }
                 }
                 const polygon = [];
@@ -1824,14 +1838,12 @@
                     triangulation.removeTriangle(Number(v1), Number(v2), Number(v3));
                 }
                 // if edge is not shared by any other triangles (occurence or frequency is one) in bad triangles add edge to polygon
+                const poly_edge_ret = [];
                 for (let bad_edge in bad_edges_dict) {
                     if (bad_edges_dict[bad_edge] === 1) {
                         polygon.push(bad_edge);
-                    }
-                    else {
-                        const ret_bad_edge = this.get_ret(bad_edge, cur_edges);
-                        ret_bad_edge.exists = false; // mark ret as not existing
-                        delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                        poly_edge_ret.push(new Ret(bad_edge, "green", true, 5));
+                        delaunay_history.push([...this.get_edges(triangulation).ret_list, ...gray_edges, ...poly_edge_ret]); // push it to the history so we can see the change
                     }
                 }
                 // re-triangulate the polygonal hole using the point and add the triangles to the triangle data structure
@@ -1840,17 +1852,11 @@
                     const [a, b] = [Number(string_a), Number(string_b)];
                     // add a new triangle with the vertices of polygonal_edge's vertice and the point number
                     triangulation.addtriangle(a, b, point_num);
-                    const ret_poly_edge = this.get_ret(polygonal_edge, cur_edges); // get ret of the polygonal edge
-                    ret_poly_edge.color_code = ref_ret.color_code; // set it to the default color code
-                    // add the other edges of the new triangle to ret list
-                    cur_edges.push(new Ret(`${a}-${point_num}`));
-                    cur_edges.push(new Ret(`${b}-${point_num}`));
-                    delaunay_history.push({ "ret_list": cur_edges, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                    delaunay_history.push([...poly_edge_ret, ...this.get_edges(triangulation).ret_list]); // push it to the history so we can see the change
                 }
             }
             // get the edges
-            const get_ret = this.get_edges(triangulation);
-            delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
+            delaunay_history.push(this.get_edges(triangulation).ret_list); // push it to the history so we can see the change
             // If triangle contains a vertex from original super-triangle remove triangle from triangulation
             const prune_list = [];
             for (let triangle of triangulation.triangleList) {
@@ -1865,33 +1871,21 @@
             }
             for (let triangle of prune_list) {
                 triangulation.removeTriangle(triangle[0], triangle[1], triangle[2]); // remove triangle containing vertices of super triangle
-                // get the ret's of the removed triangles and change their colors
-                const a = this.get_ret(`${triangle[1]}-${triangle[2]}`, get_ret.ret_list);
-                const b = this.get_ret(`${triangle[0]}-${triangle[2]}`, get_ret.ret_list);
-                const c = this.get_ret(`${triangle[0]}-${triangle[1]}`, get_ret.ret_list);
-                a.color_code = "red";
-                b.color_code = "red";
-                c.color_code = "red";
-                delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
-                // now remove all three rets (edges)
-                a.exists = false;
-                b.exists = false;
-                c.exists = false;
-                delaunay_history.push({ "ret_list": get_ret.ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                delaunay_history.push(this.get_edges(triangulation).ret_list); // push it to the history so we can see the change
             }
             // get the vertices of the convex hull of the points list
             const convex_hull_vertices = _ConvexHull.jarvisConvexHull(pointList).points;
             // get the edges of the convex hull from the previously gotten convex hull vertices
             const convex_hull_edges = _Miscellanous.genEdgefromArray(convex_hull_vertices);
             const get_ret_final = this.get_edges(triangulation);
-            const _ret_list = get_ret_final.ret_list;
+            const ret_list = [];
             const _list = get_ret_final.list;
             // for each edge of the convex hull, check if it exists in the delaunay edge array and add it if it doesn't
             for (let edge of convex_hull_edges) {
                 if (!_list.includes(edge)) {
                     _list.push(edge);
-                    _ret_list.push(new Ret(edge));
-                    delaunay_history.push({ "ret_list": _ret_list, "full_point_list": fullPointList }); // push it to the history so we can see the change
+                    ret_list.push(new Ret(edge, "black", true, 5));
+                    delaunay_history.push([...get_ret_final.ret_list, ...ret_list]); // push it to the history so we can see the change
                 }
             }
             return [{ "list": _list, "full_point_list": fullPointList }, delaunay_history, convex_hull_vertices];
@@ -1900,95 +1894,140 @@
     const _Delaunay = new Delaunay2D();
     class Delaunay2D_Animate {
         cur_index;
-        // animate_convex_hull(){
-        //     const pt_list : Point2D[] = this.pt_list;
-        //     const[a,b] = this.convex_hull_edges[this.cur_index].split("-");
-        //     console.log(a,b);
-        //     const [start, end] = [pt_list[Number(a)], pt_list[Number(b)]];
-        //     _Experimental.drawLine(start, end, this.convex_hull_color, 15);
-        //     console.log(this.cur_index);
-        //     this.cur_index++;
-        //     const time_out = setTimeout(this.animate_convex_hull, 500);
-        //     if(this.cur_index >= this.convex_hull_edges.length) {
-        //         this.cur_index = 0;
-        //         clearTimeout(time_out);
-        //     }
-        //     status.addEventListener("click", ()=>{clearTimeout(time_out); console.log(this.cur_index)})
-        // }
         delaunay_input;
         convex_hull_color;
         convex_hull_edges;
         pt_list;
-        delay(time) {
-            var iter = 0;
-            while (iter < 100) {
-                iter++;
-                console.log(iter);
-            }
-        }
+        delaunay_history;
+        pt_col_list;
+        animate_c_hull;
+        running;
         constructor(delaunay_input, convex_hull_color, color_list, animate_convex_hull_bool) {
             this.delaunay_input = delaunay_input;
             this.pt_list = delaunay_input[0].full_point_list;
+            this.pt_col_list = color_list;
             this.cur_index = 0;
-            const delaunay = delaunay_input[0];
-            const delaunay_history = delaunay_input[1];
+            this.convex_hull_color = convex_hull_color;
+            // const delaunay : _DELAUNAY = delaunay_input[0];
+            this.delaunay_history = delaunay_input[1];
             const convex_hull_vertices = delaunay_input[2];
             this.convex_hull_edges = _Miscellanous.genEdgefromArray(convex_hull_vertices);
-            console.log("first");
-            this.delay(10000);
-            return;
-            const interval = setInterval(() => {
+            this.animate_c_hull = animate_convex_hull_bool;
+            this.running = false;
+            this.animate_history();
+        }
+        animate_points(with_super_tri_vertices = true, splice = true) {
+            // add each point all at once to the delaunay history
+            const ret_list = [];
+            for (let point in this.pt_list) {
+                if (Number(point) >= this.pt_list.length - 3 && with_super_tri_vertices === true)
+                    ret_list.push(new Ret(point, this.pt_col_list[0], false));
+                if (Number(point) < (this.pt_list.length - 3))
+                    ret_list.push(new Ret(point, this.pt_col_list[(Number(point) % (this.pt_col_list.length - 1)) + 1], false));
+            }
+            if (splice === true)
+                this.delaunay_history.splice(0, 0, ret_list);
+            return ret_list;
+        }
+        animate_convex_hull() {
+            // add each convex hull edge on by one to the delaunay history with all the points
+            const ret_list = [];
+            for (let point in this.pt_list) {
+                if (Number(point) >= (this.pt_list.length - 3))
+                    ret_list.push(new Ret(point, this.pt_col_list[0], false));
+                else
+                    ret_list.push(new Ret(point, this.pt_col_list[(Number(point) % (this.pt_col_list.length - 1)) + 1], false));
+            }
+            var c_hull_index = this.convex_hull_edges.length - 1;
+            while (c_hull_index >= 0) {
+                const current_convex_hull_edges = [];
+                var index = 0;
+                while (index <= c_hull_index) {
+                    current_convex_hull_edges.push(new Ret(this.convex_hull_edges[index], this.convex_hull_color, true, 10));
+                    index++;
+                }
+                this.delaunay_history.splice(0, 0, [...ret_list, ...current_convex_hull_edges]);
+                c_hull_index--;
+            }
+            return ret_list;
+        }
+        animate_history() {
+            // add each line group to the delaunay history with all the convex_hull edges and all the points
+            const ret_list = [];
+            for (let point in this.pt_list) {
+                if (Number(point) >= (this.pt_list.length - 3))
+                    ret_list.push(new Ret(point, this.pt_col_list[0], false));
+                else
+                    ret_list.push(new Ret(point, this.pt_col_list[(Number(point) % (this.pt_col_list.length - 1)) + 1], false));
+            }
+            for (let edge of this.convex_hull_edges) {
+                ret_list.push(new Ret(edge, this.convex_hull_color, true, 10));
+            }
+            for (let history in this.delaunay_history) {
+                const history_list = this.delaunay_history[history];
+                this.delaunay_history.splice(Number(history), 1, [...ret_list, ...history_list]);
+                if (Number(history) === (this.delaunay_history.length - 1))
+                    this.delaunay_history.push([...this.animate_points(false, false), ...history_list]);
+            }
+            if (this.animate_c_hull === true)
+                this.animate_convex_hull();
+            this.animate_points(true);
+            this.animate_points(false);
+        }
+        animate(index = -1, time = 1000) {
+            this.cur_index = Math.min(index, this.delaunay_history.length);
+            this.running = true;
+            var id = setInterval(() => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                status.innerHTML = "Running";
-                if (animate_convex_hull === true) {
-                    // get the edges of the convex hull from the previously gotten convex hull vertices
-                    for (let convex_hull_edge in convex_hull_edges) {
-                        const [a, b] = convex_hull_edge.split("-");
-                        const [start, end] = [delaunay.full_point_list[Number(a)], delaunay.full_point_list[Number(b)]];
-                        _Experimental.drawLine(start, end, convex_hull_color, 15);
+                if (this.cur_index >= 0) {
+                    for (let ret of this.delaunay_history[this.cur_index]) {
+                        if (ret._line === true) {
+                            const ret_str = ret.get_ret();
+                            const [a, b] = ret_str.split("-");
+                            const p_a = this.pt_list[Number(a)];
+                            const p_b = this.pt_list[Number(b)];
+                            _Experimental.drawLine(p_a, p_b, ret.color_code, ret._s_width);
+                        }
+                        else {
+                            const point = this.pt_list[Number(ret.get_ret())];
+                            _Experimental.drawPoint(point, ret.color_code);
+                        }
                     }
                 }
-                this.animate(delaunay_history[this.cur_index]);
+                status.innerHTML = `Running, count: ${this.cur_index + 1}`;
+                anim_number_input.value = `${this.cur_index + 1}`;
+                anim_number.innerHTML = anim_number_input.value;
                 this.cur_index++;
-                if (this.cur_index >= delaunay_history.length) {
-                    status.innerHTML = "Done";
-                    console.log(interval);
-                    const time_out = setTimeout(() => {
-                        status.innerHTML = "Null";
-                        cl_t = true;
-                        if (cl_t === true) {
-                            console.log(time_out);
-                            clearTimeout(time_out);
-                        }
-                        ;
-                    }, 1000);
-                    clearInterval(interval);
+                if (this.cur_index >= this.delaunay_history.length || this.running === false) {
+                    clearInterval(id);
+                    this.running = false;
+                    if (this.cur_index >= this.delaunay_history.length)
+                        status.innerHTML = "Done";
+                    else {
+                        anim_number_input.value = `${this.cur_index}`;
+                        anim_number.innerHTML = anim_number_input.value;
+                        status.innerHTML = `Paused, count: ${animate_delaunay.cur_index}`;
+                    }
                 }
-            }, 1000);
+            }, time);
         }
-        animate(history_group) {
-            const history = history_group.ret_list;
-            const point_list = history_group.full_point_list;
-            var p_index = 0;
-            var h_index = 0;
-            const tm_1 = setTimeout(() => {
-                const point = point_list[p_index];
-                _Experimental.drawPoint(point, color_list[color_list.length % p_index]);
-                p_index++;
-                if (p_index >= point_list.length)
-                    clearTimeout(tm_1);
-            }, 100);
-            const tm_2 = setTimeout(() => {
-                const history_item = history[h_index];
-                if (typeof history_item !== undefined) {
-                    const [a, b] = history_item.get_ret().split("-");
-                    const [start, end] = [point_list[Number(a)], point_list[Number(b)]];
-                    _Experimental.drawLine(start, end, history_item.color_code, 5);
+        image() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (this.cur_index >= 0) {
+                for (let ret of this.delaunay_history[this.cur_index]) {
+                    if (ret._line === true) {
+                        const ret_str = ret.get_ret();
+                        const [a, b] = ret_str.split("-");
+                        const p_a = this.pt_list[Number(a)];
+                        const p_b = this.pt_list[Number(b)];
+                        _Experimental.drawLine(p_a, p_b, ret.color_code, ret._s_width);
+                    }
+                    else {
+                        const point = this.pt_list[Number(ret.get_ret())];
+                        _Experimental.drawPoint(point, ret.color_code);
+                    }
                 }
-                h_index++;
-                if (h_index >= history.length)
-                    clearTimeout(tm_2);
-            }, 250);
+            }
         }
     }
     class ObjectManager {
@@ -2350,7 +2389,6 @@
         }
     }
     const _DrawCanvas = new DrawCanvas();
-    _DrawCanvas.drawCanvas();
     class Experimental {
         constructor() { }
         draw(coords, fill_style = "red", stroke_style = "black", stroke_width = 1, fill_bool = false) {
@@ -2495,11 +2533,36 @@
         [278, 258],
         [352, 331]
     ];
-    const gen_points = _Miscellanous.generatePointsArray(0, 700, 0, 560, 10, false);
+    _DrawCanvas.drawCanvas();
+    const gen_points = _Miscellanous.generatePointsArray(300, 900, 300, 550, 20, false);
+    // const gen_points = _Miscellanous.generatePointsArray(300,900,150,380,50,true)
+    // const gen_points = _Miscellanous.generatePointsArray(50,1200,50,500,20,false)
     const mod_points_Set = _Miscellanous.toPoints(gen_points);
     const d_result = _Delaunay.bowyer_watson(mod_points_Set);
     const color_list = _Miscellanous.ranHexCol(20);
     const animate_delaunay = new Delaunay2D_Animate(d_result, "cyan", color_list, true);
+    const history_num = animate_delaunay.delaunay_history.length;
+    anim_number_input.max = `${history_num}`;
+    after_anim1.innerHTML = `${history_num}`;
+    anim_number_input.oninput = function () {
+        animate_delaunay.running = false;
+        anim_number.innerHTML = anim_number_input.value;
+        animate_delaunay.cur_index = Number(anim_number_input.value) - 1;
+        animate_delaunay.image();
+    };
+    anim_speed_input.oninput = function () {
+        animate_delaunay.running = false;
+        anim_speed.innerHTML = anim_speed_input.value;
+    };
+    anim_info_btn.onclick = function () {
+        if (animate_delaunay.running === false) {
+            const num = animate_delaunay.cur_index % history_num;
+            animate_delaunay.animate(num, Number(anim_speed_input.value));
+        }
+        else {
+            animate_delaunay.running = false;
+        }
+    };
     // const convexhull = _ConvexHull.jarvisConvexHull(mod_points_Set)
     // _Experimental.draw(convexhull.hull,"white","cyan",15,false);
     // for (let point in mod_points_Set){

@@ -14,8 +14,6 @@
 
     <canvas></canvas>
 
-    <p>Animation Status: <span id="status">Null</span></p>
-
     <div class="dropdown" id="drop">
         <span>&ThickSpace;&LeftAngleBracket;</span>
         <div class="dropdown-content one">
@@ -35,6 +33,19 @@
                 <input id="farz" type="number" value="10"><br/>
             </form>
         </div>
+    </div>
+
+    <div id="animation">
+        <div class="inline-div anim_input" id="anim1">
+            <label for="animation_number">Animation Number : <span id="anim1_value">Null</span></label>
+            <input type="range" min="0" max="100" value="0" id="animation_number">
+            <label for="animation_number" id="after_anim1">Null</label>
+        </div>
+        <div class="inline-div anim_input" id="anim2">
+            <label for="animation_speed">Animation Speed : <span id="anim2_value">500</span> ms/frame</label>
+            <input type="range" min="1" max="1000" value="500" id="animation_speed">
+        </div>
+        <button id="anim_info">Animation Status: <span id="status">Null</span></button>
     </div>
 
 
