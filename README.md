@@ -1,3 +1,3 @@
 # Graphical-JS
-# This repo has been <em>discontinued</em>.
+# This repo has been discontinued.
 # Please refer to JS-Graphics.
